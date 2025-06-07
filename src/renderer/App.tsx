@@ -6,12 +6,18 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { DataTable } from "@/components/ui/data-table"
+import { ConnectionManager } from "@/components/ui/connection-manager"
 
 declare global {
   interface Window {
     electronAPI: {
       connectDatabase: (connectionString: string) => Promise<{success: boolean, database?: string, tables?: string[], error?: string}>
       fetchTableData: (connectionString: string, tableName: string) => Promise<{success: boolean, tableName?: string, data?: {columns: string[], rows: any[][]}, error?: string}>
+      saveConnection: (connectionString: string, name: string) => Promise<{success: boolean, connectionId?: string, name?: string, error?: string}>
+      getSavedConnections: () => Promise<{success: boolean, connections?: any[], error?: string}>
+      loadConnection: (connectionId: string) => Promise<{success: boolean, connectionString?: string, name?: string, error?: string}>
+      deleteConnection: (connectionId: string) => Promise<{success: boolean, error?: string}>
+      updateConnectionName: (connectionId: string, newName: string) => Promise<{success: boolean, error?: string}>
     }
   }
 }
@@ -85,6 +91,13 @@ function App() {
 
   const handleConnect = () => {
     connectionMutation.mutate(connectionString)
+  }
+
+  const handleConnectionSelect = (newConnectionString: string) => {
+    setConnectionString(newConnectionString)
+    setCurrentView('connect')
+    // Auto-connect when a saved connection is selected
+    connectionMutation.mutate(newConnectionString)
   }
 
   const handleTableClick = (tableName: string) => {
@@ -230,6 +243,14 @@ function App() {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Connection Manager */}
+      <div className="mt-6 w-full max-w-md">
+        <ConnectionManager 
+          onConnectionSelect={handleConnectionSelect}
+          currentConnectionString={connectionMutation.isSuccess ? connectionString : undefined}
+        />
+      </div>
     </div>
   )
 }

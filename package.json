@@ -30,11 +30,14 @@
     "vite": "^6.3.5"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-slot": "^1.2.3",
     "@tanstack/react-query": "^5.80.6",
     "@tanstack/react-table": "^8.21.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "electron-store": "^10.0.1",
+    "keytar": "^7.9.0",
     "lucide-react": "^0.513.0",
     "pg": "^8.16.0",
     "react": "^19.1.0",
