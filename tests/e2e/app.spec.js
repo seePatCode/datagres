@@ -361,8 +361,10 @@ test.describe('Electron App Launch', () => {
     // After connection, app switches to tables view
     await expect(window.locator('text=Connected to testdb')).toBeVisible();
     
-    // Connection manager should not be visible in tables view
-    await expect(saveButton).not.toBeVisible();
+    // Connection manager should now be visible in tables view too
+    const saveButtonInTablesView = window.locator('[data-testid="save-connection-button"]');
+    await expect(saveButtonInTablesView).toBeVisible();
+    await expect(saveButtonInTablesView).toBeEnabled();
   });
 
   test('should load saved connections from mock data', async () => {
