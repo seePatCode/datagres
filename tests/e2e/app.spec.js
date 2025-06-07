@@ -251,6 +251,78 @@ test.describe('Electron App Launch', () => {
     await expect(tablesList).toBeVisible();
   });
 
+  test('should have sortable columns in table data view', async () => {
+    // Connect and navigate to table data
+    const input = window.locator('input[placeholder="Paste connection string here"]');
+    await input.fill('postgresql://testuser:testpass@localhost:5432/testdb');
+    
+    const button = window.locator('button', { hasText: 'Connect' });
+    await button.click();
+    
+    await expect(window.locator('text=Connected to testdb')).toBeVisible();
+    
+    const firstTable = window.locator('[data-testid="table-item"]').first();
+    await firstTable.click();
+    
+    await expect(window.locator('[data-testid="table-data"]')).toBeVisible();
+    
+    // Column headers should be clickable for sorting - this will fail initially
+    const firstColumnHeader = window.locator('[data-testid="column-header"]').first();
+    await expect(firstColumnHeader).toBeVisible();
+    
+    // Should have sort indicators or be clickable - this will fail initially
+    await firstColumnHeader.click();
+    
+    // Should see some indication of sorting (like arrow icons) - this will fail initially
+    const sortIndicator = window.locator('[data-testid="sort-indicator"]').first();
+    await expect(sortIndicator).toBeVisible({ timeout: 3000 });
+  });
+
+  test('should show table metadata and row count', async () => {
+    // Connect and navigate to table data
+    const input = window.locator('input[placeholder="Paste connection string here"]');
+    await input.fill('postgresql://testuser:testpass@localhost:5432/testdb');
+    
+    const button = window.locator('button', { hasText: 'Connect' });
+    await button.click();
+    
+    await expect(window.locator('text=Connected to testdb')).toBeVisible();
+    
+    const firstTable = window.locator('[data-testid="table-item"]').first();
+    await firstTable.click();
+    
+    await expect(window.locator('[data-testid="table-data"]')).toBeVisible();
+    
+    // Should show row count or table metadata - this will fail initially
+    const tableInfo = window.locator('[data-testid="table-info"]');
+    await expect(tableInfo).toBeVisible();
+    await expect(tableInfo).toContainText('rows');
+  });
+
+  test('should have improved table styling and responsiveness', async () => {
+    // Connect and navigate to table data
+    const input = window.locator('input[placeholder="Paste connection string here"]');
+    await input.fill('postgresql://testuser:testpass@localhost:5432/testdb');
+    
+    const button = window.locator('button', { hasText: 'Connect' });
+    await button.click();
+    
+    await expect(window.locator('text=Connected to testdb')).toBeVisible();
+    
+    const firstTable = window.locator('[data-testid="table-item"]').first();
+    await firstTable.click();
+    
+    // Should use enhanced table component - this will fail initially
+    const enhancedTable = window.locator('[data-testid="enhanced-table"]');
+    await expect(enhancedTable).toBeVisible();
+    
+    // Should have proper table structure with thead and tbody
+    const tableHead = enhancedTable.locator('thead');
+    const tableBody = enhancedTable.locator('tbody');
+    await expect(tableHead).toBeVisible();
+    await expect(tableBody).toBeVisible();
+  });
+
   test('should take a screenshot', async () => {
     // Take a screenshot as proof the app is working
     await window.screenshot({ path: 'tests/e2e/screenshots/app-launch.png' });

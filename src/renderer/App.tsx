@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
+import { ColumnDef } from '@tanstack/react-table'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { DataTable } from "@/components/ui/data-table"
 
 declare global {
   interface Window {
@@ -18,6 +20,20 @@ const validateConnectionString = (connectionString: string): boolean => {
   // PostgreSQL connection string validation (password optional)
   const pgRegex = /^postgresql:\/\/([^:@]+(:([^@]*))?@)?[^:\/]+:\d+\/[\w-]+$/
   return pgRegex.test(connectionString)
+}
+
+// Helper function to create columns dynamically
+const createColumns = (columnNames: string[]): ColumnDef<any>[] => {
+  return columnNames.map((columnName, index) => ({
+    accessorKey: index.toString(),
+    header: columnName,
+    cell: ({ getValue }) => {
+      const value = getValue()
+      return value !== null ? String(value) : (
+        <span className="text-muted-foreground italic">NULL</span>
+      )
+    },
+  }))
 }
 
 function App() {
@@ -125,39 +141,12 @@ function App() {
         
         <Card className="w-full max-w-6xl mx-auto">
           <CardContent className="pt-6">
-            <div data-testid="table-data" className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b">
-                    {tableDataMutation.data.data.columns.map((column) => (
-                      <th 
-                        key={column}
-                        data-testid="column-header"
-                        className="text-left p-2 font-medium border-r last:border-r-0"
-                      >
-                        {column}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {tableDataMutation.data.data.rows.map((row, rowIndex) => (
-                    <tr key={rowIndex} data-testid="data-row" className="border-b hover:bg-muted">
-                      {row.map((cell, cellIndex) => (
-                        <td key={cellIndex} className="p-2 border-r last:border-r-0">
-                          {cell !== null ? String(cell) : <span className="text-muted-foreground italic">NULL</span>}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              
-              {tableDataMutation.data.data.rows.length === 0 && (
-                <div className="text-muted-foreground text-center py-8">
-                  No data found in this table
-                </div>
-              )}
+            <div data-testid="table-data">
+              <DataTable
+                columns={createColumns(tableDataMutation.data.data.columns)}
+                data={tableDataMutation.data.data.rows}
+                tableName={selectedTable}
+              />
             </div>
           </CardContent>
         </Card>
