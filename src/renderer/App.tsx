@@ -183,13 +183,13 @@ function App() {
   if (currentView === 'tableData' && tableDataMutation.isSuccess && tableDataMutation.data?.data) {
     // Table Data View
     return (
-      <div className="app-container">
+      <div className="min-h-screen bg-background text-foreground">
         <MenuBar 
           onNewConnection={handleNewConnection}
           onShowConnections={handleShowConnections}
           currentView={currentView}
         />
-        <div className="flex flex-col min-h-screen bg-zinc-900 text-zinc-100 p-4">
+        <div className="flex flex-col p-4">
         <div className="mb-6">
           <div className="flex items-center gap-4">
             <Button 
@@ -224,15 +224,15 @@ function App() {
   if (currentView === 'tables' && connectionMutation.isSuccess && connectionMutation.data?.tables) {
     // Tables List View
     return (
-      <div className="app-container">
+      <div className="min-h-screen bg-background text-foreground">
         <MenuBar 
           onNewConnection={handleNewConnection}
           onShowConnections={handleShowConnections}
           currentView={currentView}
         />
-        <div className="flex flex-col min-h-screen bg-zinc-900 text-zinc-100 p-4">
+        <div className="flex flex-col p-4">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-semibold text-zinc-100">
+            <h2 className="text-2xl font-semibold text-foreground">
               Connected to {connectionMutation.data.database}
           </h2>
         </div>
@@ -275,17 +275,17 @@ function App() {
 
   // Connection Form View (default)
   return (
-    <div className="app-container">
+    <div className="min-h-screen bg-background text-foreground">
       <MenuBar 
         onNewConnection={handleNewConnection}
         onShowConnections={handleShowConnections}
         currentView={currentView}
       />
-      <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-900 text-zinc-100 p-4">
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <Card className="w-full max-w-md">
         <CardContent className="pt-6">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-semibold text-zinc-100">
+            <h2 className="text-2xl font-semibold text-foreground">
               Datagres - Database Explorer
             </h2>
           </div>

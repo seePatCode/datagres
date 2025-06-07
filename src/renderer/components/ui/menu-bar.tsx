@@ -96,15 +96,15 @@ export function MenuBar({ onNewConnection, onShowConnections, currentView }: Men
         />
       )}
       
-      <div className="bg-zinc-900 border-b border-zinc-800 h-8 flex items-center px-3 text-zinc-300 text-sm font-mono select-none">
+      <div className="bg-muted border-b border-border h-8 flex items-center px-3 text-muted-foreground text-sm font-mono select-none">
         <div className="flex items-center gap-1">
           {menus.map((menu) => (
             <div key={menu.label} className="relative">
               <Button
                 variant="ghost"
                 size="sm"
-                className={`h-6 px-2 text-xs hover:bg-zinc-800 hover:text-zinc-100 ${
-                  activeMenu === menu.label ? 'bg-zinc-800 text-zinc-100' : ''
+                className={`h-6 px-2 text-xs hover:bg-accent hover:text-accent-foreground ${
+                  activeMenu === menu.label ? 'bg-accent text-accent-foreground' : ''
                 }`}
                 onClick={() => handleMenuClick(menu.label)}
               >
@@ -112,19 +112,19 @@ export function MenuBar({ onNewConnection, onShowConnections, currentView }: Men
               </Button>
               
               {activeMenu === menu.label && (
-                <div className="absolute top-6 left-0 z-50 min-w-48 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg py-1">
+                <div className="absolute top-6 left-0 z-50 min-w-48 bg-popover border border-border rounded-md shadow-lg py-1">
                   {menu.items.map((item, index) => (
                     <button
                       key={index}
                       onClick={() => handleItemClick(item.action)}
-                      className="w-full flex items-center justify-between px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100 transition-colors"
+                      className="w-full flex items-center justify-between px-3 py-1.5 text-xs text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
                     >
                       <div className="flex items-center gap-2">
                         {item.icon}
                         <span>{item.label}</span>
                       </div>
                       {item.shortcut && (
-                        <span className="text-zinc-500 text-xs">
+                        <span className="text-muted-foreground text-xs">
                           {item.shortcut}
                         </span>
                       )}
@@ -139,7 +139,7 @@ export function MenuBar({ onNewConnection, onShowConnections, currentView }: Men
         <div className="flex-1" />
         
         {/* Status indicator */}
-        <div className="flex items-center gap-2 text-xs text-zinc-500">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {currentView === 'tables' && (
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-green-500 rounded-full" />

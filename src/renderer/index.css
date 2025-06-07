@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    /* Light mode (default) */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -28,33 +29,35 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem
+    --radius: 0.5rem;
   }
+
+  /* VSCode-inspired dark mode */
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --background: 240 10% 3.9%;      /* #0a0a0a - Very dark background */
+    --foreground: 0 0% 98%;          /* #fafafa - Nearly white text */
+    --card: 240 10% 3.9%;           /* #0a0a0a - Same as background */
+    --card-foreground: 0 0% 98%;    /* #fafafa - Nearly white text */
+    --popover: 240 5.9% 10%;        /* #1a1a1a - Slightly lighter for dropdowns */
+    --popover-foreground: 0 0% 98%; /* #fafafa - Nearly white text */
+    --primary: 0 0% 98%;            /* #fafafa - White for primary buttons */
+    --primary-foreground: 240 5.9% 10%; /* #1a1a1a - Dark text on white */
+    --secondary: 240 3.7% 15.9%;    /* #262626 - Dark gray for secondary */
+    --secondary-foreground: 0 0% 98%; /* #fafafa - Light text */
+    --muted: 240 3.7% 15.9%;        /* #262626 - Muted background */
+    --muted-foreground: 240 5% 64.9%; /* #a3a3a3 - Gray text */
+    --accent: 240 3.7% 15.9%;       /* #262626 - Accent same as muted */
+    --accent-foreground: 0 0% 98%;  /* #fafafa - Light text */
+    --destructive: 0 62.8% 30.6%;   /* #7f1d1d - Dark red */
+    --destructive-foreground: 0 0% 98%; /* #fafafa - White text */
+    --border: 240 3.7% 15.9%;       /* #262626 - Subtle borders */
+    --input: 240 3.7% 15.9%;        /* #262626 - Input backgrounds */
+    --ring: 240 4.9% 83.9%;         /* #d4d4d8 - Focus rings */
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%
+    --chart-5: 340 75% 55%;
   }
 }
 
@@ -62,26 +65,9 @@
   * {
     @apply border-border;
   }
+  
   body {
-    @apply bg-background text-foreground font-mono;
+    @apply bg-background text-foreground;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
   }
-}
-
-/* VSCode-style dark theme overrides */
-:root {
-  --vscode-bg: 30 30 30; /* #1e1e1e */
-  --vscode-sidebar: 37 37 38; /* #252526 */
-  --vscode-menu: 60 60 60; /* #3c3c3c */
-  --vscode-border: 69 69 69; /* #454545 */
-  --vscode-text: 204 204 204; /* #cccccc */
-  --vscode-text-muted: 153 153 153; /* #999999 */
-}
-
-.app-container {
-  @apply bg-zinc-900 text-zinc-100 min-h-screen font-mono;
-}
-
-/* Console-friendly font stack */
-.font-console {
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
 }
