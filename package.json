@@ -4,13 +4,16 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "playwright test",
+    "test:headed": "playwright test --headed"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "electron": "^36.4.0"
+    "@playwright/test": "^1.52.0",
+    "electron": "^36.4.0",
+    "playwright": "^1.52.0"
   }
 }
