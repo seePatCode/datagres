@@ -6,8 +6,9 @@
   "type": "module",
   "main": "./out/main/index.js",
   "scripts": {
-    "start": "electron-vite preview",
+    "start": "electron-vite dev",
     "dev": "electron-vite dev",
+    "preview": "electron-vite preview",
     "build": "electron-vite build",
     "dist": "npm run build && electron-builder",
     "dist:mac": "npm run build && electron-builder --mac",

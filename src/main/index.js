@@ -262,8 +262,8 @@ const createWindow = () => {
   
   
   const win = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1400,
+    height: 900,
     title: 'Datagres - Database Explorer',
     backgroundColor: '#020817', // Dark background to prevent white flash (matches hsl(222.2 84% 4.9%))
     ...(process.platform === 'darwin' 
@@ -274,14 +274,21 @@ const createWindow = () => {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: preloadPath
+      preload: preloadPath,
+      // Allow local resources in development
+      webSecurity: process.env.NODE_ENV !== 'development'
     }
   })
 
-  // In dev mode, load from Vite dev server. In production, load built files.
+  // Maximize the window on startup (except during tests)
+  if (process.env.NODE_ENV !== 'test') {
+    win.maximize()
+  }
+
+  // HMR for renderer process
   if (process.env.NODE_ENV === 'development') {
     console.log(`[${new Date().toISOString()}] [MAIN] Loading Vite dev server...`)
-    win.loadURL('http://localhost:5173')
+    win.loadURL(process.env.ELECTRON_RENDERER_URL || 'http://localhost:5173')
   } else {
     console.log(`[${new Date().toISOString()}] [MAIN] Loading built renderer...`)
     win.loadFile(path.join(__dirname, '../renderer/index.html'))
