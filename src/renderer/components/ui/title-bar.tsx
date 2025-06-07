@@ -38,7 +38,7 @@ export function TitleBar({ title = 'Datagres' }: TitleBarProps) {
       <div className="h-8 bg-background border-b border-border flex items-center select-none">
         {/* Title with left padding for traffic lights */}
         <div 
-          className="flex-1 pl-20 pr-3 text-sm font-medium text-foreground cursor-default text-center"
+          className="flex-1 pl-20 pr-20 text-sm font-medium text-foreground cursor-default text-center"
           style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
         >
           {title}

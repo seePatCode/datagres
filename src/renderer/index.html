@@ -34,7 +34,7 @@
           " />
         </div>
         <h2 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.025em; animation: fadeInUp 0.5s ease-out 0.1s both;">Datagres</h2>
-        <p style="margin: 16px 0 0; color: hsl(215 20.2% 65.1%); font-size: 14px; animation: fadeInUp 0.5s ease-out 0.2s both;">Database browsing that slaps</p>
+        <p id="loading-tagline" style="margin: 16px 0 0; color: hsl(215 20.2% 65.1%); font-size: 14px; animation: fadeInUp 0.5s ease-out 0.2s both;">Database browsing that slaps</p>
       </div>
     </div>
     
@@ -94,6 +94,42 @@
         animation: fadeOut 0.3s ease-out forwards;
       }
     </style>
+    
+    <script>
+      // Rotating taglines for loading screen
+      const taglines = [
+        "Database browsing that slaps",
+        "Vibe coded to your desktop", 
+        "A database UI that doesn't suck",
+        "Nah, no nosql here",
+        "HelpMySpacebarStoppedWorking",
+        "Do people actually read these?",
+        "So quick the loader needed a timeout",
+        "Less clicky, more action",
+        "Your data deserves better",
+        "Database tools done right",
+        "Where databases meet instant gratification",
+        "Connect once, explore everything",
+        "Stop wrestling with data",
+        "From connection string to data in 15 seconds",
+        "Paste. Connect. Explore.",
+        "Database exploration at the speed of thought",
+        "Finally, a database tool that rocks",
+        "No more terrible database GUIs",
+        "Database UX that doesn't hurt"
+      ];
+      
+      // Pick random tagline on load
+      const randomTagline = taglines[Math.floor(Math.random() * taglines.length)];
+      
+      // Update tagline when DOM is ready
+      document.addEventListener('DOMContentLoaded', function() {
+        const taglineElement = document.getElementById('loading-tagline');
+        if (taglineElement) {
+          taglineElement.textContent = randomTagline;
+        }
+      });
+    </script>
     
     <script type="module" src="/main.tsx"></script>
   </body>
