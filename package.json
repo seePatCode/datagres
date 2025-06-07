@@ -1,12 +1,11 @@
 {
   "name": "datagres",
   "version": "1.0.0",
-  "main": "main.js",
+  "main": "./out/main/index.js",
   "scripts": {
-    "start": "electron .",
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
+    "start": "electron-vite preview",
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
     "test": "playwright test",
     "test:headed": "playwright test --headed"
   },
@@ -22,6 +21,7 @@
     "@vitejs/plugin-react": "^4.5.1",
     "autoprefixer": "^10.4.21",
     "electron": "^36.4.0",
+    "electron-vite": "^3.1.0",
     "playwright": "^1.52.0",
     "postcss": "^8.5.4",
     "tailwindcss": "^3.4.17",

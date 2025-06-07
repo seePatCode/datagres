@@ -3,3 +3,20 @@ node_modules/
 test-results/
 playwright-report/
 tests/e2e/screenshots/
+
+# Build outputs
+dist/
+out/
+
+# Vite cache
+.vite/
+
+# TypeScript
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

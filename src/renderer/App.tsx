@@ -12,7 +12,7 @@ function App() {
           placeholder="Paste connection string here"
           className="w-96"
         />
-        <Button>Connect</Button>
+        <Button>React Connect</Button>
       </div>
     </div>
   )
