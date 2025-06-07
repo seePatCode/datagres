@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { DataTable } from "@/components/ui/data-table"
 import { ConnectionManager } from "@/components/ui/connection-manager"
+import { MenuBar } from "@/components/ui/menu-bar"
 
 declare global {
   interface Window {
@@ -135,6 +136,17 @@ function App() {
     connectionMutation.mutate(newConnectionString)
   }
 
+  const handleNewConnection = () => {
+    setConnectionString('')
+    setCurrentView('connect')
+    // Reset any previous connection state
+    connectionMutation.reset()
+  }
+
+  const handleShowConnections = () => {
+    setCurrentView('connect')
+  }
+
   const handleTableClick = (tableName: string) => {
     tableDataMutation.mutate(tableName)
   }
@@ -171,7 +183,13 @@ function App() {
   if (currentView === 'tableData' && tableDataMutation.isSuccess && tableDataMutation.data?.data) {
     // Table Data View
     return (
-      <div className="flex flex-col min-h-screen bg-background font-sans p-4">
+      <div className="app-container">
+        <MenuBar 
+          onNewConnection={handleNewConnection}
+          onShowConnections={handleShowConnections}
+          currentView={currentView}
+        />
+        <div className="flex flex-col min-h-screen bg-zinc-900 text-zinc-100 p-4">
         <div className="mb-6">
           <div className="flex items-center gap-4">
             <Button 
@@ -198,6 +216,7 @@ function App() {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     )
   }
@@ -205,10 +224,16 @@ function App() {
   if (currentView === 'tables' && connectionMutation.isSuccess && connectionMutation.data?.tables) {
     // Tables List View
     return (
-      <div className="flex flex-col min-h-screen bg-background font-sans p-4">
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-semibold text-foreground">
-            Connected to {connectionMutation.data.database}
+      <div className="app-container">
+        <MenuBar 
+          onNewConnection={handleNewConnection}
+          onShowConnections={handleShowConnections}
+          currentView={currentView}
+        />
+        <div className="flex flex-col min-h-screen bg-zinc-900 text-zinc-100 p-4">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-semibold text-zinc-100">
+              Connected to {connectionMutation.data.database}
           </h2>
         </div>
         
@@ -243,17 +268,24 @@ function App() {
             currentConnectionString={connectionString}
           />
         </div>
+        </div>
       </div>
     )
   }
 
   // Connection Form View (default)
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background font-sans p-4">
+    <div className="app-container">
+      <MenuBar 
+        onNewConnection={handleNewConnection}
+        onShowConnections={handleShowConnections}
+        currentView={currentView}
+      />
+      <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-900 text-zinc-100 p-4">
       <Card className="w-full max-w-md">
         <CardContent className="pt-6">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-semibold text-foreground">
+            <h2 className="text-2xl font-semibold text-zinc-100">
               Datagres - Database Explorer
             </h2>
           </div>
@@ -293,6 +325,7 @@ function App() {
           onConnectionSelect={handleConnectionSelect}
           currentConnectionString={connectionMutation.isSuccess ? connectionString : undefined}
         />
+      </div>
       </div>
     </div>
   )

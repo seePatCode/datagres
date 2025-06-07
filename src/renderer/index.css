@@ -63,6 +63,25 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-mono;
   }
+}
+
+/* VSCode-style dark theme overrides */
+:root {
+  --vscode-bg: 30 30 30; /* #1e1e1e */
+  --vscode-sidebar: 37 37 38; /* #252526 */
+  --vscode-menu: 60 60 60; /* #3c3c3c */
+  --vscode-border: 69 69 69; /* #454545 */
+  --vscode-text: 204 204 204; /* #cccccc */
+  --vscode-text-muted: 153 153 153; /* #999999 */
+}
+
+.app-container {
+  @apply bg-zinc-900 text-zinc-100 min-h-screen font-mono;
+}
+
+/* Console-friendly font stack */
+.font-console {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
 }

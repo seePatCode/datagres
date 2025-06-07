@@ -459,6 +459,33 @@ test.describe('Electron App Launch', () => {
     await expect(window.locator('text=Connected to testdb')).toBeVisible({ timeout: 5000 });
   });
 
+  test('should have VSCode-style menu bar', async () => {
+    // Check for menu bar with File, Edit, View, Help menus
+    const fileMenu = window.locator('button', { hasText: 'File' });
+    const editMenu = window.locator('button', { hasText: 'Edit' });
+    const viewMenu = window.locator('button', { hasText: 'View' });
+    const helpMenu = window.locator('button', { hasText: 'Help' });
+    
+    await expect(fileMenu).toBeVisible();
+    await expect(editMenu).toBeVisible();
+    await expect(viewMenu).toBeVisible();
+    await expect(helpMenu).toBeVisible();
+  });
+
+  test('should show File menu dropdown when clicked', async () => {
+    // Click File menu
+    const fileMenu = window.locator('button', { hasText: 'File' });
+    await fileMenu.click();
+    
+    // Should show New Connection option
+    const newConnectionItem = window.locator('text=New Connection');
+    await expect(newConnectionItem).toBeVisible();
+    
+    // Should show Saved Connections option
+    const savedConnectionsItem = window.locator('text=Saved Connections');
+    await expect(savedConnectionsItem).toBeVisible();
+  });
+
   test('should take a screenshot', async () => {
     // Take a screenshot as proof the app is working
     await window.screenshot({ path: 'tests/e2e/screenshots/app-launch.png' });
