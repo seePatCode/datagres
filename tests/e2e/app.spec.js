@@ -47,6 +47,18 @@ test.describe('Electron App Launch', () => {
     await expect(heading).toHaveCount(0);
   });
 
+  test('should have Connect button', async () => {
+    // Check for button with "Connect" text
+    const button = window.locator('button', { hasText: 'Connect' });
+    await expect(button).toBeVisible();
+  });
+
+  test('Connect button should be clickable', async () => {
+    // Verify button is enabled and clickable
+    const button = window.locator('button', { hasText: 'Connect' });
+    await expect(button).toBeEnabled();
+  });
+
   test('should have correct window dimensions', async () => {
     // Verify window size from the main process
     const windowState = await electronApp.evaluate(async ({ BrowserWindow }) => {
