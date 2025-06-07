@@ -289,7 +289,7 @@ function App() {
         <div className="flex-1 overflow-hidden">
           <ResizablePanelGroup direction="horizontal">
             {/* Sidebar Panel */}
-            <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
+            <ResizablePanel defaultSize={25} minSize={5} maxSize={95}>
               <DatabaseSidebar
                 connections={connections}
                 currentConnection={currentConnection}
@@ -302,10 +302,10 @@ function App() {
             </ResizablePanel>
             
             {/* Resize handle */}
-            <ResizableHandle withHandle />
+            <ResizableHandle />
             
             {/* Main content panel */}
-            <ResizablePanel defaultSize={75}>
+            <ResizablePanel defaultSize={75} minSize={5}>
               {selectedTable && currentTableData ? (
                 <TableView
                   tableName={selectedTable}

@@ -60,7 +60,7 @@ export function TableView({
   }
 
   return (
-    <div className={`flex h-full flex-col ${className}`}>
+    <div className={`flex h-full flex-col min-w-0 ${className}`}>
       {/* Toolbar */}
       <div className="flex items-center justify-between p-3 border-b bg-background">
         <div className="flex items-center gap-3">
