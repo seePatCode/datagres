@@ -8,6 +8,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { DataTable } from "@/components/ui/data-table"
 import { ConnectionManager } from "@/components/ui/connection-manager"
 import { TitleBar } from "@/components/ui/title-bar"
+import { DatabaseSidebar } from "@/components/ui/database-sidebar"
+import { TableView } from "@/components/ui/table-view"
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 
 declare global {
   interface Window {
@@ -52,7 +55,11 @@ function App() {
   console.time('app-component-mount')
   
   const [connectionString, setConnectionString] = useState('')
-  const [currentView, setCurrentView] = useState<'connect' | 'tables' | 'tableData'>('connect')
+  const [currentView, setCurrentView] = useState<'connect' | 'explorer'>('connect')
+  const [currentDatabase, setCurrentDatabase] = useState<string>('')
+  const [tables, setTables] = useState<{name: string, rowCount?: number}[]>([])
+  const [recentTables, setRecentTables] = useState<{name: string, rowCount?: number}[]>([])
+  const [currentTableData, setCurrentTableData] = useState<{columns: string[], rows: any[][]} | null>(null)
   const [selectedTable, setSelectedTable] = useState<string>('')
   const [hasAttemptedAutoConnect, setHasAttemptedAutoConnect] = useState(false)
   const [isAutoConnecting, setIsAutoConnecting] = useState(false)
@@ -95,9 +102,11 @@ function App() {
       
       return result
     },
-    onSuccess: () => {
-      console.log(`[${new Date().toISOString()}] Connection successful, switching to tables view`)
-      setCurrentView('tables')
+    onSuccess: (data) => {
+      console.log(`[${new Date().toISOString()}] Connection successful, switching to explorer view`)
+      setCurrentView('explorer')
+      setCurrentDatabase(data.database || '')
+      setTables((data.tables || []).map(name => ({ name })))
       setIsAutoConnecting(false)
     },
     onError: (error) => {
@@ -118,7 +127,13 @@ function App() {
     },
     onSuccess: (data) => {
       setSelectedTable(data.tableName || '')
-      setCurrentView('tableData')
+      setCurrentTableData(data.data || null)
+      // Add to recent tables
+      const tableName = data.tableName || ''
+      setRecentTables(prev => {
+        const filtered = prev.filter(t => t.name !== tableName)
+        return [{ name: tableName }, ...filtered].slice(0, 5) // Keep last 5
+      })
     }
   })
 
@@ -166,9 +181,32 @@ function App() {
 
   const handleConnectionSelect = (newConnectionString: string) => {
     setConnectionString(newConnectionString)
-    setCurrentView('connect')
     // Auto-connect when a saved connection is selected
     connectionMutation.mutate(newConnectionString)
+  }
+
+  const handleConnectionChange = (connectionId: string) => {
+    // Load and connect to selected connection
+    window.electronAPI.loadConnection(connectionId)
+      .then((result) => {
+        if (result.success && result.connectionString) {
+          setConnectionString(result.connectionString)
+          connectionMutation.mutate(result.connectionString)
+        }
+      })
+      .catch((error) => {
+        console.warn('Failed to load connection:', error)
+      })
+  }
+
+  const handleTableSelect = (tableName: string) => {
+    tableDataMutation.mutate(tableName)
+  }
+
+  const handleTableRefresh = () => {
+    if (selectedTable) {
+      tableDataMutation.mutate(selectedTable)
+    }
   }
 
   const handleNewConnection = () => {
@@ -194,8 +232,9 @@ function App() {
             handleShowConnections()
             break
           case 'back-to-tables':
-            if (currentView === 'tableData') {
-              handleBackToTables()
+            if (selectedTable) {
+              setSelectedTable('')
+              setCurrentTableData(null)
             }
             break
         }
@@ -203,14 +242,16 @@ function App() {
     }
   }, [currentView])
 
-  const handleTableClick = (tableName: string) => {
-    tableDataMutation.mutate(tableName)
-  }
+  // Convert connections data to the format expected by DatabaseSidebar
+  const connections = (connectionsData || []).map(conn => ({
+    id: conn.id,
+    name: conn.name,
+    database: conn.database
+  }))
 
-  const handleBackToTables = () => {
-    setCurrentView('tables')
-    setSelectedTable('')
-  }
+  const currentConnection = connections.find(conn => 
+    conn.database === currentDatabase
+  )
 
   const getStatusVariant = () => {
     if (connectionMutation.isSuccess) return 'default' // Green-ish
@@ -235,101 +276,55 @@ function App() {
     return connectionMutation.isPending || connectionMutation.isSuccess || connectionMutation.isError
   }
 
-  // Render different views based on current state
-  if (currentView === 'tableData' && tableDataMutation.isSuccess && tableDataMutation.data?.data) {
-    // Table Data View
+  // Explorer view with sidebar + main content
+  if (currentView === 'explorer' && connectionMutation.isSuccess) {
     return (
       <div className="h-screen bg-background text-foreground flex flex-col">
         {/* Fixed header area */}
         <div className="flex-none">
-          <TitleBar title={`Datagres - ${selectedTable}`} />
+          <TitleBar title={selectedTable ? `Datagres - ${selectedTable}` : `Datagres - ${currentDatabase}`} />
         </div>
         
-        {/* Scrollable content area */}
-        <div className="flex-1 overflow-auto">
-          <div className="p-4">
-        <div className="mb-6">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="outline" 
-              onClick={handleBackToTables}
-              data-testid="back-to-tables"
-            >
-              ← Back to Tables
-            </Button>
-            <h2 className="text-2xl font-semibold text-foreground" data-testid="table-header">
-              {selectedTable}
-            </h2>
-          </div>
-        </div>
-        
-        <Card className="w-full max-w-6xl mx-auto">
-          <CardContent className="pt-6">
-            <div data-testid="table-data">
-              <DataTable
-                columns={createColumns(tableDataMutation.data.data.columns)}
-                data={tableDataMutation.data.data.rows}
-                tableName={selectedTable}
+        {/* Main layout with resizable panels */}
+        <div className="flex-1 overflow-hidden">
+          <ResizablePanelGroup direction="horizontal">
+            {/* Sidebar Panel */}
+            <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
+              <DatabaseSidebar
+                connections={connections}
+                currentConnection={currentConnection}
+                tables={tables}
+                recentTables={recentTables}
+                onConnectionChange={handleConnectionChange}
+                onTableSelect={handleTableSelect}
+                selectedTable={selectedTable}
               />
-            </div>
-          </CardContent>
-        </Card>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (currentView === 'tables' && connectionMutation.isSuccess && connectionMutation.data?.tables) {
-    // Tables List View
-    return (
-      <div className="h-screen bg-background text-foreground flex flex-col">
-        {/* Fixed header area */}
-        <div className="flex-none">
-          <TitleBar title={`Datagres - ${connectionMutation.data.database}`} />
-        </div>
-        
-        {/* Scrollable content area */}
-        <div className="flex-1 overflow-auto">
-          <div className="p-4">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-semibold text-foreground">
-              Connected to {connectionMutation.data.database}
-          </h2>
-        </div>
-        
-        <div className="w-full max-w-4xl mx-auto space-y-6">
-          <Card>
-            <CardContent className="pt-6">
-              <h3 className="text-lg font-medium mb-4">Tables</h3>
-              <div data-testid="tables-list" className="space-y-2">
-                {connectionMutation.data.tables.length > 0 ? (
-                  connectionMutation.data.tables.map((table) => (
-                    <div 
-                      key={table}
-                      data-testid="table-item"
-                      onClick={() => handleTableClick(table)}
-                      className="p-3 border rounded-lg hover:bg-muted cursor-pointer transition-colors"
-                    >
-                      <span className="font-medium">{table}</span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-muted-foreground text-center py-8">
-                    No tables found in this database
+            </ResizablePanel>
+            
+            {/* Resize handle */}
+            <ResizableHandle withHandle />
+            
+            {/* Main content panel */}
+            <ResizablePanel defaultSize={75}>
+              {selectedTable && currentTableData ? (
+                <TableView
+                  tableName={selectedTable}
+                  data={currentTableData}
+                  onRefresh={handleTableRefresh}
+                  isLoading={tableDataMutation.isPending}
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center">
+                  <div className="text-center">
+                    <h3 className="text-lg font-medium mb-2">Select a table to view data</h3>
+                    <p className="text-muted-foreground">
+                      Choose a table from the sidebar to start exploring your data
+                    </p>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Connection Manager - also shown in tables view */}
-          <ConnectionManager 
-            onConnectionSelect={handleConnectionSelect}
-            currentConnectionString={connectionString}
-          />
-          </div>
-        </div>
+                </div>
+              )}
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </div>
       </div>
     )

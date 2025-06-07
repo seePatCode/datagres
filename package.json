@@ -34,7 +34,10 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ]
     },
@@ -63,6 +66,9 @@
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.14",
+    "@radix-ui/react-scroll-area": "^1.2.9",
+    "@radix-ui/react-select": "^2.2.5",
+    "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
     "@tanstack/react-query": "^5.80.6",
     "@tanstack/react-table": "^8.21.3",
@@ -74,6 +80,7 @@
     "pg": "^8.16.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-resizable-panels": "^3.0.2",
     "tailwind-merge": "^3.3.0"
   }
 }
