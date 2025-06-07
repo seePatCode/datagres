@@ -187,14 +187,20 @@ function App() {
   if (currentView === 'tableData' && tableDataMutation.isSuccess && tableDataMutation.data?.data) {
     // Table Data View
     return (
-      <div className="min-h-screen bg-background text-foreground">
-        <TitleBar title={`Datagres - ${selectedTable}`} />
-        <MenuBar 
-          onNewConnection={handleNewConnection}
-          onShowConnections={handleShowConnections}
-          currentView={currentView}
-        />
-        <div className="flex flex-col p-4">
+      <div className="h-screen bg-background text-foreground flex flex-col">
+        {/* Fixed header area */}
+        <div className="flex-none">
+          <TitleBar title={`Datagres - ${selectedTable}`} />
+          <MenuBar 
+            onNewConnection={handleNewConnection}
+            onShowConnections={handleShowConnections}
+            currentView={currentView}
+          />
+        </div>
+        
+        {/* Scrollable content area */}
+        <div className="flex-1 overflow-auto">
+          <div className="p-4">
         <div className="mb-6">
           <div className="flex items-center gap-4">
             <Button 
@@ -221,6 +227,7 @@ function App() {
             </div>
           </CardContent>
         </Card>
+          </div>
         </div>
       </div>
     )
@@ -229,14 +236,20 @@ function App() {
   if (currentView === 'tables' && connectionMutation.isSuccess && connectionMutation.data?.tables) {
     // Tables List View
     return (
-      <div className="min-h-screen bg-background text-foreground">
-        <TitleBar title={`Datagres - ${connectionMutation.data.database}`} />
-        <MenuBar 
-          onNewConnection={handleNewConnection}
-          onShowConnections={handleShowConnections}
-          currentView={currentView}
-        />
-        <div className="flex flex-col p-4">
+      <div className="h-screen bg-background text-foreground flex flex-col">
+        {/* Fixed header area */}
+        <div className="flex-none">
+          <TitleBar title={`Datagres - ${connectionMutation.data.database}`} />
+          <MenuBar 
+            onNewConnection={handleNewConnection}
+            onShowConnections={handleShowConnections}
+            currentView={currentView}
+          />
+        </div>
+        
+        {/* Scrollable content area */}
+        <div className="flex-1 overflow-auto">
+          <div className="p-4">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-semibold text-foreground">
               Connected to {connectionMutation.data.database}
@@ -273,6 +286,7 @@ function App() {
             onConnectionSelect={handleConnectionSelect}
             currentConnectionString={connectionString}
           />
+          </div>
         </div>
         </div>
       </div>
@@ -281,14 +295,20 @@ function App() {
 
   // Connection Form View (default)
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <TitleBar />
-      <MenuBar 
-        onNewConnection={handleNewConnection}
-        onShowConnections={handleShowConnections}
-        currentView={currentView}
-      />
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+    <div className="h-screen bg-background text-foreground flex flex-col">
+      {/* Fixed header area */}
+      <div className="flex-none">
+        <TitleBar />
+        <MenuBar 
+          onNewConnection={handleNewConnection}
+          onShowConnections={handleShowConnections}
+          currentView={currentView}
+        />
+      </div>
+      
+      {/* Scrollable content area */}
+      <div className="flex-1 overflow-auto">
+        <div className="flex flex-col items-center justify-center min-h-full p-4">
       <Card className="w-full max-w-md">
         <CardContent className="pt-6">
           <div className="text-center mb-6">
@@ -332,7 +352,8 @@ function App() {
           onConnectionSelect={handleConnectionSelect}
           currentConnectionString={connectionMutation.isSuccess ? connectionString : undefined}
         />
-      </div>
+        </div>
+        </div>
       </div>
     </div>
   )
