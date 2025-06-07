@@ -35,10 +35,16 @@ test.describe('Electron App Launch', () => {
     expect(title).toBe('Datagres - Database Explorer');
   });
 
-  test('should display correct heading', async () => {
-    // Check for the h1 element
-    const heading = await window.locator('h1').textContent();
-    expect(heading).toBe('Datagres - Database Explorer');
+  test('should have connection input field', async () => {
+    // Check for input element with correct placeholder
+    const input = window.locator('input[placeholder="Paste connection string here"]');
+    await expect(input).toBeVisible();
+  });
+
+  test('should not have h1 heading anymore', async () => {
+    // h1 should be replaced with connection UI
+    const heading = window.locator('h1');
+    await expect(heading).toHaveCount(0);
   });
 
   test('should have correct window dimensions', async () => {
