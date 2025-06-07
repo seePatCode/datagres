@@ -261,6 +261,8 @@ const createWindow = () => {
   const win = new BrowserWindow({
     width: 800,
     height: 600,
+    titleBarStyle: 'hiddenInset', // Hide native title bar on macOS
+    frame: process.platform !== 'darwin', // Keep frame on non-macOS for window controls
     show: process.env.NODE_ENV !== 'test', // Don't show during tests
     focusable: process.env.NODE_ENV !== 'test', // Don't steal focus during tests
     webPreferences: {
@@ -544,4 +546,30 @@ ipcMain.handle('update-connection-name', async (_event, connectionId, newName) =
   }
   
   return updateConnectionName(connectionId, newName)
+})
+
+// Handle window controls
+ipcMain.handle('window-minimize', async (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+  if (win) {
+    win.minimize()
+  }
+})
+
+ipcMain.handle('window-maximize', async (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+  if (win) {
+    if (win.isMaximized()) {
+      win.unmaximize()
+    } else {
+      win.maximize()
+    }
+  }
+})
+
+ipcMain.handle('window-close', async (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+  if (win) {
+    win.close()
+  }
 })

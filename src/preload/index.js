@@ -8,5 +8,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getSavedConnections: () => ipcRenderer.invoke('get-saved-connections'),
   loadConnection: (connectionId) => ipcRenderer.invoke('load-connection', connectionId),
   deleteConnection: (connectionId) => ipcRenderer.invoke('delete-connection', connectionId),
-  updateConnectionName: (connectionId, newName) => ipcRenderer.invoke('update-connection-name', connectionId, newName)
+  updateConnectionName: (connectionId, newName) => ipcRenderer.invoke('update-connection-name', connectionId, newName),
+  // Window controls
+  minimize: () => ipcRenderer.invoke('window-minimize'),
+  maximize: () => ipcRenderer.invoke('window-maximize'),
+  close: () => ipcRenderer.invoke('window-close')
 })

@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { DataTable } from "@/components/ui/data-table"
 import { ConnectionManager } from "@/components/ui/connection-manager"
 import { MenuBar } from "@/components/ui/menu-bar"
+import { TitleBar } from "@/components/ui/title-bar"
 
 declare global {
   interface Window {
@@ -19,6 +20,9 @@ declare global {
       loadConnection: (connectionId: string) => Promise<{success: boolean, connectionString?: string, name?: string, error?: string}>
       deleteConnection: (connectionId: string) => Promise<{success: boolean, error?: string}>
       updateConnectionName: (connectionId: string, newName: string) => Promise<{success: boolean, error?: string}>
+      minimize?: () => Promise<void>
+      maximize?: () => Promise<void>
+      close?: () => Promise<void>
     }
   }
 }
@@ -184,6 +188,7 @@ function App() {
     // Table Data View
     return (
       <div className="min-h-screen bg-background text-foreground">
+        <TitleBar title={`Datagres - ${selectedTable}`} />
         <MenuBar 
           onNewConnection={handleNewConnection}
           onShowConnections={handleShowConnections}
@@ -225,6 +230,7 @@ function App() {
     // Tables List View
     return (
       <div className="min-h-screen bg-background text-foreground">
+        <TitleBar title={`Datagres - ${connectionMutation.data.database}`} />
         <MenuBar 
           onNewConnection={handleNewConnection}
           onShowConnections={handleShowConnections}
@@ -276,6 +282,7 @@ function App() {
   // Connection Form View (default)
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <TitleBar />
       <MenuBar 
         onNewConnection={handleNewConnection}
         onShowConnections={handleShowConnections}

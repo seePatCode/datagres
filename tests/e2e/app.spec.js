@@ -486,6 +486,19 @@ test.describe('Electron App Launch', () => {
     await expect(savedConnectionsItem).toBeVisible();
   });
 
+  test('should have custom title bar with window controls', async () => {
+    // Check for custom title bar
+    const titleBar = window.locator('text=Datagres');
+    await expect(titleBar).toBeVisible();
+    
+    // Check for window controls (they exist but may not be functional in test mode)
+    // On macOS, look for traffic light buttons
+    // On other platforms, look for minimize/maximize/close buttons
+    const windowControls = window.locator('button[aria-label="Close"], button[aria-label="Minimize"], button[aria-label="Maximize"]');
+    const controlCount = await windowControls.count();
+    expect(controlCount).toBeGreaterThan(0);
+  });
+
   test('should take a screenshot', async () => {
     // Take a screenshot as proof the app is working
     await window.screenshot({ path: 'tests/e2e/screenshots/app-launch.png' });
