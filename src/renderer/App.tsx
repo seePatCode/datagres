@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 declare global {
   interface Window {
     electronAPI: {
-      connectDatabase: (connectionString: string) => Promise<{success: boolean, database?: string, error?: string}>
+      connectDatabase: (connectionString: string) => Promise<{success: boolean, database?: string, tables?: string[], error?: string}>
     }
   }
 }
@@ -33,6 +33,7 @@ function App() {
       if (!validateConnectionString(trimmedConnection)) {
         throw new Error('Invalid connection string format')
       }
+
 
       const result = await window.electronAPI.connectDatabase(trimmedConnection)
       
@@ -71,6 +72,43 @@ function App() {
     return connectionMutation.isPending || connectionMutation.isSuccess || connectionMutation.isError
   }
 
+  // Show tables list if successfully connected, otherwise show connection form
+  if (connectionMutation.isSuccess && connectionMutation.data?.tables) {
+    return (
+      <div className="flex flex-col min-h-screen bg-background font-sans p-4">
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-semibold text-foreground">
+            Connected to {connectionMutation.data.database}
+          </h2>
+        </div>
+        
+        <Card className="w-full max-w-4xl mx-auto">
+          <CardContent className="pt-6">
+            <h3 className="text-lg font-medium mb-4">Tables</h3>
+            <div data-testid="tables-list" className="space-y-2">
+              {connectionMutation.data.tables.length > 0 ? (
+                connectionMutation.data.tables.map((table) => (
+                  <div 
+                    key={table}
+                    data-testid="table-item"
+                    className="p-3 border rounded-lg hover:bg-muted cursor-pointer transition-colors"
+                  >
+                    <span className="font-medium">{table}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-muted-foreground text-center py-8">
+                  No tables found in this database
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Show connection form
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background font-sans p-4">
       <Card className="w-full max-w-md">

@@ -12,7 +12,13 @@ export default defineConfig({
   preload: {
     // Vite config for preload scripts
     build: {
-      outDir: 'out/preload'
+      outDir: 'out/preload',
+      rollupOptions: {
+        output: {
+          format: 'cjs',
+          entryFileNames: '[name].js'
+        }
+      }
     }
   },
   renderer: {

@@ -83,7 +83,7 @@ test.describe('Electron App Launch', () => {
   });
 
   test('should show connection status when button clicked', async () => {
-    // Enter a PostgreSQL connection string
+    // Enter a PostgreSQL connection string (this will succeed in test mode)
     const input = window.locator('input[placeholder="Paste connection string here"]');
     await input.fill('postgresql://user:pass@localhost:5432/testdb');
     
@@ -91,9 +91,10 @@ test.describe('Electron App Launch', () => {
     const button = window.locator('button', { hasText: 'Connect' });
     await button.click();
     
-    // Should show some status (either connecting or error)
-    const statusArea = window.locator('[data-testid="connection-status"]');
-    await expect(statusArea).toBeVisible();
+    // Should show either success (tables list) or error status
+    // With our test mock, this will succeed and show tables
+    const tablesView = window.locator('text=Connected to testdb');
+    await expect(tablesView).toBeVisible({ timeout: 3000 });
   });
 
   test('should validate PostgreSQL connection string format', async () => {
@@ -127,6 +128,48 @@ test.describe('Electron App Launch', () => {
     expect(windowState).toBeTruthy();
     expect(windowState.width).toBe(800);
     expect(windowState.height).toBe(600);
+  });
+
+  test('should show tables list after successful connection', async () => {
+    // Mock a successful connection by using a test database string
+    const input = window.locator('input[placeholder="Paste connection string here"]');
+    await input.fill('postgresql://testuser:testpass@localhost:5432/testdb');
+    
+    // Click connect button
+    const button = window.locator('button', { hasText: 'Connect' });
+    await button.click();
+    
+    
+    // Wait for successful connection
+    await expect(window.locator('text=Connected to testdb')).toBeVisible({ timeout: 10000 });
+    
+    // Should show tables list  
+    const tablesList = window.locator('[data-testid="tables-list"]');
+    await expect(tablesList).toBeVisible();
+    
+    // Should have at least one table listed
+    const tableItems = window.locator('[data-testid="table-item"]');
+    await expect(tableItems).toHaveCount(4); // We mock 4 tables
+  });
+
+  test('should hide connection form after successful connection', async () => {
+    // This test will fail until we implement the functionality
+    const input = window.locator('input[placeholder="Paste connection string here"]');
+    await input.fill('postgresql://testuser:testpass@localhost:5432/testdb');
+    
+    // Click connect button
+    const button = window.locator('button', { hasText: 'Connect' });
+    await button.click();
+    
+    // Wait for successful connection
+    await expect(window.locator('text=Connected to testdb')).toBeVisible({ timeout: 5000 });
+    
+    // Connection input should be hidden - this will fail initially
+    await expect(input).toBeHidden();
+    
+    // Connect button should be hidden - this will fail initially  
+    const connectButton = window.locator('button', { hasText: 'Connect' });
+    await expect(connectButton).toBeHidden();
   });
 
   test('should take a screenshot', async () => {
