@@ -7,9 +7,19 @@ test.describe('Electron App Launch', () => {
   let window;
 
   test.beforeEach(async () => {
-    // Launch Electron app
+    // Launch Electron app in headless/non-intrusive mode
     electronApp = await electron.launch({
-      args: [path.join(__dirname, '../../main.js')]
+      args: [
+        path.join(__dirname, '../../main.js'),
+        '--no-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu'
+      ],
+      env: {
+        ...process.env,
+        NODE_ENV: 'test',
+        ELECTRON_ENABLE_LOGGING: 'false'
+      }
     });
     
     // Wait for the first window to be ready
