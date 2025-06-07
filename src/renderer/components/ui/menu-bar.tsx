@@ -112,7 +112,7 @@ export function MenuBar({ onNewConnection, onShowConnections, currentView }: Men
               </Button>
               
               {activeMenu === menu.label && (
-                <div className="absolute top-6 left-0 z-50 min-w-48 bg-popover border border-border rounded-md shadow-lg py-1">
+                <div className="absolute top-6 left-0 z-50 min-w-48 bg-popover border border-border rounded-md shadow-lg py-1 max-h-80 overflow-auto scrollbar-thin">
                   {menu.items.map((item, index) => (
                     <button
                       key={index}

@@ -50,7 +50,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table */}
-      <div className="rounded-md border" data-testid="enhanced-table">
+      <div className="rounded-md border overflow-auto max-h-[70vh] scrollbar-thin" data-testid="enhanced-table">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

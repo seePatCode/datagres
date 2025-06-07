@@ -499,6 +499,23 @@ test.describe('Electron App Launch', () => {
     expect(controlCount).toBeGreaterThan(0);
   });
 
+  test('should have custom scrollbars on data table', async () => {
+    // Wait for auto-connection to show tables view
+    await expect(window.locator('text=Connected to testdb')).toBeVisible({ timeout: 5000 });
+    
+    // Click on a table to view data
+    const firstTable = window.locator('[data-testid="table-item"]').first();
+    await firstTable.click();
+    
+    // Should show table data with scrollable container
+    const tableContainer = window.locator('[data-testid="enhanced-table"]');
+    await expect(tableContainer).toBeVisible();
+    
+    // Container should have scrollbar classes
+    await expect(tableContainer).toHaveClass(/scrollbar-thin/);
+    await expect(tableContainer).toHaveClass(/overflow-auto/);
+  });
+
   test('should take a screenshot', async () => {
     // Take a screenshot as proof the app is working
     await window.screenshot({ path: 'tests/e2e/screenshots/app-launch.png' });
