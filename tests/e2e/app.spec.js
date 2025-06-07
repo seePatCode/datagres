@@ -172,6 +172,85 @@ test.describe('Electron App Launch', () => {
     await expect(connectButton).toBeHidden();
   });
 
+  test('should make tables clickable to view data', async () => {
+    // First connect to database to get tables list
+    const input = window.locator('input[placeholder="Paste connection string here"]');
+    await input.fill('postgresql://testuser:testpass@localhost:5432/testdb');
+    
+    const button = window.locator('button', { hasText: 'Connect' });
+    await button.click();
+    
+    // Wait for tables list to appear
+    await expect(window.locator('text=Connected to testdb')).toBeVisible();
+    const tablesList = window.locator('[data-testid="tables-list"]');
+    await expect(tablesList).toBeVisible();
+    
+    // Click on the first table (should be 'users' based on our mock)
+    const firstTable = window.locator('[data-testid="table-item"]').first();
+    await expect(firstTable).toBeVisible();
+    await firstTable.click();
+    
+    // Should show table data view - this will fail initially
+    const tableDataView = window.locator('[data-testid="table-data"]');
+    await expect(tableDataView).toBeVisible({ timeout: 5000 });
+    
+    // Should show table name as header - this will fail initially
+    const tableHeader = window.locator('[data-testid="table-header"]');
+    await expect(tableHeader).toContainText('users');
+    
+    // Should show column headers - this will fail initially
+    const columnHeaders = window.locator('[data-testid="column-header"]');
+    const columnCount = await columnHeaders.count();
+    expect(columnCount).toBeGreaterThan(0);
+    
+    // Should show data rows - this will fail initially
+    const dataRows = window.locator('[data-testid="data-row"]');
+    const rowCount = await dataRows.count();
+    expect(rowCount).toBeGreaterThan(0);
+  });
+
+  test('should hide tables list when viewing table data', async () => {
+    // Connect and get to tables list
+    const input = window.locator('input[placeholder="Paste connection string here"]');
+    await input.fill('postgresql://testuser:testpass@localhost:5432/testdb');
+    
+    const button = window.locator('button', { hasText: 'Connect' });
+    await button.click();
+    
+    await expect(window.locator('text=Connected to testdb')).toBeVisible();
+    
+    // Click on a table
+    const firstTable = window.locator('[data-testid="table-item"]').first();
+    await firstTable.click();
+    
+    // Tables list should be hidden when viewing table data - this will fail initially
+    const tablesList = window.locator('[data-testid="tables-list"]');
+    await expect(tablesList).toBeHidden();
+  });
+
+  test('should show back navigation from table data to tables list', async () => {
+    // Connect and click on a table
+    const input = window.locator('input[placeholder="Paste connection string here"]');
+    await input.fill('postgresql://testuser:testpass@localhost:5432/testdb');
+    
+    const button = window.locator('button', { hasText: 'Connect' });
+    await button.click();
+    
+    await expect(window.locator('text=Connected to testdb')).toBeVisible();
+    
+    const firstTable = window.locator('[data-testid="table-item"]').first();
+    await firstTable.click();
+    
+    // Should show back button or breadcrumb - this will fail initially
+    const backButton = window.locator('[data-testid="back-to-tables"]');
+    await expect(backButton).toBeVisible();
+    
+    // Clicking back should return to tables list - this will fail initially
+    await backButton.click();
+    const tablesList = window.locator('[data-testid="tables-list"]');
+    await expect(tablesList).toBeVisible();
+  });
+
   test('should take a screenshot', async () => {
     // Take a screenshot as proof the app is working
     await window.screenshot({ path: 'tests/e2e/screenshots/app-launch.png' });

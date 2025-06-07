@@ -106,3 +106,100 @@ ipcMain.handle('connect-database', async (_event, connectionString) => {
     }
   }
 })
+
+// Handle table data requests
+ipcMain.handle('fetch-table-data', async (_event, connectionString, tableName) => {
+  // In test mode, return mock data
+  if (process.env.NODE_ENV === 'test') {
+    if (connectionString.includes('testdb')) {
+      // Mock table data based on table name
+      const mockData = {
+        users: {
+          columns: ['id', 'name', 'email', 'created_at'],
+          rows: [
+            [1, 'John Doe', 'john@example.com', '2024-01-01'],
+            [2, 'Jane Smith', 'jane@example.com', '2024-01-02'],
+            [3, 'Bob Johnson', 'bob@example.com', '2024-01-03']
+          ]
+        },
+        products: {
+          columns: ['id', 'name', 'price', 'category'],
+          rows: [
+            [1, 'Laptop', 999.99, 'Electronics'],
+            [2, 'Mouse', 29.99, 'Electronics'],
+            [3, 'Desk', 199.99, 'Furniture']
+          ]
+        },
+        orders: {
+          columns: ['id', 'user_id', 'total', 'status'],
+          rows: [
+            [1, 1, 1029.98, 'completed'],
+            [2, 2, 29.99, 'pending'],
+            [3, 1, 199.99, 'shipped']
+          ]
+        },
+        categories: {
+          columns: ['id', 'name', 'description'],
+          rows: [
+            [1, 'Electronics', 'Electronic devices and accessories'],
+            [2, 'Furniture', 'Home and office furniture']
+          ]
+        }
+      }
+      
+      return {
+        success: true,
+        tableName: tableName,
+        data: mockData[tableName] || { columns: [], rows: [] }
+      }
+    }
+    
+    return {
+      success: false,
+      error: 'Table not found'
+    }
+  }
+
+  const client = new Client(connectionString)
+  
+  try {
+    await client.connect()
+    
+    // First, get column information
+    const columnsResult = await client.query(`
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = $1 
+      AND table_schema = 'public'
+      ORDER BY ordinal_position
+    `, [tableName])
+    
+    const columns = columnsResult.rows.map(row => row.column_name)
+    
+    // Then get the data (limit to first 100 rows for now)
+    const dataResult = await client.query(`SELECT * FROM ${tableName} LIMIT 100`)
+    const rows = dataResult.rows.map(row => columns.map(col => row[col]))
+    
+    await client.end()
+    
+    return {
+      success: true,
+      tableName: tableName,
+      data: {
+        columns: columns,
+        rows: rows
+      }
+    }
+  } catch (error) {
+    try {
+      await client.end()
+    } catch (endError) {
+      // Ignore end errors
+    }
+    
+    return {
+      success: false,
+      error: error.message
+    }
+  }
+})

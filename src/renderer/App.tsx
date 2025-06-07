@@ -9,6 +9,7 @@ declare global {
   interface Window {
     electronAPI: {
       connectDatabase: (connectionString: string) => Promise<{success: boolean, database?: string, tables?: string[], error?: string}>
+      fetchTableData: (connectionString: string, tableName: string) => Promise<{success: boolean, tableName?: string, data?: {columns: string[], rows: any[][]}, error?: string}>
     }
   }
 }
@@ -21,6 +22,8 @@ const validateConnectionString = (connectionString: string): boolean => {
 
 function App() {
   const [connectionString, setConnectionString] = useState('')
+  const [currentView, setCurrentView] = useState<'connect' | 'tables' | 'tableData'>('connect')
+  const [selectedTable, setSelectedTable] = useState<string>('')
 
   const connectionMutation = useMutation({
     mutationFn: async (connectionString: string) => {
@@ -43,10 +46,38 @@ function App() {
       
       return result
     },
+    onSuccess: () => {
+      setCurrentView('tables')
+    }
+  })
+
+  const tableDataMutation = useMutation({
+    mutationFn: async (tableName: string) => {
+      const result = await window.electronAPI.fetchTableData(connectionString, tableName)
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch table data')
+      }
+      
+      return result
+    },
+    onSuccess: (data) => {
+      setSelectedTable(data.tableName || '')
+      setCurrentView('tableData')
+    }
   })
 
   const handleConnect = () => {
     connectionMutation.mutate(connectionString)
+  }
+
+  const handleTableClick = (tableName: string) => {
+    tableDataMutation.mutate(tableName)
+  }
+
+  const handleBackToTables = () => {
+    setCurrentView('tables')
+    setSelectedTable('')
   }
 
   const getStatusVariant = () => {
@@ -72,8 +103,70 @@ function App() {
     return connectionMutation.isPending || connectionMutation.isSuccess || connectionMutation.isError
   }
 
-  // Show tables list if successfully connected, otherwise show connection form
-  if (connectionMutation.isSuccess && connectionMutation.data?.tables) {
+  // Render different views based on current state
+  if (currentView === 'tableData' && tableDataMutation.isSuccess && tableDataMutation.data?.data) {
+    // Table Data View
+    return (
+      <div className="flex flex-col min-h-screen bg-background font-sans p-4">
+        <div className="mb-6">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="outline" 
+              onClick={handleBackToTables}
+              data-testid="back-to-tables"
+            >
+              ← Back to Tables
+            </Button>
+            <h2 className="text-2xl font-semibold text-foreground" data-testid="table-header">
+              {selectedTable}
+            </h2>
+          </div>
+        </div>
+        
+        <Card className="w-full max-w-6xl mx-auto">
+          <CardContent className="pt-6">
+            <div data-testid="table-data" className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b">
+                    {tableDataMutation.data.data.columns.map((column) => (
+                      <th 
+                        key={column}
+                        data-testid="column-header"
+                        className="text-left p-2 font-medium border-r last:border-r-0"
+                      >
+                        {column}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {tableDataMutation.data.data.rows.map((row, rowIndex) => (
+                    <tr key={rowIndex} data-testid="data-row" className="border-b hover:bg-muted">
+                      {row.map((cell, cellIndex) => (
+                        <td key={cellIndex} className="p-2 border-r last:border-r-0">
+                          {cell !== null ? String(cell) : <span className="text-muted-foreground italic">NULL</span>}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              {tableDataMutation.data.data.rows.length === 0 && (
+                <div className="text-muted-foreground text-center py-8">
+                  No data found in this table
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (currentView === 'tables' && connectionMutation.isSuccess && connectionMutation.data?.tables) {
+    // Tables List View
     return (
       <div className="flex flex-col min-h-screen bg-background font-sans p-4">
         <div className="text-center mb-6">
@@ -91,6 +184,7 @@ function App() {
                   <div 
                     key={table}
                     data-testid="table-item"
+                    onClick={() => handleTableClick(table)}
                     className="p-3 border rounded-lg hover:bg-muted cursor-pointer transition-colors"
                   >
                     <span className="font-medium">{table}</span>
@@ -108,7 +202,7 @@ function App() {
     )
   }
 
-  // Show connection form
+  // Connection Form View (default)
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background font-sans p-4">
       <Card className="w-full max-w-md">
@@ -137,7 +231,7 @@ function App() {
               </Button>
             </div>
 
-            {shouldShowStatus() && (
+            {shouldShowStatus() && !connectionMutation.isSuccess && (
               <Alert variant={getStatusVariant()}>
                 <AlertDescription data-testid="connection-status">
                   {getStatusMessage()}
