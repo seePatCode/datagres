@@ -6,15 +6,19 @@ const crypto = require('crypto')
 // Conditionally load optional dependencies
 let Store, keytar
 try {
-  Store = require('electron-store')
+  const ElectronStore = require('electron-store')
+  Store = ElectronStore.default || ElectronStore
+  console.log('electron-store loaded successfully')
 } catch (error) {
-  console.warn('electron-store not available:', error.message)
+  console.error('electron-store not available:', error.message)
 }
 
 try {
   keytar = require('keytar')
+  console.log('keytar loaded successfully')
 } catch (error) {
   console.warn('keytar not available:', error.message)
+  // keytar is optional, so just warn
 }
 
 // Secure Storage Implementation
@@ -23,8 +27,8 @@ const SERVICE_NAME = 'datagres-db-connections'
 // Create encrypted store for connection metadata
 let store
 try {
-  // Only initialize store if not in test mode and Store is available
-  if (process.env.NODE_ENV !== 'test' && Store) {
+  // Initialize store if Store is available
+  if (Store) {
     store = new Store({
       name: 'connections',
       encryptionKey: process.env.DATAGRES_ENCRYPTION_KEY || 'datagres-default-key-change-in-production',
@@ -81,7 +85,8 @@ function buildConnectionString(connection, password = null) {
 
 async function saveConnection(connectionString, name = null) {
   if (!store) {
-    return { success: false, error: 'Storage not available in test mode' }
+    console.error('Store not initialized - electron-store may not be available')
+    return { success: false, error: 'Storage not available' }
   }
   try {
     const parsed = parseConnectionString(connectionString)
@@ -128,7 +133,8 @@ async function saveConnection(connectionString, name = null) {
 
 function getSavedConnections() {
   if (!store) {
-    return { success: false, error: 'Storage not available in test mode', connections: [] }
+    console.error('Store not initialized - electron-store may not be available')
+    return { success: true, connections: [] } // Return empty list instead of error
   }
   try {
     const connections = store.get('connections')
@@ -147,7 +153,8 @@ function getSavedConnections() {
 
 async function loadConnection(connectionId) {
   if (!store) {
-    return { success: false, error: 'Storage not available in test mode' }
+    console.error('Store not initialized - electron-store may not be available')
+    return { success: false, error: 'Storage not available' }
   }
   try {
     const connections = store.get('connections')
@@ -189,7 +196,8 @@ async function loadConnection(connectionId) {
 
 async function deleteConnection(connectionId) {
   if (!store) {
-    return { success: false, error: 'Storage not available in test mode' }
+    console.error('Store not initialized - electron-store may not be available')
+    return { success: false, error: 'Storage not available' }
   }
   try {
     const connections = store.get('connections')
@@ -223,7 +231,8 @@ async function deleteConnection(connectionId) {
 
 function updateConnectionName(connectionId, newName) {
   if (!store) {
-    return { success: false, error: 'Storage not available in test mode' }
+    console.error('Store not initialized - electron-store may not be available')
+    return { success: false, error: 'Storage not available' }
   }
   try {
     const connections = store.get('connections')
