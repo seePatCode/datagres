@@ -1,6 +1,7 @@
 {
   "name": "datagres",
   "productName": "Datagres",
+  "description": "Database Explorer",
   "version": "1.0.0",
   "type": "module",
   "main": "./out/main/index.js",
@@ -14,7 +15,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "devDependencies": {
     "@playwright/test": "^1.52.0",
     "@types/node": "^22.15.30",

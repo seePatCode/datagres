@@ -3,6 +3,9 @@ const { Client } = require('pg')
 const path = require('path')
 const crypto = require('crypto')
 
+// Set app name as early as possible
+app.setName('Datagres')
+
 // Conditionally load optional dependencies
 let Store, keytar
 try {
@@ -261,6 +264,7 @@ const createWindow = () => {
   const win = new BrowserWindow({
     width: 800,
     height: 600,
+    title: 'Datagres - Database Explorer',
     ...(process.platform === 'darwin' 
       ? { titleBarStyle: 'hidden' } // macOS: Hide title but keep traffic lights
       : { frame: false }), // Windows/Linux: Completely frameless
@@ -294,7 +298,7 @@ const createNativeMenu = (mainWindow) => {
   const template = [
     // App menu (macOS only)
     ...(isMac ? [{
-      label: app.getName(),
+      label: 'Datagres',
       submenu: [
         { label: 'About Datagres', role: 'about' },
         { type: 'separator' },
@@ -405,9 +409,6 @@ const createNativeMenu = (mainWindow) => {
 }
 
 app.whenReady().then(() => {
-  // Set the app name for native menus
-  app.setName('Datagres')
-  
   const mainWindow = createWindow()
   createNativeMenu(mainWindow)
 
