@@ -267,7 +267,11 @@ export function ConnectionManager({ onConnectionSelect, currentConnectionString 
                       <div className="text-sm text-muted-foreground truncate">
                         {connection.username}@{connection.host}:{connection.port}/{connection.database}
                         {connection.hasPassword && (
-                          <span className="ml-2 text-xs bg-green-100 text-green-800 px-1 rounded">
+                          <span className="ml-2 text-xs px-1.5 py-0.5 rounded-md bg-black/20 border" style={{
+                            borderColor: 'hsl(var(--accent-cyan))',
+                            color: 'hsl(var(--accent-cyan))',
+                            boxShadow: '0 0 4px hsla(var(--accent-cyan), 0.3)'
+                          }}>
                             🔒 Saved
                           </span>
                         )}

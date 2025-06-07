@@ -265,6 +265,7 @@ const createWindow = () => {
     width: 800,
     height: 600,
     title: 'Datagres - Database Explorer',
+    backgroundColor: '#020817', // Dark background to prevent white flash (matches hsl(222.2 84% 4.9%))
     ...(process.platform === 'darwin' 
       ? { titleBarStyle: 'hidden' } // macOS: Hide title but keep traffic lights
       : { frame: false }), // Windows/Linux: Completely frameless

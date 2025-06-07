@@ -29,6 +29,9 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+    /* Logo accent colors */
+    --accent-cyan: 180 100% 50%;        /* Bright cyan from logo */
+    --accent-magenta: 320 100% 65%;     /* Vibrant pink from logo */
     --radius: 0.5rem;
   }
 
@@ -58,6 +61,9 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+    /* Logo accent colors */
+    --accent-cyan: 180 100% 50%;        /* Bright cyan from logo */
+    --accent-magenta: 320 100% 65%;     /* Vibrant pink from logo */
   }
 }
 
