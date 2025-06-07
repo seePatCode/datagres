@@ -77,7 +77,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table */}
-      <div className="rounded-md border overflow-auto scrollbar-thin" data-testid="enhanced-table">
+      <div className="border overflow-auto scrollbar-thin" data-testid="enhanced-table">
         <Table className="w-full" style={{ tableLayout: 'fixed' }}>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
