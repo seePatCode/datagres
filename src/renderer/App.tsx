@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -46,6 +46,19 @@ function App() {
   const [connectionString, setConnectionString] = useState('')
   const [currentView, setCurrentView] = useState<'connect' | 'tables' | 'tableData'>('connect')
   const [selectedTable, setSelectedTable] = useState<string>('')
+  const [hasAttemptedAutoConnect, setHasAttemptedAutoConnect] = useState(false)
+
+  // Get saved connections to find the most recently used one
+  const { data: connectionsData } = useQuery({
+    queryKey: ['saved-connections'],
+    queryFn: async () => {
+      const result = await window.electronAPI.getSavedConnections()
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to load connections')
+      }
+      return result.connections
+    }
+  })
 
   const connectionMutation = useMutation({
     mutationFn: async (connectionString: string) => {
@@ -92,6 +105,28 @@ function App() {
   const handleConnect = () => {
     connectionMutation.mutate(connectionString)
   }
+
+  // Auto-connect to the most recently used connection on startup
+  useEffect(() => {
+    if (!hasAttemptedAutoConnect && connectionsData && connectionsData.length > 0) {
+      setHasAttemptedAutoConnect(true)
+      
+      // Find the most recently used connection (connections are already sorted by lastUsed)
+      const mostRecentConnection = connectionsData[0]
+      
+      // Load and connect to the most recent connection
+      window.electronAPI.loadConnection(mostRecentConnection.id)
+        .then((result) => {
+          if (result.success && result.connectionString) {
+            setConnectionString(result.connectionString)
+            connectionMutation.mutate(result.connectionString)
+          }
+        })
+        .catch((error) => {
+          console.warn('Failed to auto-connect to last used database:', error)
+        })
+    }
+  }, [connectionsData, hasAttemptedAutoConnect, connectionMutation])
 
   const handleConnectionSelect = (newConnectionString: string) => {
     setConnectionString(newConnectionString)
