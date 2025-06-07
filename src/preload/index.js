@@ -12,5 +12,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Window controls
   minimize: () => ipcRenderer.invoke('window-minimize'),
   maximize: () => ipcRenderer.invoke('window-maximize'),
-  close: () => ipcRenderer.invoke('window-close')
+  close: () => ipcRenderer.invoke('window-close'),
+  // Menu actions
+  onMenuAction: (callback) => {
+    ipcRenderer.on('menu-action', (event, action) => {
+      callback(action)
+    })
+  }
 })

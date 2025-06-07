@@ -7,7 +7,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { DataTable } from "@/components/ui/data-table"
 import { ConnectionManager } from "@/components/ui/connection-manager"
-import { MenuBar } from "@/components/ui/menu-bar"
 import { TitleBar } from "@/components/ui/title-bar"
 
 declare global {
@@ -23,6 +22,7 @@ declare global {
       minimize?: () => Promise<void>
       maximize?: () => Promise<void>
       close?: () => Promise<void>
+      onMenuAction?: (callback: (action: string) => void) => void
     }
   }
 }
@@ -151,6 +151,27 @@ function App() {
     setCurrentView('connect')
   }
 
+  // Expose menu handlers to main process via IPC
+  useEffect(() => {
+    if (window.electronAPI?.onMenuAction) {
+      window.electronAPI.onMenuAction((action: string) => {
+        switch (action) {
+          case 'new-connection':
+            handleNewConnection()
+            break
+          case 'show-connections':
+            handleShowConnections()
+            break
+          case 'back-to-tables':
+            if (currentView === 'tableData') {
+              handleBackToTables()
+            }
+            break
+        }
+      })
+    }
+  }, [currentView])
+
   const handleTableClick = (tableName: string) => {
     tableDataMutation.mutate(tableName)
   }
@@ -191,11 +212,6 @@ function App() {
         {/* Fixed header area */}
         <div className="flex-none">
           <TitleBar title={`Datagres - ${selectedTable}`} />
-          <MenuBar 
-            onNewConnection={handleNewConnection}
-            onShowConnections={handleShowConnections}
-            currentView={currentView}
-          />
         </div>
         
         {/* Scrollable content area */}
@@ -240,11 +256,6 @@ function App() {
         {/* Fixed header area */}
         <div className="flex-none">
           <TitleBar title={`Datagres - ${connectionMutation.data.database}`} />
-          <MenuBar 
-            onNewConnection={handleNewConnection}
-            onShowConnections={handleShowConnections}
-            currentView={currentView}
-          />
         </div>
         
         {/* Scrollable content area */}
@@ -299,11 +310,6 @@ function App() {
       {/* Fixed header area */}
       <div className="flex-none">
         <TitleBar />
-        <MenuBar 
-          onNewConnection={handleNewConnection}
-          onShowConnections={handleShowConnections}
-          currentView={currentView}
-        />
       </div>
       
       {/* Scrollable content area */}

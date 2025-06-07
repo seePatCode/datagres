@@ -7,16 +7,14 @@ interface TitleBarProps {
 }
 
 export function TitleBar({ title = 'Datagres' }: TitleBarProps) {
-  const [isMaximized, setIsMaximized] = useState(false)
-  const [platform, setPlatform] = useState<string>('darwin')
+  const [isMacOS, setIsMacOS] = useState(false)
 
   useEffect(() => {
-    // Detect platform for different window control styles
-    setPlatform(navigator.platform.toLowerCase().includes('mac') ? 'darwin' : 'win32')
+    // Detect macOS
+    setIsMacOS(navigator.platform.toLowerCase().includes('mac'))
   }, [])
 
   const handleMinimize = () => {
-    // Note: We'll need to expose these in the preload script
     if (window.electronAPI?.minimize) {
       window.electronAPI.minimize()
     }
@@ -25,7 +23,6 @@ export function TitleBar({ title = 'Datagres' }: TitleBarProps) {
   const handleMaximize = () => {
     if (window.electronAPI?.maximize) {
       window.electronAPI.maximize()
-      setIsMaximized(!isMaximized)
     }
   }
 
@@ -35,44 +32,22 @@ export function TitleBar({ title = 'Datagres' }: TitleBarProps) {
     }
   }
 
-  // macOS style traffic lights
-  if (platform === 'darwin') {
+  if (isMacOS) {
+    // macOS: Title bar with padding for native traffic lights
     return (
-      <div className="h-8 bg-background border-b border-border flex items-center justify-between px-3 select-none">
-        {/* Left side - Traffic lights */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleClose}
-            className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-600 transition-colors"
-            aria-label="Close"
-          />
-          <button
-            onClick={handleMinimize}
-            className="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-600 transition-colors"
-            aria-label="Minimize"
-          />
-          <button
-            onClick={handleMaximize}
-            className="w-3 h-3 rounded-full bg-green-500 hover:bg-green-600 transition-colors"
-            aria-label="Maximize"
-          />
-        </div>
-
-        {/* Center - Title (draggable area) */}
+      <div className="h-8 bg-background border-b border-border flex items-center select-none">
+        {/* Title with left padding for traffic lights */}
         <div 
-          className="flex-1 text-center text-sm font-medium text-foreground cursor-default"
+          className="flex-1 pl-20 pr-3 text-sm font-medium text-foreground cursor-default text-center"
           style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
         >
           {title}
         </div>
-
-        {/* Right side - Empty for balance */}
-        <div className="w-[62px]" />
       </div>
     )
   }
 
-  // Windows/Linux style controls
+  // Windows/Linux: Custom window controls
   return (
     <div className="h-8 bg-background border-b border-border flex items-center justify-between select-none">
       {/* Left side - Title (draggable area) */}
