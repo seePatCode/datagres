@@ -32,13 +32,13 @@ test.describe('Electron App Launch', () => {
   test('should display correct window title', async () => {
     // Get window title
     const title = await window.title();
-    expect(title).toBe('Hello from Electron renderer!');
+    expect(title).toBe('Datagres - Database Explorer');
   });
 
   test('should display correct heading', async () => {
     // Check for the h1 element
     const heading = await window.locator('h1').textContent();
-    expect(heading).toBe('Hello from Electron renderer!');
+    expect(heading).toBe('Datagres - Database Explorer');
   });
 
   test('should have correct window dimensions', async () => {
