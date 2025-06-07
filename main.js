@@ -13,7 +13,7 @@ const createWindow = () => {
     }
   })
 
-  win.loadFile('index.html')
+  win.loadFile('dist/index.html')
   
   // Show window after loading if not in test mode
   if (process.env.NODE_ENV !== 'test') {
