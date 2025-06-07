@@ -405,6 +405,9 @@ const createNativeMenu = (mainWindow) => {
 }
 
 app.whenReady().then(() => {
+  // Set the app name for native menus
+  app.setName('Datagres')
+  
   const mainWindow = createWindow()
   createNativeMenu(mainWindow)
 
