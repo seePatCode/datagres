@@ -15,5 +15,8 @@
     "@playwright/test": "^1.52.0",
     "electron": "^36.4.0",
     "playwright": "^1.52.0"
+  },
+  "dependencies": {
+    "pg": "^8.16.0"
   }
 }

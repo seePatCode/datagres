@@ -69,6 +69,40 @@ test.describe('Electron App Launch', () => {
     await expect(button).toBeEnabled();
   });
 
+  test('should show connection status area', async () => {
+    // Check for status display area
+    const statusArea = window.locator('[data-testid="connection-status"]');
+    await expect(statusArea).toBeVisible();
+  });
+
+  test('should show connecting state when button clicked', async () => {
+    // Enter a PostgreSQL connection string
+    const input = window.locator('input[placeholder="Paste connection string here"]');
+    await input.fill('postgresql://user:pass@localhost:5432/testdb');
+    
+    // Click connect button
+    const button = window.locator('button', { hasText: 'Connect' });
+    await button.click();
+    
+    // Should show connecting state in status area
+    const connectingStatus = window.locator('[data-testid="connection-status"]', { hasText: 'Connecting...' });
+    await expect(connectingStatus).toBeVisible();
+  });
+
+  test('should validate PostgreSQL connection string format', async () => {
+    // Enter invalid connection string
+    const input = window.locator('input[placeholder="Paste connection string here"]');
+    await input.fill('invalid-connection-string');
+    
+    // Click connect button
+    const button = window.locator('button', { hasText: 'Connect' });
+    await button.click();
+    
+    // Should show error message
+    const errorStatus = window.locator('text=Invalid connection string format');
+    await expect(errorStatus).toBeVisible();
+  });
+
   test('should have correct window dimensions', async () => {
     // Verify window size from the main process
     const windowState = await electronApp.evaluate(async ({ BrowserWindow }) => {
