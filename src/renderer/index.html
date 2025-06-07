@@ -24,18 +24,17 @@
       z-index: 9999;
     ">
       <div style="text-align: center; transform: scale(1); transition: transform 0.3s ease-out; animation: fadeInUp 0.4s ease-out;">
-        <div style="
-          width: 40px;
-          height: 40px;
-          border: 3px solid hsl(120 15% 35%);
-          border-top: 3px solid hsl(120 80% 70%);
-          border-radius: 50%;
-          animation: spin 1.2s linear infinite, pulse 2s ease-in-out infinite;
-          margin: 0 auto 24px;
-          filter: drop-shadow(0 0 8px hsla(120, 80%, 70%, 0.4));
-        "></div>
+        <div style="position: relative; display: inline-block; margin: 0 auto 24px;">
+          <!-- Logo icon -->
+          <img src="/logo.png" alt="Datagres" style="
+            width: 48px;
+            height: 48px;
+            animation: fadeInUp 0.5s ease-out;
+            filter: drop-shadow(0 0 8px hsla(var(--accent-cyan), 0.3));
+          " />
+        </div>
         <h2 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.025em; animation: fadeInUp 0.5s ease-out 0.1s both;">Datagres</h2>
-        <p style="margin: 16px 0 0; color: hsl(215 20.2% 65.1%); font-size: 14px; animation: fadeInUp 0.5s ease-out 0.2s both;">Loading Database Explorer...</p>
+        <p style="margin: 16px 0 0; color: hsl(215 20.2% 65.1%); font-size: 14px; animation: fadeInUp 0.5s ease-out 0.2s both;">Database browsing that slaps</p>
       </div>
     </div>
     
@@ -51,6 +50,12 @@
       body {
         background: hsl(222.2 84% 4.9%);
         overflow: hidden;
+      }
+      
+      /* Make sure accent colors are available before React loads */
+      :root {
+        --accent-cyan: 180 100% 50%;
+        --accent-magenta: 320 100% 65%;
       }
       
       @keyframes spin {
@@ -71,10 +76,10 @@
       
       @keyframes pulse {
         0%, 100% {
-          filter: drop-shadow(0 0 8px hsla(120, 80%, 70%, 0.4));
+          filter: drop-shadow(0 0 8px hsla(var(--accent-cyan), 0.4));
         }
         50% {
-          filter: drop-shadow(0 0 16px hsla(120, 80%, 70%, 0.7));
+          filter: drop-shadow(0 0 16px hsla(var(--accent-cyan), 0.7));
         }
       }
       

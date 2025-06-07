@@ -31,6 +31,7 @@ export default defineConfig({
     },
     build: {
       outDir: 'out/renderer'
-    }
+    },
+    publicDir: resolve('public')
   }
 })
