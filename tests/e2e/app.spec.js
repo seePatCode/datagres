@@ -10,7 +10,7 @@ test.describe('Electron App Launch', () => {
     // Launch Electron app in headless/non-intrusive mode
     electronApp = await electron.launch({
       args: [
-        path.join(__dirname, '../../main.js'),
+        path.join(__dirname, '../../out/main/index.js'),
         '--no-sandbox',
         '--disable-dev-shm-usage',
         '--disable-gpu'
@@ -69,9 +69,16 @@ test.describe('Electron App Launch', () => {
     await expect(button).toBeEnabled();
   });
 
-  test('should show connection status area', async () => {
-    // Check for status display area
+  test('should show connection status area after interaction', async () => {
+    // Status area should be hidden initially
     const statusArea = window.locator('[data-testid="connection-status"]');
+    await expect(statusArea).toBeHidden();
+    
+    // Click connect without entering anything to trigger error state
+    const button = window.locator('button', { hasText: 'Connect' });
+    await button.click();
+    
+    // Now status area should be visible
     await expect(statusArea).toBeVisible();
   });
 
