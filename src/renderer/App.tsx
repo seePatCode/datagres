@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -12,69 +13,62 @@ declare global {
   }
 }
 
-type ConnectionStatus = 'idle' | 'connecting' | 'connected' | 'error'
+const validateConnectionString = (connectionString: string): boolean => {
+  // PostgreSQL connection string validation (password optional)
+  const pgRegex = /^postgresql:\/\/([^:@]+(:([^@]*))?@)?[^:\/]+:\d+\/[\w-]+$/
+  return pgRegex.test(connectionString)
+}
 
 function App() {
   const [connectionString, setConnectionString] = useState('')
-  const [status, setStatus] = useState<ConnectionStatus>('idle')
-  const [statusMessage, setStatusMessage] = useState('')
-  const [connectedDatabase, setConnectedDatabase] = useState('')
 
-  const validateConnectionString = (connectionString: string): boolean => {
-    // PostgreSQL connection string validation (password optional)
-    const pgRegex = /^postgresql:\/\/([^:@]+(:([^@]*))?@)?[^:\/]+:\d+\/[\w-]+$/
-    return pgRegex.test(connectionString)
-  }
+  const connectionMutation = useMutation({
+    mutationFn: async (connectionString: string) => {
+      const trimmedConnection = connectionString.trim()
+      
+      if (!trimmedConnection) {
+        throw new Error('Please enter a connection string')
+      }
 
-  const handleConnect = async () => {
-    const trimmedConnection = connectionString.trim()
-    
-    if (!trimmedConnection) {
-      setStatus('error')
-      setStatusMessage('Please enter a connection string')
-      return
-    }
+      if (!validateConnectionString(trimmedConnection)) {
+        throw new Error('Invalid connection string format')
+      }
 
-    if (!validateConnectionString(trimmedConnection)) {
-      setStatus('error')
-      setStatusMessage('Invalid connection string format')
-      return
-    }
-
-    setStatus('connecting')
-    setStatusMessage('Connecting...')
-
-    try {
       const result = await window.electronAPI.connectDatabase(trimmedConnection)
       
-      if (result.success) {
-        setStatus('connected')
-        setStatusMessage(`Connected to ${result.database}`)
-        setConnectedDatabase(result.database || '')
-      } else {
-        setStatus('error')
-        setStatusMessage(`Connection failed: ${result.error}`)
+      if (!result.success) {
+        throw new Error(result.error || 'Connection failed')
       }
-    } catch (error) {
-      setStatus('error')
-      setStatusMessage(`Connection error: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    }
+      
+      return result
+    },
+  })
+
+  const handleConnect = () => {
+    connectionMutation.mutate(connectionString)
   }
 
   const getStatusVariant = () => {
-    switch (status) {
-      case 'connected': return 'default' // Green-ish
-      case 'error': return 'destructive' // Red
-      default: return 'default' // Default styling
-    }
+    if (connectionMutation.isSuccess) return 'default' // Green-ish
+    if (connectionMutation.isError) return 'destructive' // Red
+    return 'default' // Default styling
   }
 
   const getButtonText = () => {
-    switch (status) {
-      case 'connecting': return 'Connecting...'
-      case 'connected': return 'Connected'
-      default: return 'Connect'
-    }
+    if (connectionMutation.isPending) return 'Connecting...'
+    if (connectionMutation.isSuccess) return 'Connected'
+    return 'Connect'
+  }
+
+  const getStatusMessage = () => {
+    if (connectionMutation.isPending) return 'Connecting...'
+    if (connectionMutation.isSuccess) return `Connected to ${connectionMutation.data?.database}`
+    if (connectionMutation.isError) return `Connection error: ${connectionMutation.error?.message}`
+    return ''
+  }
+
+  const shouldShowStatus = () => {
+    return connectionMutation.isPending || connectionMutation.isSuccess || connectionMutation.isError
   }
 
   return (
@@ -94,21 +88,21 @@ function App() {
                 value={connectionString}
                 onChange={(e) => setConnectionString(e.target.value)}
                 className="flex-1"
-                disabled={status === 'connecting'}
+                disabled={connectionMutation.isPending}
               />
               <Button 
                 onClick={handleConnect}
-                disabled={status === 'connecting'}
-                className={status === 'connected' ? 'bg-green-600 hover:bg-green-700' : ''}
+                disabled={connectionMutation.isPending}
+                className={connectionMutation.isSuccess ? 'bg-green-600 hover:bg-green-700' : ''}
               >
                 {getButtonText()}
               </Button>
             </div>
 
-            {status !== 'idle' && (
+            {shouldShowStatus() && (
               <Alert variant={getStatusVariant()}>
                 <AlertDescription data-testid="connection-status">
-                  {statusMessage}
+                  {getStatusMessage()}
                 </AlertDescription>
               </Alert>
             )}
