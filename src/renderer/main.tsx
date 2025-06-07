@@ -5,6 +5,9 @@ import { ThemeProvider } from './components/theme-provider'
 import './index.css'
 import App from './App.tsx'
 
+console.log(`[${new Date().toISOString()}] [RENDERER] main.tsx starting execution`)
+console.time('renderer-startup')
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -13,6 +16,8 @@ const queryClient = new QueryClient({
     },
   },
 })
+
+console.log(`[${new Date().toISOString()}] [RENDERER] QueryClient created, starting React render`)
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -23,3 +28,6 @@ createRoot(document.getElementById('root')!).render(
     </ThemeProvider>
   </StrictMode>,
 )
+
+console.log(`[${new Date().toISOString()}] [RENDERER] React render initiated`)
+console.timeEnd('renderer-startup')

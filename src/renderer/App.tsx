@@ -48,16 +48,23 @@ const createColumns = (columnNames: string[]): ColumnDef<any>[] => {
 }
 
 function App() {
+  console.log(`[${new Date().toISOString()}] App component initializing`)
+  console.time('app-component-mount')
+  
   const [connectionString, setConnectionString] = useState('')
   const [currentView, setCurrentView] = useState<'connect' | 'tables' | 'tableData'>('connect')
   const [selectedTable, setSelectedTable] = useState<string>('')
   const [hasAttemptedAutoConnect, setHasAttemptedAutoConnect] = useState(false)
+  const [isAutoConnecting, setIsAutoConnecting] = useState(false)
 
   // Get saved connections to find the most recently used one
   const { data: connectionsData } = useQuery({
     queryKey: ['saved-connections'],
     queryFn: async () => {
+      console.log(`[${new Date().toISOString()}] Starting to fetch saved connections`)
+      console.timeEnd('app-component-mount')
       const result = await window.electronAPI.getSavedConnections()
+      console.log(`[${new Date().toISOString()}] Finished fetching saved connections:`, result.success ? `${result.connections?.length} connections` : result.error)
       if (!result.success) {
         throw new Error(result.error || 'Failed to load connections')
       }
@@ -67,6 +74,7 @@ function App() {
 
   const connectionMutation = useMutation({
     mutationFn: async (connectionString: string) => {
+      console.log(`[${new Date().toISOString()}] Starting database connection attempt`)
       const trimmedConnection = connectionString.trim()
       
       if (!trimmedConnection) {
@@ -77,8 +85,9 @@ function App() {
         throw new Error('Invalid connection string format')
       }
 
-
+      console.log(`[${new Date().toISOString()}] Calling electronAPI.connectDatabase`)
       const result = await window.electronAPI.connectDatabase(trimmedConnection)
+      console.log(`[${new Date().toISOString()}] Database connection result:`, result.success ? `Connected to ${result.database}, ${result.tables?.length} tables` : result.error)
       
       if (!result.success) {
         throw new Error(result.error || 'Connection failed')
@@ -87,7 +96,13 @@ function App() {
       return result
     },
     onSuccess: () => {
+      console.log(`[${new Date().toISOString()}] Connection successful, switching to tables view`)
       setCurrentView('tables')
+      setIsAutoConnecting(false)
+    },
+    onError: (error) => {
+      console.log(`[${new Date().toISOString()}] Connection failed:`, error.message)
+      setIsAutoConnecting(false)
     }
   })
 
@@ -111,25 +126,41 @@ function App() {
     connectionMutation.mutate(connectionString)
   }
 
-  // Auto-connect to the most recently used connection on startup
+  // Auto-connect to the most recently used connection on startup (delayed for better UX)
   useEffect(() => {
     if (!hasAttemptedAutoConnect && connectionsData && connectionsData.length > 0) {
+      console.log(`[${new Date().toISOString()}] Starting auto-connection process`)
       setHasAttemptedAutoConnect(true)
+      setIsAutoConnecting(true)
+      
+      // Delay auto-connection slightly to let UI render first
+      setTimeout(() => {
       
       // Find the most recently used connection (connections are already sorted by lastUsed)
       const mostRecentConnection = connectionsData[0]
+      console.log(`[${new Date().toISOString()}] Loading most recent connection:`, mostRecentConnection.name)
       
       // Load and connect to the most recent connection
       window.electronAPI.loadConnection(mostRecentConnection.id)
         .then((result) => {
+          console.log(`[${new Date().toISOString()}] Load connection result:`, result.success ? 'Success' : result.error)
           if (result.success && result.connectionString) {
             setConnectionString(result.connectionString)
+            console.log(`[${new Date().toISOString()}] Triggering auto-connection to database`)
             connectionMutation.mutate(result.connectionString)
+          } else {
+            console.log(`[${new Date().toISOString()}] Auto-connection aborted - no valid connection string`)
+            setIsAutoConnecting(false)
           }
         })
         .catch((error) => {
-          console.warn('Failed to auto-connect to last used database:', error)
+          console.warn(`[${new Date().toISOString()}] Failed to auto-connect to last used database:`, error)
+          setIsAutoConnecting(false)
         })
+      }, 100) // 100ms delay to let UI render first
+    } else if (!hasAttemptedAutoConnect) {
+      console.log(`[${new Date().toISOString()}] No saved connections found, skipping auto-connect`)
+      setHasAttemptedAutoConnect(true)
     }
   }, [connectionsData, hasAttemptedAutoConnect, connectionMutation])
 

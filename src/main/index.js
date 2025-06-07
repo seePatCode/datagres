@@ -279,13 +279,29 @@ const createWindow = () => {
 
   // In dev mode, load from Vite dev server. In production, load built files.
   if (process.env.NODE_ENV === 'development') {
+    console.log(`[${new Date().toISOString()}] [MAIN] Loading Vite dev server...`)
     win.loadURL('http://localhost:5173')
   } else {
+    console.log(`[${new Date().toISOString()}] [MAIN] Loading built renderer...`)
     win.loadFile(path.join(__dirname, '../renderer/index.html'))
   }
   
+  // Add event listeners to track loading
+  win.webContents.on('did-start-loading', () => {
+    console.log(`[${new Date().toISOString()}] [MAIN] Window started loading`)
+  })
+  
+  win.webContents.on('did-finish-load', () => {
+    console.log(`[${new Date().toISOString()}] [MAIN] Window finished loading`)
+  })
+  
+  win.webContents.on('dom-ready', () => {
+    console.log(`[${new Date().toISOString()}] [MAIN] DOM ready`)
+  })
+  
   // Show window after loading if not in test mode
   if (process.env.NODE_ENV !== 'test') {
+    console.log(`[${new Date().toISOString()}] [MAIN] Showing window`)
     win.show()
   }
 
@@ -409,8 +425,11 @@ const createNativeMenu = (mainWindow) => {
 }
 
 app.whenReady().then(() => {
+  console.log(`[${new Date().toISOString()}] [MAIN] App ready, creating window...`)
   const mainWindow = createWindow()
+  console.log(`[${new Date().toISOString()}] [MAIN] Window created, setting up native menu...`)
   createNativeMenu(mainWindow)
+  console.log(`[${new Date().toISOString()}] [MAIN] Native menu created, startup complete`)
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -428,8 +447,10 @@ app.on('window-all-closed', () => {
 
 // Handle database connection requests
 ipcMain.handle('connect-database', async (_event, connectionString) => {
+  console.log(`[${new Date().toISOString()}] [MAIN] connect-database called`)
   // In test mode, return mock data for valid connection strings
   if (process.env.NODE_ENV === 'test') {
+    console.log(`[${new Date().toISOString()}] [MAIN] Test mode - mocking database connection`)
     // Mock successful connection for valid test connection strings to testdb
     if (connectionString.includes('testdb')) {
       return {
@@ -445,16 +466,21 @@ ipcMain.handle('connect-database', async (_event, connectionString) => {
     }
   }
 
+  console.log(`[${new Date().toISOString()}] [MAIN] Creating PostgreSQL client`)
   const client = new Client(connectionString)
   
   try {
+    console.log(`[${new Date().toISOString()}] [MAIN] Connecting to PostgreSQL...`)
     await client.connect()
+    console.log(`[${new Date().toISOString()}] [MAIN] Connected! Querying database info...`)
     
     // Test the connection by querying the database name
     const result = await client.query('SELECT current_database()')
     const database = result.rows[0].current_database
+    console.log(`[${new Date().toISOString()}] [MAIN] Connected to database: ${database}`)
     
     // Fetch table names from the current database
+    console.log(`[${new Date().toISOString()}] [MAIN] Fetching table list...`)
     const tablesResult = await client.query(`
       SELECT table_name 
       FROM information_schema.tables 
@@ -464,8 +490,10 @@ ipcMain.handle('connect-database', async (_event, connectionString) => {
     `)
     
     const tables = tablesResult.rows.map(row => row.table_name)
+    console.log(`[${new Date().toISOString()}] [MAIN] Found ${tables.length} tables`)
     
     await client.end()
+    console.log(`[${new Date().toISOString()}] [MAIN] Database connection completed successfully`)
     
     return {
       success: true,
@@ -473,6 +501,7 @@ ipcMain.handle('connect-database', async (_event, connectionString) => {
       tables: tables
     }
   } catch (error) {
+    console.log(`[${new Date().toISOString()}] [MAIN] Database connection failed:`, error.message)
     try {
       await client.end()
     } catch (endError) {
@@ -599,8 +628,10 @@ ipcMain.handle('save-connection', async (_event, connectionString, name) => {
 
 // Handle getting saved connections
 ipcMain.handle('get-saved-connections', async () => {
+  console.log(`[${new Date().toISOString()}] [MAIN] get-saved-connections called`)
   if (process.env.NODE_ENV === 'test') {
     // Mock saved connections for tests
+    console.log(`[${new Date().toISOString()}] [MAIN] Returning mock connections for test mode`)
     return {
       success: true,
       connections: [
@@ -630,13 +661,17 @@ ipcMain.handle('get-saved-connections', async () => {
     }
   }
   
-  return getSavedConnections()
+  const result = getSavedConnections()
+  console.log(`[${new Date().toISOString()}] [MAIN] getSavedConnections result:`, result.success ? `${result.connections?.length} connections` : result.error)
+  return result
 })
 
 // Handle loading a saved connection
 ipcMain.handle('load-connection', async (_event, connectionId) => {
+  console.log(`[${new Date().toISOString()}] [MAIN] load-connection called for ID:`, connectionId)
   if (process.env.NODE_ENV === 'test') {
     // Mock loading connection for tests
+    console.log(`[${new Date().toISOString()}] [MAIN] Test mode - mocking connection load`)
     if (connectionId === 'test-connection-1') {
       return {
         success: true,
@@ -650,7 +685,9 @@ ipcMain.handle('load-connection', async (_event, connectionId) => {
     }
   }
   
-  return await loadConnection(connectionId)
+  const result = await loadConnection(connectionId)
+  console.log(`[${new Date().toISOString()}] [MAIN] loadConnection result:`, result.success ? 'Success' : result.error)
+  return result
 })
 
 // Handle deleting a saved connection
