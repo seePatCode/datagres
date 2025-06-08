@@ -55,7 +55,7 @@ export function DatabaseSidebar({
   }
 
   return (
-    <div className={cn("flex h-full flex-col border-r bg-background", className)}>
+    <div className={cn("flex h-full flex-col border-r bg-sidebar", className)}>
       {/* Connection Selector */}
       <div className="p-3 border-b">
         <div className="flex items-center gap-2 mb-2">

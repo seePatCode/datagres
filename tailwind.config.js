@@ -12,9 +12,20 @@ module.exports = {
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
   		},
-  		colors: {
-  			background: 'hsl(var(--background))',
-  			foreground: 'hsl(var(--foreground))',
+  		fontSize: {
+  			'vs-ui': ['13px', '1.4'],        /* VSCode UI elements */
+  			'vs-ui-small': ['12px', '1.3'],  /* VSCode small UI (status bar, breadcrumbs) */
+  			'vs-ui-large': ['14px', '1.4'],  /* VSCode large UI (titles) */
+  			'vs-editor': ['14px', '1.5'],    /* VSCode editor */
+  		},
+  		fontFamily: {
+  			'system': ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'sans-serif'],
+  			'mono': ['SF Mono', 'Monaco', 'Consolas', 'Roboto Mono', 'Courier New', 'monospace'],
+  		},
+  				colors: {
+			background: 'hsl(var(--background))',
+			sidebar: 'hsl(var(--sidebar))',
+			foreground: 'hsl(var(--foreground))',
   			card: {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'
@@ -46,13 +57,16 @@ module.exports = {
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
-  			chart: {
-  				'1': 'hsl(var(--chart-1))',
-  				'2': 'hsl(var(--chart-2))',
-  				'3': 'hsl(var(--chart-3))',
-  				'4': 'hsl(var(--chart-4))',
-  				'5': 'hsl(var(--chart-5))'
-  			}
+  						chart: {
+				'1': 'hsl(var(--chart-1))',
+				'2': 'hsl(var(--chart-2))',
+				'3': 'hsl(var(--chart-3))',
+				'4': 'hsl(var(--chart-4))',
+				'5': 'hsl(var(--chart-5))'
+			},
+			cyan: {
+				500: 'hsl(var(--accent-cyan))',
+			}
   		}
   	}
   },
