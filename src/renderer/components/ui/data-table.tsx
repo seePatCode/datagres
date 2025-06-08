@@ -70,14 +70,14 @@ export function DataTable<TData, TValue>({
   const columnWidths = calculateColumnWidths()
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-full">
       {/* Table Info */}
-      <div data-testid="table-info" className="text-sm text-muted-foreground">
+      <div data-testid="table-info" className="flex items-center h-10 px-3 text-sm text-muted-foreground border-b bg-muted/10">
         Showing {data.length} rows{tableName && ` from ${tableName}`}
       </div>
 
       {/* Table */}
-      <div className="border overflow-auto scrollbar-thin min-w-0" data-testid="enhanced-table">
+      <div className="flex-1 border-x border-b overflow-auto scrollbar-thin min-w-0" data-testid="enhanced-table">
         <Table className="w-full" style={{ tableLayout: 'fixed' }}>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

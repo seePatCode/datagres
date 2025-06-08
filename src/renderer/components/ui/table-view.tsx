@@ -62,24 +62,21 @@ export function TableView({
   return (
     <div className={`flex h-full flex-col min-w-0 ${className}`}>
       {/* Toolbar */}
-      <div className="flex items-center justify-between p-3 border-b bg-background">
-        <div className="flex items-center gap-3">
-          {/* Table name */}
-          <h2 className="text-lg font-semibold">{tableName}</h2>
-          
+      <div className="flex items-center justify-between border-b bg-background">
+        <div className="flex-1">
           {/* Search */}
-          <div className="relative w-80">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search data..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-9 rounded-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 px-3">
           {/* Save button (if changes) */}
           {hasUnsavedChanges && onSave && (
             <Button onClick={onSave} size="sm" className="gap-1">
