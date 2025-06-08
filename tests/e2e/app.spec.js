@@ -1,6 +1,6 @@
-import { test, expect } from '@playwright/test';
-import { _electron as electron } from 'playwright';
-import path from 'path';
+const { test, expect } = require('@playwright/test');
+const { _electron: electron } = require('playwright');
+const path = require('path');
 
 test.describe('Electron App Launch', () => {
   let electronApp;
@@ -10,7 +10,7 @@ test.describe('Electron App Launch', () => {
     // Launch Electron app in headless/non-intrusive mode
     electronApp = await electron.launch({
       args: [
-        path.join(import.meta.dirname, '../../out/main/index.js'),
+        path.join(__dirname, '../../out/main/index.js'),
         '--no-sandbox',
         '--disable-dev-shm-usage',
         '--disable-gpu'
@@ -460,7 +460,7 @@ test.describe('Electron App Launch', () => {
     
     // Verify screenshot was taken (file will exist)
     import('fs');
-    const screenshotPath = path.join(import.meta.dirname, 'screenshots', 'app-launch.png');
+    const screenshotPath = path.join(__dirname, 'screenshots', 'app-launch.png');
     
     // Just verify we could take a screenshot - don't check file existence
     // as it may not be written immediately

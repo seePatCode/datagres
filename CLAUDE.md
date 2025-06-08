@@ -15,13 +15,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-**Datagres** is an Electron-based PostgreSQL database explorer built for speed and simplicity. The app follows Electron's three-process architecture:
+**Datagres** is an Electron-based PostgreSQL database explorer built for speed and simplicity. The app follows Electron's three-process architecture with a modular design for scalability:
 
-### Main Process (`src/main/index.js`)
+### Main Process (`src/main/`)
+- **Entry Point** (`index.js`): IPC handlers and application lifecycle
+- **Services** (`services/`):
+  - `connectionStore.js`: Secure storage for database connections using `electron-store` (encrypted) + `keytar` (OS keychain)
 - **Database Operations**: Uses `pg` client for PostgreSQL connections
-- **Secure Storage**: `electron-store` (encrypted) + `keytar` (OS keychain) for credentials
-- **IPC Handlers**: All database operations exposed via IPC to renderer
 - **Test Mocking**: Complete mock layer for reliable e2e testing
+- **Module Bundling**: All services are bundled into a single file during build via electron-vite configuration
 
 ### Preload Script (`src/preload/index.js`)
 - **Security Bridge**: Exposes safe database API via `contextBridge`
@@ -65,6 +67,12 @@ User Action → React Query Mutation → IPC Call → Main Process → PostgreSQ
 4. Add TypeScript declaration in App.tsx global interface
 5. Use React Query mutation/query in components
 
+### Adding New Services/Modules
+1. Create module in `src/main/services/` or `src/main/utils/`
+2. Add module path to `externalizeDepsPlugin` exclude list in `electron.vite.config.mjs`
+3. Import and use in main process
+4. Module will be automatically bundled during build
+
 ### Component Development
 - Follow existing shadcn/ui patterns for new components
 - Use Tailwind utilities, avoid custom CSS
@@ -80,16 +88,26 @@ User Action → React Query Mutation → IPC Call → Main Process → PostgreSQ
 
 ### Build Configuration
 - **electron-vite**: Separate builds for main/preload (CommonJS) and renderer (ES modules)
-- **Path Aliases**: Use `@/` for renderer imports (`src/renderer/`)
+- **Path Aliases**: 
+  - Renderer: `@/` maps to `src/renderer/`
+  - Main: `@services` maps to `src/main/services/`, `@utils` maps to `src/main/utils/`
+- **Module Bundling**: Internal modules excluded from externalization and bundled via `inlineDynamicImports`
 - **TypeScript**: Full type checking in renderer, JavaScript in main/preload
+- **ESM Handling**: Dynamic imports for ESM-only packages (e.g., electron-store v10)
 
 ## Important Files
 
-- `src/main/index.js` - Main process with all database logic
+### Main Process
+- `src/main/index.js` - IPC handlers and app lifecycle
+- `src/main/services/connectionStore.js` - Connection storage logic
+
+### Renderer Process  
 - `src/renderer/App.tsx` - Central application state and routing
 - `src/renderer/components/ui/connection-manager.tsx` - Connection CRUD operations
 - `src/renderer/components/ui/data-table.tsx` - Advanced data grid
-- `electron.vite.config.js` - Multi-process build configuration
+
+### Configuration
+- `electron.vite.config.mjs` - Multi-process build configuration with module bundling
 - `tests/e2e/app.spec.js` - Complete user journey tests
 
 ## Product Vision
