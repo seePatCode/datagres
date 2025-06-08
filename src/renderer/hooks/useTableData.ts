@@ -5,7 +5,7 @@
 
 import { useState, useCallback } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import type { TableInfo } from '../../shared/types'
+import type { TableInfo } from '@shared/types'
 
 export function useTableData(connectionString: string) {
   const queryClient = useQueryClient()

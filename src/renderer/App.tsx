@@ -11,8 +11,8 @@ import { TitleBar } from "@/components/ui/title-bar"
 import { DatabaseSidebar } from "@/components/ui/database-sidebar"
 import { TableView } from "@/components/ui/table-view"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
-import type { ElectronAPI, AppView, TableInfo, MenuAction } from '../../shared/types'
-import { validateConnectionString } from '../../shared/validation'
+import type { ElectronAPI, AppView, TableInfo, MenuAction } from '@shared/types'
+import { validateConnectionString } from '@shared/validation'
 
 declare global {
   interface Window {

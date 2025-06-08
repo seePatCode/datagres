@@ -68,8 +68,10 @@ export default defineConfig({
     plugins: [react()],
     resolve: {
       alias: {
-        '@': resolve('src/renderer')
-      }
+        '@': resolve('src/renderer'),
+        '@shared': resolve('src/shared')
+      },
+      extensions: ['.ts', '.tsx', '.js', '.jsx', '.json']
     },
     build: {
       outDir: 'out/renderer'

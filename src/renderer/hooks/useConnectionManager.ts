@@ -5,7 +5,7 @@
 
 import { useState, useCallback } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { SavedConnection } from '../../shared/types'
+import type { SavedConnection } from '@shared/types'
 
 export function useConnectionManager() {
   const queryClient = useQueryClient()
