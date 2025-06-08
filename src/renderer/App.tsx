@@ -41,7 +41,6 @@ function App() {
   const [currentDatabase, setCurrentDatabase] = useState<string>('')
   const [tables, setTables] = useState<TableInfo[]>([])
   const [recentTables, setRecentTables] = useState<TableInfo[]>([])
-  const [currentTableData, setCurrentTableData] = useState<{columns: string[], rows: any[][]} | null>(null)
   const [selectedTable, setSelectedTable] = useState<string>('')
   const [hasAttemptedAutoConnect, setHasAttemptedAutoConnect] = useState(false)
   const [isAutoConnecting, setIsAutoConnecting] = useState(false)
@@ -97,27 +96,6 @@ function App() {
     }
   })
 
-  const tableDataMutation = useMutation({
-    mutationFn: async (tableName: string) => {
-      const result = await window.electronAPI.fetchTableData(connectionString, tableName)
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch table data')
-      }
-      
-      return result
-    },
-    onSuccess: (data) => {
-      setSelectedTable(data.tableName || '')
-      setCurrentTableData(data.data || null)
-      // Add to recent tables
-      const tableName = data.tableName || ''
-      setRecentTables(prev => {
-        const filtered = prev.filter(t => t.name !== tableName)
-        return [{ name: tableName }, ...filtered].slice(0, 5) // Keep last 5
-      })
-    }
-  })
 
   const handleConnect = () => {
     connectionMutation.mutate(connectionString)
@@ -176,13 +154,12 @@ function App() {
   }
 
   const handleTableSelect = (tableName: string) => {
-    tableDataMutation.mutate(tableName)
-  }
-
-  const handleTableRefresh = () => {
-    if (selectedTable) {
-      tableDataMutation.mutate(selectedTable)
-    }
+    setSelectedTable(tableName)
+    // Add to recent tables
+    setRecentTables(prev => {
+      const filtered = prev.filter(t => t.name !== tableName)
+      return [{ name: tableName }, ...filtered].slice(0, 5) // Keep last 5
+    })
   }
 
   const handleNewConnection = () => {
@@ -210,7 +187,6 @@ function App() {
           case 'back-to-tables':
             if (selectedTable) {
               setSelectedTable('')
-              setCurrentTableData(null)
             }
             break
         }
@@ -282,12 +258,10 @@ function App() {
             
             {/* Main content panel */}
             <ResizablePanel defaultSize={75} minSize={5}>
-              {selectedTable && currentTableData ? (
+              {selectedTable ? (
                 <TableView
                   tableName={selectedTable}
-                  data={currentTableData}
-                  onRefresh={handleTableRefresh}
-                  isLoading={tableDataMutation.isPending}
+                  connectionString={connectionString}
                 />
               ) : (
                 <div className="flex h-full items-center justify-center">

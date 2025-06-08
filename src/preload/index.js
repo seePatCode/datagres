@@ -3,7 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('electronAPI', {
   connectDatabase: (connectionString) => ipcRenderer.invoke('connect-database', connectionString),
-  fetchTableData: (connectionString, tableName) => ipcRenderer.invoke('fetch-table-data', connectionString, tableName),
+  fetchTableData: (connectionString, tableName, searchOptions) => ipcRenderer.invoke('fetch-table-data', connectionString, tableName, searchOptions),
   saveConnection: (connectionString, name) => ipcRenderer.invoke('save-connection', connectionString, name),
   getSavedConnections: () => ipcRenderer.invoke('get-saved-connections'),
   loadConnection: (connectionId) => ipcRenderer.invoke('load-connection', connectionId),

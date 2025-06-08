@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
-import { Search, RefreshCw, Save, MoreHorizontal, Filter, EyeOff, Eye } from 'lucide-react'
+import { Search, RefreshCw, Save, MoreHorizontal, Filter, EyeOff, Eye, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { DataTable } from '@/components/ui/data-table'
@@ -12,16 +12,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useServerSideTableData } from '@/hooks/useServerSideTableData'
 
 interface TableViewProps {
   tableName: string
-  data: {
-    columns: string[]
-    rows: any[][]
-  }
-  onRefresh: () => void
+  connectionString: string
   onSave?: () => void
-  isLoading?: boolean
   hasUnsavedChanges?: boolean
   className?: string
 }
@@ -59,25 +55,40 @@ const createColumns = (columnNames: string[]): ColumnDef<any>[] => {
 
 export function TableView({
   tableName,
-  data,
-  onRefresh,
+  connectionString,
   onSave,
-  isLoading = false,
   hasUnsavedChanges = false,
   className,
 }: TableViewProps) {
-  const [searchQuery, setSearchQuery] = useState('')
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({})
   
-  // Filter rows based on search query
-  const filteredRows = data.rows.filter(row =>
-    row.some(cell =>
-      cell?.toString().toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  )
+  // Use server-side table data hook
+  const {
+    data,
+    totalRows,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    searchTerm,
+    setSearchTerm,
+    handleSearchCommit,
+    activeSearchTerm,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    totalPages,
+    hasNextPage,
+    hasPreviousPage,
+  } = useServerSideTableData({
+    connectionString,
+    tableName,
+    enabled: !!connectionString && !!tableName
+  })
 
   // Create column definitions
-  const columns = createColumns(data.columns)
+  const columns = data ? createColumns(data.columns) : []
 
   const formatRowCount = (count: number) => {
     if (count < 1000) return count.toLocaleString()
@@ -94,10 +105,16 @@ export function TableView({
           <div className="relative m-0.5">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground z-10" />
             <Input
-              placeholder="Search data..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 rounded-none border focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-0 focus-visible:border-cyan-500/30"
+              placeholder="WHERE clause (e.g., location = 'NYC' AND age > 25) - Press Enter"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearchCommit()
+                }
+              }}
+              className="pl-9 rounded-none border focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-0 focus-visible:border-cyan-500/30 font-mono text-sm"
+              disabled={isLoading}
             />
           </div>
         </div>
@@ -115,7 +132,7 @@ export function TableView({
           <Button
             variant="outline"
             size="sm"
-            onClick={onRefresh}
+            onClick={() => refetch()}
             disabled={isLoading}
             className="gap-1"
           >
@@ -136,7 +153,7 @@ export function TableView({
                 Column Visibility
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {data.columns.map((columnName) => {
+              {(data?.columns || []).map((columnName) => {
                 const isVisible = columnVisibility[columnName] !== false
                 return (
                   <DropdownMenuCheckboxItem
@@ -172,19 +189,37 @@ export function TableView({
 
       {/* Data Table */}
       <div className="flex-1 overflow-hidden">
-        {data.columns.length > 0 ? (
+        {isError ? (
+          <div className="flex h-full items-center justify-center">
+            <div className="text-center">
+              <div className="text-destructive mb-2">Error loading table</div>
+              <div className="text-sm text-muted-foreground mb-4">{error?.message}</div>
+              <Button variant="outline" onClick={() => refetch()}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </Button>
+            </div>
+          </div>
+        ) : data && data.columns.length > 0 ? (
           <DataTable 
             columns={columns}
-            data={filteredRows}
+            data={data.rows}
             tableName={tableName}
             columnVisibility={columnVisibility}
             onColumnVisibilityChange={setColumnVisibility}
           />
+        ) : isLoading ? (
+          <div className="flex h-full items-center justify-center">
+            <div className="text-center">
+              <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground mb-2" />
+              <div className="text-muted-foreground">Loading table data...</div>
+            </div>
+          </div>
         ) : (
           <div className="flex h-full items-center justify-center">
             <div className="text-center">
               <div className="text-muted-foreground mb-2">No data available</div>
-              <Button variant="outline" onClick={onRefresh} disabled={isLoading}>
+              <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
                 <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                 Refresh Table
               </Button>
@@ -197,21 +232,45 @@ export function TableView({
       <div className="flex items-center justify-between px-3 py-2 border-t bg-muted/20 text-sm text-muted-foreground">
         <div className="flex items-center gap-4">
           <span>
-            {formatRowCount(filteredRows.length)} 
-            {searchQuery && filteredRows.length !== data.rows.length && 
-              ` of ${formatRowCount(data.rows.length)}`
-            } rows
+            {data ? `${formatRowCount(data.rows.length)} of ${formatRowCount(totalRows)}` : '0'} rows
+            {activeSearchTerm && ` WHERE ${activeSearchTerm}`}
           </span>
-          {data.columns.length > 0 && (
+          {data && data.columns.length > 0 && (
             <span>{data.columns.length} columns</span>
           )}
         </div>
         
         <div className="flex items-center gap-4">
+          {/* Pagination controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(page - 1)}
+                disabled={!hasPreviousPage || isLoading}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="min-w-[100px] text-center">
+                Page {page} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(page + 1)}
+                disabled={!hasNextPage || isLoading}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
           {hasUnsavedChanges && (
             <span className="text-orange-600">Unsaved changes</span>
           )}
-          <span>Last updated: {new Date().toLocaleTimeString()}</span>
+          {isLoading && (
+            <span className="text-cyan-600">Loading...</span>
+          )}
         </div>
       </div>
     </div>

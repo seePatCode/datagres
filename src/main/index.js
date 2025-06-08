@@ -36,8 +36,8 @@ ipcMain.handle('connect-database', async (_event, connectionString) => {
 })
 
 // Handle table data requests
-ipcMain.handle('fetch-table-data', async (_event, connectionString, tableName) => {
-  return await databaseService.fetchTableData(connectionString, tableName)
+ipcMain.handle('fetch-table-data', async (_event, connectionString, tableName, searchOptions) => {
+  return await databaseService.fetchTableData(connectionString, tableName, searchOptions)
 })
 
 // Handle saving database connections

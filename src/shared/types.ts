@@ -19,6 +19,9 @@ export interface FetchTableDataResponse extends APIResponse {
     columns: string[]
     rows: any[][]
   }
+  totalRows?: number
+  page?: number
+  pageSize?: number
 }
 
 export interface SaveConnectionResponse extends APIResponse {
@@ -33,6 +36,23 @@ export interface GetSavedConnectionsResponse extends APIResponse {
 export interface LoadConnectionResponse extends APIResponse {
   connectionString?: string
   name?: string
+}
+
+// Search and filter options
+export interface SearchOptions {
+  searchTerm?: string
+  searchColumns?: string[]
+  filters?: Array<{
+    column: string
+    operator: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'ilike' | 'in' | 'is_null' | 'is_not_null'
+    value?: any
+  }>
+  orderBy?: Array<{
+    column: string
+    direction: 'asc' | 'desc'
+  }>
+  page?: number
+  pageSize?: number
 }
 
 // Data models
@@ -65,7 +85,7 @@ export interface ParsedConnectionInfo {
 export interface ElectronAPI {
   // Database operations
   connectDatabase: (connectionString: string) => Promise<ConnectDatabaseResponse>
-  fetchTableData: (connectionString: string, tableName: string) => Promise<FetchTableDataResponse>
+  fetchTableData: (connectionString: string, tableName: string, searchOptions?: SearchOptions) => Promise<FetchTableDataResponse>
   
   // Connection management
   saveConnection: (connectionString: string, name: string) => Promise<SaveConnectionResponse>

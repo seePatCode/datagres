@@ -116,12 +116,29 @@ async function connectDatabase(connectionString) {
 }
 
 /**
- * Fetch data from a specific table
+ * Build WHERE clause from search options
+ * @param {Object} searchOptions - Search options
+ * @returns {{whereClause: string}}
+ */
+function buildWhereClause(searchOptions = {}) {
+  // If searchTerm exists, use it directly as a WHERE clause
+  if (searchOptions.searchTerm && searchOptions.searchTerm.trim()) {
+    return { whereClause: `WHERE ${searchOptions.searchTerm}` }
+  }
+  
+  // No search term = no WHERE clause
+  return { whereClause: '' }
+
+}
+
+/**
+ * Fetch data from a specific table with optional search/filter options
  * @param {string} connectionString - PostgreSQL connection string
  * @param {string} tableName - Name of the table to fetch data from
- * @returns {Promise<{success: boolean, tableName?: string, data?: {columns: string[], rows: any[][]}, error?: string}>}
+ * @param {Object} searchOptions - Optional search and filter options
+ * @returns {Promise<{success: boolean, tableName?: string, data?: {columns: string[], rows: any[][]}, totalRows?: number, page?: number, pageSize?: number, error?: string}>}
  */
-async function fetchTableData(connectionString, tableName) {
+async function fetchTableData(connectionString, tableName, searchOptions = {}) {
   // In test mode, return mock data
   if (process.env.NODE_ENV === 'test') {
     if (connectionString.includes('testdb')) {
@@ -129,10 +146,33 @@ async function fetchTableData(connectionString, tableName) {
       const tableData = mockData.testdb.tableData[tableName]
       
       if (tableData) {
+        // Apply mock search filtering
+        let filteredRows = tableData.rows
+        if (searchOptions.searchTerm) {
+          // Simple mock filtering for test mode
+          // Just filter rows that contain the search term in any column
+          const searchLower = searchOptions.searchTerm.toLowerCase()
+          filteredRows = tableData.rows.filter(row => 
+            row.some(cell => cell?.toString().toLowerCase().includes(searchLower))
+          )
+        }
+        
+        // Apply pagination
+        const page = searchOptions.page || 1
+        const pageSize = searchOptions.pageSize || 100
+        const startIndex = (page - 1) * pageSize
+        const paginatedRows = filteredRows.slice(startIndex, startIndex + pageSize)
+        
         return {
           success: true,
           tableName: tableName,
-          data: tableData
+          data: {
+            columns: tableData.columns,
+            rows: paginatedRows
+          },
+          totalRows: filteredRows.length,
+          page: page,
+          pageSize: pageSize
         }
       }
     }
@@ -159,8 +199,32 @@ async function fetchTableData(connectionString, tableName) {
     
     const columns = columnsResult.rows.map(row => row.column_name)
     
-    // Then get the data (limit to first 100 rows for now)
-    const dataResult = await client.query(`SELECT * FROM ${tableName} LIMIT 100`)
+    // Build WHERE clause
+    const { whereClause } = buildWhereClause(searchOptions)
+    
+    // Get total count with filters
+    const countQuery = `SELECT COUNT(*) FROM ${tableName} ${whereClause}`
+    const countResult = await client.query(countQuery)
+    const totalRows = parseInt(countResult.rows[0].count, 10)
+    
+    // Build ORDER BY clause
+    let orderByClause = ''
+    if (searchOptions.orderBy && searchOptions.orderBy.length > 0) {
+      const orderParts = searchOptions.orderBy.map(order => 
+        `${order.column} ${order.direction.toUpperCase()}`
+      )
+      orderByClause = `ORDER BY ${orderParts.join(', ')}`
+    }
+    
+    // Pagination
+    const page = searchOptions.page || 1
+    const pageSize = searchOptions.pageSize || 100
+    const offset = (page - 1) * pageSize
+    const limitClause = `LIMIT ${pageSize} OFFSET ${offset}`
+    
+    // Build and execute the data query
+    const dataQuery = `SELECT * FROM ${tableName} ${whereClause} ${orderByClause} ${limitClause}`
+    const dataResult = await client.query(dataQuery)
     const rows = dataResult.rows.map(row => columns.map(col => row[col]))
     
     await client.end()
@@ -171,7 +235,10 @@ async function fetchTableData(connectionString, tableName) {
       data: {
         columns: columns,
         rows: rows
-      }
+      },
+      totalRows: totalRows,
+      page: page,
+      pageSize: pageSize
     }
   } catch (error) {
     try {
