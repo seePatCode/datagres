@@ -9,6 +9,7 @@ import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
+  getGlobalFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
@@ -33,7 +34,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { ChevronDown, MoreHorizontal } from "lucide-react"
+import { ChevronDown, ChevronUp, MoreHorizontal } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -89,13 +90,51 @@ function DraggableTableHeader({
     <TableHead
       ref={setNodeRef}
       style={style}
-      className="cursor-move"
-      {...attributes}
-      {...listeners}
+      className="px-3 py-2 font-medium text-left border-r border-border/50 bg-muted/30 relative"
     >
-      {header.isPlaceholder
-        ? null
-        : flexRender(header.column.columnDef.header, header.getContext())}
+      <div className="flex items-center gap-2 truncate">
+        {/* Drag handle - separate from sort area */}
+        <div 
+          className="cursor-move p-1 -ml-1 hover:bg-muted/50 rounded"
+          {...attributes}
+          {...listeners}
+          title="Drag to reorder column"
+        >
+          <div className="w-1 h-4 flex flex-col gap-0.5">
+            <div className="w-1 h-1 bg-muted-foreground/50 rounded-full"></div>
+            <div className="w-1 h-1 bg-muted-foreground/50 rounded-full"></div>
+            <div className="w-1 h-1 bg-muted-foreground/50 rounded-full"></div>
+          </div>
+        </div>
+        
+        {/* Sortable content area */}
+        <div 
+          className={`flex items-center gap-2 truncate flex-1 ${
+            header.column.getCanSort() ? "cursor-pointer select-none hover:bg-muted/50 p-1 -m-1 rounded" : ""
+          }`}
+          onClick={header.column.getCanSort() ? header.column.getToggleSortingHandler() : undefined}
+        >
+          <span className="truncate">
+            {header.isPlaceholder
+              ? null
+              : flexRender(header.column.columnDef.header, header.getContext())}
+          </span>
+          {header.column.getCanSort() && (
+            <div data-testid="sort-indicator" className="flex flex-col flex-shrink-0">
+              {header.column.getIsSorted() === "asc" ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : header.column.getIsSorted() === "desc" ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <div className="h-4 w-4 flex flex-col justify-center items-center">
+                  <ChevronUp className="h-2 w-2 opacity-50" />
+                  <ChevronDown className="h-2 w-2 opacity-50" />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
     </TableHead>
   )
 }
@@ -107,6 +146,7 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+  const [globalFilter, setGlobalFilter] = React.useState("")
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnOrder, setColumnOrder] = React.useState<ColumnOrderState>(
@@ -186,42 +226,6 @@ export function DataTable<TData, TValue>({
       sensors={sensors}
     >
       <div className="w-full">
-        <div className="flex items-center py-4">
-          <Input
-            placeholder="Filter emails..."
-            value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("email")?.setFilterValue(event.target.value)
-            }
-            className="max-w-sm"
-          />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto">
-                Columns <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  )
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
         <div className="rounded-md border">
           <Table>
             <TableHeader>

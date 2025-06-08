@@ -12,17 +12,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Testing
 - `npm test` - Run Playwright e2e tests
 - `npm test:headed` - Run tests with visible browser (for debugging)
+- `npm run test:unit` - Run unit tests with Vitest
+- `npm run test:unit:coverage` - Run unit tests with coverage report
 
 ## Architecture Overview
 
 **Datagres** is an Electron-based PostgreSQL database explorer built for speed and simplicity. The app follows Electron's three-process architecture with a modular design for scalability:
 
 ### Main Process (`src/main/`)
-- **Entry Point** (`index.js`): IPC handlers and application lifecycle
+- **Entry Point** (`index.js`): IPC handlers and application lifecycle (147 lines, reduced from 766)
 - **Services** (`services/`):
   - `connectionStore.js`: Secure storage for database connections using `electron-store` (encrypted) + `keytar` (OS keychain)
-- **Database Operations**: Uses `pg` client for PostgreSQL connections
-- **Test Mocking**: Complete mock layer for reliable e2e testing
+  - `databaseService.js`: PostgreSQL operations and test mocking
+  - `menuBuilder.js`: Application menu construction
+  - `windowManager.js`: Window creation and control
 - **Module Bundling**: All services are bundled into a single file during build via electron-vite configuration
 
 ### Preload Script (`src/preload/index.js`)
@@ -34,6 +37,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **TanStack Query**: Server state management with caching and mutations
 - **TanStack Table**: Advanced data grid with virtual scrolling
 - **Tailwind + shadcn/ui**: Component library built on Radix UI primitives
+
+### Shared Types (`src/shared/types.ts`)
+- **Type Definitions**: Centralized TypeScript types for IPC communication
+- **API Contracts**: Ensures type safety between main and renderer processes
+- **Data Models**: SavedConnection, TableInfo, API responses
 
 ## Key Technical Patterns
 

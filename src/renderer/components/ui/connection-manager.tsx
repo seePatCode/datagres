@@ -13,18 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-
-interface SavedConnection {
-  id: string
-  name: string
-  host: string
-  port: number
-  database: string
-  username: string
-  hasPassword: boolean
-  createdAt: string
-  lastUsed: string
-}
+import type { SavedConnection } from '../../../shared/types'
 
 interface ConnectionManagerProps {
   onConnectionSelect: (connectionString: string) => void

@@ -11,22 +11,11 @@ import { TitleBar } from "@/components/ui/title-bar"
 import { DatabaseSidebar } from "@/components/ui/database-sidebar"
 import { TableView } from "@/components/ui/table-view"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
+import type { ElectronAPI, AppView, TableInfo, MenuAction } from '../../shared/types'
 
 declare global {
   interface Window {
-    electronAPI: {
-      connectDatabase: (connectionString: string) => Promise<{success: boolean, database?: string, tables?: string[], error?: string}>
-      fetchTableData: (connectionString: string, tableName: string) => Promise<{success: boolean, tableName?: string, data?: {columns: string[], rows: any[][]}, error?: string}>
-      saveConnection: (connectionString: string, name: string) => Promise<{success: boolean, connectionId?: string, name?: string, error?: string}>
-      getSavedConnections: () => Promise<{success: boolean, connections?: any[], error?: string}>
-      loadConnection: (connectionId: string) => Promise<{success: boolean, connectionString?: string, name?: string, error?: string}>
-      deleteConnection: (connectionId: string) => Promise<{success: boolean, error?: string}>
-      updateConnectionName: (connectionId: string, newName: string) => Promise<{success: boolean, error?: string}>
-      minimize?: () => Promise<void>
-      maximize?: () => Promise<void>
-      close?: () => Promise<void>
-      onMenuAction?: (callback: (action: string) => void) => void
-    }
+    electronAPI: ElectronAPI
   }
 }
 
@@ -55,10 +44,10 @@ function App() {
   console.time('app-component-mount')
   
   const [connectionString, setConnectionString] = useState('')
-  const [currentView, setCurrentView] = useState<'connect' | 'explorer'>('connect')
+  const [currentView, setCurrentView] = useState<AppView>('connect')
   const [currentDatabase, setCurrentDatabase] = useState<string>('')
-  const [tables, setTables] = useState<{name: string, rowCount?: number}[]>([])
-  const [recentTables, setRecentTables] = useState<{name: string, rowCount?: number}[]>([])
+  const [tables, setTables] = useState<TableInfo[]>([])
+  const [recentTables, setRecentTables] = useState<TableInfo[]>([])
   const [currentTableData, setCurrentTableData] = useState<{columns: string[], rows: any[][]} | null>(null)
   const [selectedTable, setSelectedTable] = useState<string>('')
   const [hasAttemptedAutoConnect, setHasAttemptedAutoConnect] = useState(false)
@@ -223,7 +212,7 @@ function App() {
   // Expose menu handlers to main process via IPC
   useEffect(() => {
     if (window.electronAPI?.onMenuAction) {
-      window.electronAPI.onMenuAction((action: string) => {
+      window.electronAPI.onMenuAction((action: MenuAction) => {
         switch (action) {
           case 'new-connection':
             handleNewConnection()
