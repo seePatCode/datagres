@@ -31,8 +31,8 @@ import {
 } from '@dnd-kit/sortable'
 import {
   useSortable,
-  CSS,
 } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { ChevronDown, MoreHorizontal } from "lucide-react"
 
 import { Button } from "@/components/ui/button"

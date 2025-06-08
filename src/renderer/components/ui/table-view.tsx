@@ -21,6 +21,7 @@ interface TableViewProps {
 // Helper function to create columns dynamically
 const createColumns = (columnNames: string[]): ColumnDef<any>[] => {
   return columnNames.map((columnName, index) => ({
+    id: columnName, // Add explicit ID for drag and drop
     accessorKey: index.toString(),
     header: columnName,
     cell: ({ getValue }) => {

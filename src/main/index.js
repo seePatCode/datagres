@@ -1,87 +1,31 @@
-const { app, BrowserWindow, ipcMain } = require('electron')
-const path = require('path')
+const { app, ipcMain } = require('electron')
 
 // Import services
 const connectionStore = require('./services/connectionStore')
 const databaseService = require('./services/databaseService')
 const { createApplicationMenu } = require('./services/menuBuilder')
+const { createMainWindow, setupWindowControlHandlers } = require('./services/windowManager')
 
 // Set app name as early as possible
 app.setName('Datagres')
 
 
-const createWindow = () => {
-  const preloadPath = path.join(__dirname, '../preload/index.js')
-  
-  
-  const win = new BrowserWindow({
-    width: 1400,
-    height: 900,
-    title: 'Datagres - Database Explorer',
-    backgroundColor: '#171A1F', // Dark background with navy tint to prevent white flash
-    ...(process.platform === 'darwin' 
-      ? { titleBarStyle: 'hidden' } // macOS: Hide title but keep traffic lights
-      : { frame: false }), // Windows/Linux: Completely frameless
-    show: process.env.NODE_ENV !== 'test', // Don't show during tests
-    focusable: process.env.NODE_ENV !== 'test', // Don't steal focus during tests
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      preload: preloadPath,
-      // Allow local resources in development
-      webSecurity: process.env.NODE_ENV !== 'development'
-    }
-  })
-
-  // Maximize the window on startup (except during tests)
-  if (process.env.NODE_ENV !== 'test') {
-    win.maximize()
-  }
-
-  // HMR for renderer process
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[${new Date().toISOString()}] [MAIN] Loading Vite dev server...`)
-    win.loadURL(process.env.ELECTRON_RENDERER_URL || 'http://localhost:5173')
-  } else {
-    console.log(`[${new Date().toISOString()}] [MAIN] Loading built renderer...`)
-    win.loadFile(path.join(__dirname, '../renderer/index.html'))
-  }
-  
-  // Add event listeners to track loading
-  win.webContents.on('did-start-loading', () => {
-    console.log(`[${new Date().toISOString()}] [MAIN] Window started loading`)
-  })
-  
-  win.webContents.on('did-finish-load', () => {
-    console.log(`[${new Date().toISOString()}] [MAIN] Window finished loading`)
-  })
-  
-  win.webContents.on('dom-ready', () => {
-    console.log(`[${new Date().toISOString()}] [MAIN] DOM ready`)
-  })
-  
-  // Show window after loading if not in test mode
-  if (process.env.NODE_ENV !== 'test') {
-    console.log(`[${new Date().toISOString()}] [MAIN] Showing window`)
-    win.show()
-  }
-
-  return win
-}
 
 
 app.whenReady().then(async () => {
   console.log(`[${new Date().toISOString()}] [MAIN] App ready, initializing store...`)
   await connectionStore.initialize()
   console.log(`[${new Date().toISOString()}] [MAIN] Store initialized, creating window...`)
-  const mainWindow = createWindow()
+  const mainWindow = createMainWindow()
   console.log(`[${new Date().toISOString()}] [MAIN] Window created, setting up native menu...`)
   createApplicationMenu(mainWindow)
-  console.log(`[${new Date().toISOString()}] [MAIN] Native menu created, startup complete`)
+  console.log(`[${new Date().toISOString()}] [MAIN] Native menu created, setting up window controls...`)
+  setupWindowControlHandlers()
+  console.log(`[${new Date().toISOString()}] [MAIN] Window controls set up, startup complete`)
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      const newWindow = createWindow()
+    if (require('electron').BrowserWindow.getAllWindows().length === 0) {
+      const newWindow = createMainWindow()
       createApplicationMenu(newWindow)
     }
   })
@@ -201,28 +145,3 @@ ipcMain.handle('update-connection-name', async (_event, connectionId, newName) =
   return connectionStore.updateConnectionName(connectionId, newName)
 })
 
-// Handle window controls
-ipcMain.handle('window-minimize', async (event) => {
-  const win = BrowserWindow.fromWebContents(event.sender)
-  if (win) {
-    win.minimize()
-  }
-})
-
-ipcMain.handle('window-maximize', async (event) => {
-  const win = BrowserWindow.fromWebContents(event.sender)
-  if (win) {
-    if (win.isMaximized()) {
-      win.unmaximize()
-    } else {
-      win.maximize()
-    }
-  }
-})
-
-ipcMain.handle('window-close', async (event) => {
-  const win = BrowserWindow.fromWebContents(event.sender)
-  if (win) {
-    win.close()
-  }
-})
