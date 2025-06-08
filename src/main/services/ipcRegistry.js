@@ -24,9 +24,6 @@ class IPCRegistry {
       const timestamp = new Date().toISOString()
       
       try {
-        // Log the incoming request
-        console.log(`[${timestamp}] [IPC] ${channel} called with ${args.length} args`)
-        
         // Use test handler if in test mode and available
         const actualHandler = (isTestMode() && testHandler) ? testHandler : handler
         
@@ -39,13 +36,9 @@ class IPCRegistry {
         // Execute the handler
         const result = await actualHandler(event, ...args)
         
-        // Log success
-        const duration = Date.now() - startTime
-        console.log(`[${timestamp}] [IPC] ${channel} completed in ${duration}ms`)
-        
         return result
       } catch (error) {
-        // Log error
+        // Log error for debugging
         console.error(`[${timestamp}] [IPC] ${channel} failed:`, error.message)
         
         // Return consistent error format

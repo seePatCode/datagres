@@ -80,7 +80,7 @@ export interface ElectronAPI {
   close?: () => Promise<void>
   
   // Menu actions
-  onMenuAction?: (callback: (action: string) => void) => void
+  onMenuAction?: (callback: (action: MenuAction) => void) => void
 }
 
 // Menu action types

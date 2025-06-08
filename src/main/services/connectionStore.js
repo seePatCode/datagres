@@ -11,7 +11,6 @@ async function loadElectronStore() {
   try {
     const module = await import('electron-store')
     Store = module.default
-    console.log('electron-store loaded successfully via dynamic import')
   } catch (error) {
     console.error('electron-store not available:', error.message)
     storeLoadError = error
@@ -22,7 +21,6 @@ async function loadElectronStore() {
 function loadKeytar() {
   try {
     keytar = require('keytar')
-    console.log('keytar loaded successfully')
   } catch (error) {
     console.warn('keytar not available:', error.message)
     // keytar is optional, so just warn

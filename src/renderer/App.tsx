@@ -35,9 +35,6 @@ const createColumns = (columnNames: string[]): ColumnDef<any>[] => {
 }
 
 function App() {
-  console.log(`[${new Date().toISOString()}] App component initializing`)
-  console.log('window.electronAPI:', window.electronAPI)
-  console.time('app-component-mount')
   
   const [connectionString, setConnectionString] = useState('')
   const [currentView, setCurrentView] = useState<AppView>('connect')
@@ -129,7 +126,6 @@ function App() {
   // Auto-connect to the most recently used connection on startup (delayed for better UX)
   useEffect(() => {
     if (!hasAttemptedAutoConnect && connectionsData && connectionsData.length > 0) {
-      console.log(`[${new Date().toISOString()}] Starting auto-connection process`)
       setHasAttemptedAutoConnect(true)
       setIsAutoConnecting(true)
       
@@ -138,28 +134,23 @@ function App() {
       
       // Find the most recently used connection (connections are already sorted by lastUsed)
       const mostRecentConnection = connectionsData[0]
-      console.log(`[${new Date().toISOString()}] Loading most recent connection:`, mostRecentConnection.name)
       
       // Load and connect to the most recent connection
       window.electronAPI.loadConnection(mostRecentConnection.id)
         .then((result) => {
-          console.log(`[${new Date().toISOString()}] Load connection result:`, result.success ? 'Success' : result.error)
           if (result.success && result.connectionString) {
             setConnectionString(result.connectionString)
-            console.log(`[${new Date().toISOString()}] Triggering auto-connection to database`)
             connectionMutation.mutate(result.connectionString)
           } else {
-            console.log(`[${new Date().toISOString()}] Auto-connection aborted - no valid connection string`)
             setIsAutoConnecting(false)
           }
         })
         .catch((error) => {
-          console.warn(`[${new Date().toISOString()}] Failed to auto-connect to last used database:`, error)
+          console.warn('Failed to auto-connect to last used database:', error)
           setIsAutoConnecting(false)
         })
       }, 100) // 100ms delay to let UI render first
     } else if (!hasAttemptedAutoConnect) {
-      console.log(`[${new Date().toISOString()}] No saved connections found, skipping auto-connect`)
       setHasAttemptedAutoConnect(true)
     }
   }, [connectionsData, hasAttemptedAutoConnect, connectionMutation])
