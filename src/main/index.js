@@ -5,23 +5,16 @@ const connectionStore = require('./services/connectionStore')
 const databaseService = require('./services/databaseService')
 const { createApplicationMenu } = require('./services/menuBuilder')
 const { createMainWindow, setupWindowControlHandlers } = require('./services/windowManager')
+const { testMocks, isTestMode } = require('./services/testMocks')
 
 // Set app name as early as possible
 app.setName('Datagres')
 
-
-
-
 app.whenReady().then(async () => {
-  console.log(`[${new Date().toISOString()}] [MAIN] App ready, initializing store...`)
   await connectionStore.initialize()
-  console.log(`[${new Date().toISOString()}] [MAIN] Store initialized, creating window...`)
   const mainWindow = createMainWindow()
-  console.log(`[${new Date().toISOString()}] [MAIN] Window created, setting up native menu...`)
   createApplicationMenu(mainWindow)
-  console.log(`[${new Date().toISOString()}] [MAIN] Native menu created, setting up window controls...`)
   setupWindowControlHandlers()
-  console.log(`[${new Date().toISOString()}] [MAIN] Window controls set up, startup complete`)
 
   app.on('activate', () => {
     if (require('electron').BrowserWindow.getAllWindows().length === 0) {
@@ -49,13 +42,8 @@ ipcMain.handle('fetch-table-data', async (_event, connectionString, tableName) =
 
 // Handle saving database connections
 ipcMain.handle('save-connection', async (_event, connectionString, name) => {
-  if (process.env.NODE_ENV === 'test') {
-    // Mock success for tests
-    return {
-      success: true,
-      connectionId: 'test-connection-id',
-      name: name || 'Test Connection'
-    }
+  if (isTestMode()) {
+    return testMocks.saveConnection(name)
   }
   
   return await connectionStore.saveConnection(connectionString, name)
@@ -63,73 +51,26 @@ ipcMain.handle('save-connection', async (_event, connectionString, name) => {
 
 // Handle getting saved connections
 ipcMain.handle('get-saved-connections', async () => {
-  console.log(`[${new Date().toISOString()}] [MAIN] get-saved-connections called`)
-  if (process.env.NODE_ENV === 'test') {
-    // Mock saved connections for tests
-    console.log(`[${new Date().toISOString()}] [MAIN] Returning mock connections for test mode`)
-    return {
-      success: true,
-      connections: [
-        {
-          id: 'test-connection-1',
-          name: 'Test Database 1',
-          host: 'localhost',
-          port: 5432,
-          database: 'testdb1',
-          username: 'testuser',
-          hasPassword: true,
-          createdAt: '2024-01-01T00:00:00.000Z',
-          lastUsed: '2024-01-02T00:00:00.000Z'
-        },
-        {
-          id: 'test-connection-2', 
-          name: 'Test Database 2',
-          host: 'localhost',
-          port: 5432,
-          database: 'testdb2',
-          username: 'testuser',
-          hasPassword: false,
-          createdAt: '2024-01-01T00:00:00.000Z',
-          lastUsed: '2024-01-01T12:00:00.000Z'
-        }
-      ]
-    }
+  if (isTestMode()) {
+    return testMocks.getSavedConnections()
   }
   
-  const result = connectionStore.getSavedConnections()
-  console.log(`[${new Date().toISOString()}] [MAIN] getSavedConnections result:`, result.success ? `${result.connections?.length} connections` : result.error)
-  return result
+  return connectionStore.getSavedConnections()
 })
 
 // Handle loading a saved connection
 ipcMain.handle('load-connection', async (_event, connectionId) => {
-  console.log(`[${new Date().toISOString()}] [MAIN] load-connection called for ID:`, connectionId)
-  if (process.env.NODE_ENV === 'test') {
-    // Mock loading connection for tests
-    console.log(`[${new Date().toISOString()}] [MAIN] Test mode - mocking connection load`)
-    if (connectionId === 'test-connection-1') {
-      return {
-        success: true,
-        connectionString: 'postgresql://testuser:testpass@localhost:5432/testdb',
-        name: 'Test Database 1'
-      }
-    }
-    return {
-      success: false,
-      error: 'Connection not found'
-    }
+  if (isTestMode()) {
+    return testMocks.loadConnection(connectionId)
   }
   
-  const result = await connectionStore.loadConnection(connectionId)
-  console.log(`[${new Date().toISOString()}] [MAIN] loadConnection result:`, result.success ? 'Success' : result.error)
-  return result
+  return await connectionStore.loadConnection(connectionId)
 })
 
 // Handle deleting a saved connection
 ipcMain.handle('delete-connection', async (_event, connectionId) => {
-  if (process.env.NODE_ENV === 'test') {
-    // Mock success for tests
-    return { success: true }
+  if (isTestMode()) {
+    return testMocks.deleteConnection()
   }
   
   return await connectionStore.deleteConnection(connectionId)
@@ -137,11 +78,9 @@ ipcMain.handle('delete-connection', async (_event, connectionId) => {
 
 // Handle updating connection name
 ipcMain.handle('update-connection-name', async (_event, connectionId, newName) => {
-  if (process.env.NODE_ENV === 'test') {
-    // Mock success for tests
-    return { success: true }
+  if (isTestMode()) {
+    return testMocks.updateConnectionName()
   }
   
   return connectionStore.updateConnectionName(connectionId, newName)
 })
-

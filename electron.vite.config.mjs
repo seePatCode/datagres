@@ -12,7 +12,8 @@ export default defineConfig({
           './services/connectionStore',
           './services/databaseService',
           './services/menuBuilder',
-          './services/windowManager'
+          './services/windowManager',
+          './services/testMocks'
         ]
       })
     ],

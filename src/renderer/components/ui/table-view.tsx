@@ -1,9 +1,17 @@
 import { useState } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
-import { Search, RefreshCw, Save, MoreHorizontal, Filter } from 'lucide-react'
+import { Search, RefreshCw, Save, MoreHorizontal, Filter, EyeOff, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { DataTable } from '@/components/ui/data-table'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface TableViewProps {
   tableName: string
@@ -43,6 +51,7 @@ export function TableView({
   className,
 }: TableViewProps) {
   const [searchQuery, setSearchQuery] = useState('')
+  const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({})
   
   // Filter rows based on search query
   const filteredRows = data.rows.filter(row =>
@@ -99,9 +108,49 @@ export function TableView({
           </Button>
           
           {/* More options */}
-          <Button variant="outline" size="sm">
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="flex items-center gap-2">
+                <Eye className="h-4 w-4" />
+                Column Visibility
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {data.columns.map((columnName) => {
+                const isVisible = columnVisibility[columnName] !== false
+                return (
+                  <DropdownMenuCheckboxItem
+                    key={columnName}
+                    checked={isVisible}
+                    onCheckedChange={(checked) => {
+                      setColumnVisibility(prev => ({
+                        ...prev,
+                        [columnName]: checked
+                      }))
+                    }}
+                    onSelect={(event) => {
+                      // Prevent dropdown from closing when clicking checkbox
+                      event.preventDefault()
+                    }}
+                    className="capitalize"
+                  >
+                    <div className="flex items-center gap-2">
+                      {isVisible ? (
+                        <Eye className="h-3 w-3" />
+                      ) : (
+                        <EyeOff className="h-3 w-3" />
+                      )}
+                      {columnName}
+                    </div>
+                  </DropdownMenuCheckboxItem>
+                )
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -112,6 +161,8 @@ export function TableView({
             columns={columns}
             data={filteredRows}
             tableName={tableName}
+            columnVisibility={columnVisibility}
+            onColumnVisibilityChange={setColumnVisibility}
           />
         ) : (
           <div className="flex h-full items-center justify-center">
