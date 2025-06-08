@@ -3,7 +3,6 @@
   "productName": "Datagres",
   "description": "Database Explorer",
   "version": "1.0.0",
-  "type": "module",
   "main": "./out/main/index.js",
   "scripts": {
     "start": "electron-vite dev",
@@ -29,6 +28,10 @@
     "files": [
       "out/**/*",
       "package.json"
+    ],
+    "asarUnpack": [
+      "node_modules/electron-store/**/*",
+      "node_modules/keytar/**/*"
     ],
     "mac": {
       "category": "public.app-category.developer-tools",

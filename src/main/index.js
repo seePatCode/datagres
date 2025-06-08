@@ -7,13 +7,18 @@ const crypto = require('crypto')
 app.setName('Datagres')
 
 // Conditionally load optional dependencies
-let Store, keytar
-try {
-  const ElectronStore = require('electron-store')
-  Store = ElectronStore.default || ElectronStore
-  console.log('electron-store loaded successfully')
-} catch (error) {
-  console.error('electron-store not available:', error.message)
+let Store, keytar, storeLoadError
+
+// Dynamic import for ESM module electron-store v10
+async function loadElectronStore() {
+  try {
+    const module = await import('electron-store')
+    Store = module.default
+    console.log('electron-store loaded successfully via dynamic import')
+  } catch (error) {
+    console.error('electron-store not available:', error.message)
+    storeLoadError = error
+  }
 }
 
 try {
@@ -28,11 +33,16 @@ try {
 const SERVICE_NAME = 'datagres-db-connections'
 
 // Create encrypted store for connection metadata
-let store
-try {
-  // Initialize store if Store is available
-  if (Store) {
-    store = new Store({
+let store, storeInitError
+
+// Initialize store after async loading
+async function initializeStore() {
+  await loadElectronStore()
+  
+  try {
+    // Initialize store if Store is available
+    if (Store) {
+      store = new Store({
       name: 'connections',
       encryptionKey: process.env.DATAGRES_ENCRYPTION_KEY || 'datagres-default-key-change-in-production',
       schema: {
@@ -56,9 +66,11 @@ try {
         }
       }
     })
+    }
+  } catch (error) {
+    console.warn('Could not initialize electron-store:', error.message)
+    storeInitError = error
   }
-} catch (error) {
-  console.warn('Could not initialize electron-store:', error.message)
 }
 
 // Helper functions for secure storage
@@ -88,8 +100,10 @@ function buildConnectionString(connection, password = null) {
 
 async function saveConnection(connectionString, name = null) {
   if (!store) {
-    console.error('Store not initialized - electron-store may not be available')
-    return { success: false, error: 'Storage not available' }
+    const actualError = storeInitError || storeLoadError
+    const errorMsg = actualError ? `Store error: ${actualError.message}` : 'Store not initialized - electron-store may not be available'
+    console.error(errorMsg, actualError)
+    return { success: false, error: errorMsg }
   }
   try {
     const parsed = parseConnectionString(connectionString)
@@ -156,8 +170,10 @@ function getSavedConnections() {
 
 async function loadConnection(connectionId) {
   if (!store) {
-    console.error('Store not initialized - electron-store may not be available')
-    return { success: false, error: 'Storage not available' }
+    const actualError = storeInitError || storeLoadError
+    const errorMsg = actualError ? `Store error: ${actualError.message}` : 'Store not initialized - electron-store may not be available'
+    console.error(errorMsg, actualError)
+    return { success: false, error: errorMsg }
   }
   try {
     const connections = store.get('connections')
@@ -199,8 +215,10 @@ async function loadConnection(connectionId) {
 
 async function deleteConnection(connectionId) {
   if (!store) {
-    console.error('Store not initialized - electron-store may not be available')
-    return { success: false, error: 'Storage not available' }
+    const actualError = storeInitError || storeLoadError
+    const errorMsg = actualError ? `Store error: ${actualError.message}` : 'Store not initialized - electron-store may not be available'
+    console.error(errorMsg, actualError)
+    return { success: false, error: errorMsg }
   }
   try {
     const connections = store.get('connections')
@@ -234,8 +252,10 @@ async function deleteConnection(connectionId) {
 
 function updateConnectionName(connectionId, newName) {
   if (!store) {
-    console.error('Store not initialized - electron-store may not be available')
-    return { success: false, error: 'Storage not available' }
+    const actualError = storeInitError || storeLoadError
+    const errorMsg = actualError ? `Store error: ${actualError.message}` : 'Store not initialized - electron-store may not be available'
+    console.error(errorMsg, actualError)
+    return { success: false, error: errorMsg }
   }
   try {
     const connections = store.get('connections')
@@ -432,8 +452,10 @@ const createNativeMenu = (mainWindow) => {
   Menu.setApplicationMenu(menu)
 }
 
-app.whenReady().then(() => {
-  console.log(`[${new Date().toISOString()}] [MAIN] App ready, creating window...`)
+app.whenReady().then(async () => {
+  console.log(`[${new Date().toISOString()}] [MAIN] App ready, initializing store...`)
+  await initializeStore()
+  console.log(`[${new Date().toISOString()}] [MAIN] Store initialized, creating window...`)
   const mainWindow = createWindow()
   console.log(`[${new Date().toISOString()}] [MAIN] Window created, setting up native menu...`)
   createNativeMenu(mainWindow)
