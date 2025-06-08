@@ -20,6 +20,9 @@ interface TableViewProps {
   onSave?: () => void
   hasUnsavedChanges?: boolean
   className?: string
+  initialSearchTerm?: string
+  initialPage?: number
+  initialPageSize?: number
 }
 
 // Helper function to create columns dynamically
@@ -59,7 +62,11 @@ export function TableView({
   onSave,
   hasUnsavedChanges = false,
   className,
+  initialSearchTerm = '',
+  initialPage = 1,
+  initialPageSize = 100,
 }: TableViewProps) {
+  console.log('[TableView] Rendering with props:', { tableName, connectionString, initialSearchTerm, initialPage, initialPageSize })
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({})
   
   // Use server-side table data hook
@@ -84,8 +91,30 @@ export function TableView({
   } = useServerSideTableData({
     connectionString,
     tableName,
-    enabled: !!connectionString && !!tableName
+    enabled: !!connectionString && !!tableName,
+    pageSize: initialPageSize
   })
+  
+  // Initialize search term from props when table changes
+  useEffect(() => {
+    if (initialSearchTerm !== searchTerm) {
+      setSearchTerm(initialSearchTerm)
+      if (initialSearchTerm) {
+        // Also set the active search term if there's an initial value
+        handleSearchCommit()
+      }
+    }
+  }, [tableName, initialSearchTerm])
+  
+  // Initialize pagination from props when table changes
+  useEffect(() => {
+    if (initialPage !== page) {
+      setPage(initialPage)
+    }
+    if (initialPageSize !== pageSize) {
+      setPageSize(initialPageSize)
+    }
+  }, [tableName, initialPage, initialPageSize])
 
   // Create column definitions
   const columns = data ? createColumns(data.columns) : []

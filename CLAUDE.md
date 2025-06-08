@@ -83,6 +83,9 @@ User Action → React Query Mutation → IPC Call → Main Process → PostgreSQ
 
 ### Component Development
 - Follow existing shadcn/ui patterns for new components
+- **NEVER manually create shadcn components** - always use `pnpm dlx shadcn@latest add [component]`
+- Use `pnpm` instead of `npx` for better peer dependency management with React 19
+- If you have trouble installing a shadcn component, check with the user instead of creating it manually
 - Use Tailwind utilities, avoid custom CSS
 - Implement proper loading states and error handling
 - Add data-testid attributes for e2e testing

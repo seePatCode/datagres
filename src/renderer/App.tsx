@@ -11,7 +11,9 @@ import { TitleBar } from "@/components/ui/title-bar"
 import { DatabaseSidebar } from "@/components/ui/database-sidebar"
 import { TableView } from "@/components/ui/table-view"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
-import type { ElectronAPI, AppView, TableInfo, MenuAction } from '@shared/types'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { X } from 'lucide-react'
+import type { ElectronAPI, AppView, TableInfo, MenuAction, TableTab } from '@shared/types'
 import { validateConnectionString } from '@shared/validation'
 
 declare global {
@@ -41,9 +43,18 @@ function App() {
   const [currentDatabase, setCurrentDatabase] = useState<string>('')
   const [tables, setTables] = useState<TableInfo[]>([])
   const [recentTables, setRecentTables] = useState<TableInfo[]>([])
-  const [selectedTable, setSelectedTable] = useState<string>('')
   const [hasAttemptedAutoConnect, setHasAttemptedAutoConnect] = useState(false)
   const [isAutoConnecting, setIsAutoConnecting] = useState(false)
+  
+  // Tab management
+  const [tabs, setTabs] = useState<TableTab[]>([])
+  const [activeTabId, setActiveTabId] = useState<string | null>(null)
+  
+  // Debug logging for tab state
+  useEffect(() => {
+    console.log('[Tab State Changed] tabs:', tabs)
+    console.log('[Tab State Changed] activeTabId:', activeTabId)
+  }, [tabs, activeTabId])
 
   // Get saved connections to find the most recently used one
   const { data: connectionsData } = useQuery({
@@ -154,13 +165,54 @@ function App() {
   }
 
   const handleTableSelect = (tableName: string) => {
-    setSelectedTable(tableName)
+    console.log('[handleTableSelect] Selected table:', tableName)
+    console.log('[handleTableSelect] Current tabs:', tabs)
+    console.log('[handleTableSelect] Current activeTabId:', activeTabId)
+    
+    // Check if table is already open in a tab
+    const existingTab = tabs.find(tab => tab.tableName === tableName)
+    
+    if (existingTab) {
+      console.log('[handleTableSelect] Found existing tab:', existingTab)
+      // Switch to existing tab
+      setActiveTabId(existingTab.id)
+    } else {
+      // Create new tab
+      const newTab: TableTab = {
+        id: `${tableName}_${Date.now()}`,
+        tableName,
+        searchTerm: '',
+        page: 1,
+        pageSize: 100
+      }
+      console.log('[handleTableSelect] Creating new tab:', newTab)
+      setTabs(prev => {
+        const newTabs = [...prev, newTab]
+        console.log('[handleTableSelect] New tabs array:', newTabs)
+        return newTabs
+      })
+      setActiveTabId(newTab.id)
+    }
+    
     // Add to recent tables
     setRecentTables(prev => {
       const filtered = prev.filter(t => t.name !== tableName)
       return [{ name: tableName }, ...filtered].slice(0, 5) // Keep last 5
     })
   }
+  
+  const handleCloseTab = (tabId: string) => {
+    setTabs(prev => {
+      const newTabs = prev.filter(tab => tab.id !== tabId)
+      // If closing active tab, switch to another tab or null
+      if (activeTabId === tabId) {
+        const newActiveTab = newTabs[newTabs.length - 1]
+        setActiveTabId(newActiveTab?.id || null)
+      }
+      return newTabs
+    })
+  }
+  
 
   const handleNewConnection = () => {
     setConnectionString('')
@@ -185,14 +237,57 @@ function App() {
             handleShowConnections()
             break
           case 'back-to-tables':
-            if (selectedTable) {
-              setSelectedTable('')
+            // Close current tab
+            if (activeTabId) {
+              handleCloseTab(activeTabId)
             }
             break
         }
       })
     }
   }, [currentView])
+  
+  // Keyboard shortcuts for tab navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd/Ctrl + W to close current tab
+      if ((e.metaKey || e.ctrlKey) && e.key === 'w') {
+        e.preventDefault()
+        if (activeTabId) {
+          handleCloseTab(activeTabId)
+        }
+      }
+      // Cmd/Ctrl + Tab to cycle forward through tabs
+      else if ((e.metaKey || e.ctrlKey) && e.key === 'Tab' && !e.shiftKey) {
+        e.preventDefault()
+        const currentIndex = tabs.findIndex(t => t.id === activeTabId)
+        const nextIndex = (currentIndex + 1) % tabs.length
+        if (tabs[nextIndex]) {
+          setActiveTabId(tabs[nextIndex].id)
+        }
+      }
+      // Cmd/Ctrl + Shift + Tab to cycle backward through tabs
+      else if ((e.metaKey || e.ctrlKey) && e.key === 'Tab' && e.shiftKey) {
+        e.preventDefault()
+        const currentIndex = tabs.findIndex(t => t.id === activeTabId)
+        const prevIndex = currentIndex <= 0 ? tabs.length - 1 : currentIndex - 1
+        if (tabs[prevIndex]) {
+          setActiveTabId(tabs[prevIndex].id)
+        }
+      }
+      // Cmd/Ctrl + 1-9 to jump to specific tab
+      else if ((e.metaKey || e.ctrlKey) && e.key >= '1' && e.key <= '9') {
+        e.preventDefault()
+        const tabIndex = parseInt(e.key) - 1
+        if (tabs[tabIndex]) {
+          setActiveTabId(tabs[tabIndex].id)
+        }
+      }
+    }
+    
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [tabs, activeTabId, handleCloseTab])
 
   // Convert connections data to the format expected by DatabaseSidebar
   const connections = (connectionsData || []).map(conn => ({
@@ -234,7 +329,9 @@ function App() {
       <div className="h-screen bg-background text-foreground flex flex-col">
         {/* Fixed header area */}
         <div className="flex-none">
-          <TitleBar title={selectedTable ? `Datagres - ${selectedTable}` : `Datagres - ${currentDatabase}`} />
+          <TitleBar title={activeTabId && tabs.find(t => t.id === activeTabId) 
+            ? `Datagres - ${tabs.find(t => t.id === activeTabId)!.tableName}` 
+            : `Datagres - ${currentDatabase}`} />
         </div>
         
         {/* Main layout with resizable panels */}
@@ -249,7 +346,7 @@ function App() {
                 recentTables={recentTables}
                 onConnectionChange={handleConnectionChange}
                 onTableSelect={handleTableSelect}
-                selectedTable={selectedTable}
+                selectedTable={tabs.find(t => t.id === activeTabId)?.tableName || ''}
               />
             </ResizablePanel>
             
@@ -258,11 +355,51 @@ function App() {
             
             {/* Main content panel */}
             <ResizablePanel defaultSize={75} minSize={5}>
-              {selectedTable ? (
-                <TableView
-                  tableName={selectedTable}
-                  connectionString={connectionString}
-                />
+              {tabs.length > 0 ? (
+                <Tabs value={activeTabId || ''} onValueChange={(value) => {
+                  console.log('[Tabs] Tab changed to:', value)
+                  setActiveTabId(value)
+                }} className="h-full flex flex-col">
+                  <div className="border-b bg-background">
+                    <TabsList className="h-auto p-0 bg-transparent rounded-none w-full justify-start">
+                      {tabs.map(tab => (
+                        <div key={tab.id} className="relative group">
+                          <TabsTrigger 
+                            value={tab.id}
+                            className="rounded-none border-r data-[state=active]:bg-muted data-[state=active]:shadow-none pr-8"
+                          >
+                            <span className="max-w-[150px] truncate">{tab.tableName}</span>
+                          </TabsTrigger>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleCloseTab(tab.id)
+                            }}
+                            className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </TabsList>
+                  </div>
+                  {tabs.map(tab => {
+                    console.log('[TabsContent] Rendering tab content for:', tab)
+                    return (
+                      <TabsContent key={tab.id} value={tab.id} className="flex-1 mt-0 overflow-hidden">
+                        <TableView
+                          tableName={tab.tableName}
+                          connectionString={connectionString}
+                          initialSearchTerm={tab.searchTerm}
+                          initialPage={tab.page}
+                          initialPageSize={tab.pageSize}
+                        />
+                      </TabsContent>
+                    )
+                  })}
+                </Tabs>
               ) : (
                 <div className="flex h-full items-center justify-center">
                   <div className="text-center">

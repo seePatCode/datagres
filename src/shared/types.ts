@@ -111,3 +111,12 @@ export type MenuAction =
 
 // View states
 export type AppView = 'connect' | 'explorer'
+
+// Tab state
+export interface TableTab {
+  id: string
+  tableName: string
+  searchTerm: string
+  page: number
+  pageSize: number
+}
