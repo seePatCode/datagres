@@ -13,7 +13,9 @@ export default defineConfig({
           './services/databaseService',
           './services/menuBuilder',
           './services/windowManager',
-          './services/testMocks'
+          './services/testMocks',
+          './services/ipcRegistry',
+          './config/appConfig'
         ]
       })
     ],

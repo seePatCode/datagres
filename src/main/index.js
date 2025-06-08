@@ -62,6 +62,7 @@ ipcMain.handle('get-saved-connections', async () => {
 ipcMain.handle('load-connection', async (_event, connectionId) => {
   if (isTestMode()) {
     return testMocks.loadConnection(connectionId)
+    
   }
   
   return await connectionStore.loadConnection(connectionId)

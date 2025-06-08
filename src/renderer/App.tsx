@@ -12,17 +12,12 @@ import { DatabaseSidebar } from "@/components/ui/database-sidebar"
 import { TableView } from "@/components/ui/table-view"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import type { ElectronAPI, AppView, TableInfo, MenuAction } from '../../shared/types'
+import { validateConnectionString } from '../../shared/validation'
 
 declare global {
   interface Window {
     electronAPI: ElectronAPI
   }
-}
-
-const validateConnectionString = (connectionString: string): boolean => {
-  // PostgreSQL connection string validation (password optional)
-  const pgRegex = /^postgresql:\/\/([^:@]+(:([^@]*))?@)?[^:\/]+:\d+\/[\w-]+$/
-  return pgRegex.test(connectionString)
 }
 
 // Helper function to create columns dynamically

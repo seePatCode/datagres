@@ -92,7 +92,7 @@ function DraggableTableHeader({
     <TableHead
       ref={setNodeRef}
       style={style}
-      className="px-3 py-2 font-medium text-left border-r border-border/50 bg-muted/30 relative"
+      className="px-2 py-1 font-medium text-left border-r border-b border-muted-foreground/40 bg-muted/30 relative h-8 text-vs-ui"
     >
       <div className="flex items-center gap-2 truncate">
         {/* Drag handle - separate from sort area */}
@@ -200,32 +200,33 @@ export function DataTable<TData, TValue>({
     }
   }
 
-  // Calculate optimal column widths based on content
-  const calculateColumnWidths = () => {
+  // Update column sizes based on content (VSCode-style)
+  React.useEffect(() => {
     const rows = table.getRowModel().rows
     const headers = table.getHeaderGroups()[0]?.headers || []
     
-    return headers.map((header, columnIndex) => {
+    headers.forEach((header, columnIndex) => {
       // Get the header text length
       const headerText = String(header.column.columnDef.header || '')
       const headerLength = headerText.length
       
-      // Sample first 10 rows to estimate content width
-      const sampleRows = rows.slice(0, 10)
+      // Sample first 20 rows to estimate content width
+      const sampleRows = rows.slice(0, 20)
       const maxContentLength = sampleRows.reduce((max, row) => {
         const cellValue = String(row.getVisibleCells()[columnIndex]?.getValue() || '')
         return Math.max(max, cellValue.length)
       }, headerLength)
       
-      // Calculate width based on content length (rough estimate: 8px per character + padding)
-      const estimatedWidth = Math.max(maxContentLength * 8 + 24, 80)
+      // Calculate width based on monospace font (roughly 7px per character for 14px font)
+      const estimatedWidth = Math.max(maxContentLength * 7 + 16, 60)
       
-      // Constrain to our min/max bounds
-      return Math.min(Math.max(estimatedWidth, 80), 160)
+      // Constrain to reasonable bounds for VSCode-style tables
+      const finalWidth = Math.min(Math.max(estimatedWidth, 60), 180)
+      
+      // Update column size
+      header.column.columnDef.size = finalWidth
     })
-  }
-
-  const columnWidths = calculateColumnWidths()
+  }, [table.getRowModel().rows])
 
   return (
     <DndContext
@@ -260,9 +261,18 @@ export function DataTable<TData, TValue>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
+                    className="hover:bg-muted/20 transition-colors h-8"
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
+                      <TableCell 
+                        key={cell.id}
+                        className="p-0 border-r border-b border-muted-foreground/40 h-8 align-middle"
+                        style={{ 
+                          width: cell.column.getSize(),
+                          minWidth: cell.column.columnDef.minSize,
+                          maxWidth: cell.column.columnDef.maxSize 
+                        }}
+                      >
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext()

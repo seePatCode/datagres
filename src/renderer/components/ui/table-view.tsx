@@ -34,10 +34,26 @@ const createColumns = (columnNames: string[]): ColumnDef<any>[] => {
     header: columnName,
     cell: ({ getValue }) => {
       const value = getValue()
-      return value !== null ? String(value) : (
-        <span className="text-muted-foreground italic">NULL</span>
+      return (
+        <div 
+          className="font-mono text-vs-ui truncate py-1 px-2 hover:bg-muted/30 transition-colors w-full"
+          title={value !== null ? String(value) : 'NULL'}
+        >
+          {value !== null ? (
+            <span className="text-foreground">
+              {String(value)}
+            </span>
+          ) : (
+            <span className="text-muted-foreground italic font-system text-vs-ui-small">
+              NULL
+            </span>
+          )}
+        </div>
       )
     },
+    size: 120, // Default column width
+    minSize: 60,
+    maxSize: 180, // Smaller max width for more compact display
   }))
 }
 
