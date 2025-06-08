@@ -1,9 +1,10 @@
-const { app, BrowserWindow, ipcMain, Menu } = require('electron')
+const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
 
 // Import services
 const connectionStore = require('./services/connectionStore')
 const databaseService = require('./services/databaseService')
+const { createApplicationMenu } = require('./services/menuBuilder')
 
 // Set app name as early as possible
 app.setName('Datagres')
@@ -68,121 +69,6 @@ const createWindow = () => {
   return win
 }
 
-const createNativeMenu = (mainWindow) => {
-  const isMac = process.platform === 'darwin'
-
-  const template = [
-    // App menu (macOS only)
-    ...(isMac ? [{
-      label: 'Datagres',
-      submenu: [
-        { label: 'About Datagres', role: 'about' },
-        { type: 'separator' },
-        { label: 'Hide Datagres', role: 'hide' },
-        { label: 'Hide Others', role: 'hideothers' },
-        { label: 'Show All', role: 'unhide' },
-        { type: 'separator' },
-        { label: 'Quit', role: 'quit' }
-      ]
-    }] : []),
-    
-    // File menu
-    {
-      label: 'File',
-      submenu: [
-        {
-          label: 'New Connection',
-          accelerator: 'CmdOrCtrl+N',
-          click: () => {
-            mainWindow.webContents.send('menu-action', 'new-connection')
-          }
-        },
-        {
-          label: 'Saved Connections',
-          accelerator: 'CmdOrCtrl+Shift+O',
-          click: () => {
-            mainWindow.webContents.send('menu-action', 'show-connections')
-          }
-        },
-        { type: 'separator' },
-        ...(isMac ? [] : [{ label: 'Exit', role: 'quit' }])
-      ]
-    },
-    
-    // Edit menu
-    {
-      label: 'Edit',
-      submenu: [
-        { label: 'Undo', role: 'undo' },
-        { label: 'Redo', role: 'redo' },
-        { type: 'separator' },
-        { label: 'Cut', role: 'cut' },
-        { label: 'Copy', role: 'copy' },
-        { label: 'Paste', role: 'paste' },
-        ...(isMac ? [
-          { label: 'Select All', role: 'selectall' }
-        ] : [
-          { label: 'Select All', role: 'selectall' },
-          { type: 'separator' },
-          { label: 'Preferences', accelerator: 'CmdOrCtrl+,' }
-        ])
-      ]
-    },
-    
-    // View menu
-    {
-      label: 'View',
-      submenu: [
-        {
-          label: 'Back to Tables',
-          accelerator: 'CmdOrCtrl+B',
-          click: () => {
-            mainWindow.webContents.send('menu-action', 'back-to-tables')
-          }
-        },
-        { type: 'separator' },
-        { label: 'Reload', role: 'reload' },
-        { label: 'Force Reload', role: 'forceReload' },
-        { label: 'Toggle Developer Tools', role: 'toggleDevTools' },
-        { type: 'separator' },
-        { label: 'Actual Size', role: 'resetZoom' },
-        { label: 'Zoom In', role: 'zoomIn' },
-        { label: 'Zoom Out', role: 'zoomOut' },
-        { type: 'separator' },
-        { label: 'Toggle Fullscreen', role: 'togglefullscreen' }
-      ]
-    },
-    
-    // Window menu (macOS only)
-    ...(isMac ? [{
-      label: 'Window',
-      submenu: [
-        { label: 'Close', role: 'close' },
-        { label: 'Minimize', role: 'minimize' },
-        { label: 'Zoom', role: 'zoom' },
-        { type: 'separator' },
-        { label: 'Bring All to Front', role: 'front' }
-      ]
-    }] : []),
-    
-    // Help menu
-    {
-      label: 'Help',
-      submenu: [
-        {
-          label: 'About Datagres',
-          click: () => {
-            // Could open an about dialog or webpage
-            console.log('About Datagres')
-          }
-        }
-      ]
-    }
-  ]
-
-  const menu = Menu.buildFromTemplate(template)
-  Menu.setApplicationMenu(menu)
-}
 
 app.whenReady().then(async () => {
   console.log(`[${new Date().toISOString()}] [MAIN] App ready, initializing store...`)
@@ -190,13 +76,13 @@ app.whenReady().then(async () => {
   console.log(`[${new Date().toISOString()}] [MAIN] Store initialized, creating window...`)
   const mainWindow = createWindow()
   console.log(`[${new Date().toISOString()}] [MAIN] Window created, setting up native menu...`)
-  createNativeMenu(mainWindow)
+  createApplicationMenu(mainWindow)
   console.log(`[${new Date().toISOString()}] [MAIN] Native menu created, startup complete`)
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       const newWindow = createWindow()
-      createNativeMenu(newWindow)
+      createApplicationMenu(newWindow)
     }
   })
 })

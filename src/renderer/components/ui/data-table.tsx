@@ -1,14 +1,52 @@
+"use client"
+
+import * as React from "react"
 import {
   ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  ColumnOrderState,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
   getSortedRowModel,
-  SortingState,
   useReactTable,
+  VisibilityState,
 } from "@tanstack/react-table"
-import { useState } from "react"
-import { ChevronDown, ChevronUp } from "lucide-react"
+import {
+  DndContext,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  closestCenter,
+  type DragEndEvent,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  horizontalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import {
+  useSortable,
+  CSS,
+} from '@dnd-kit/sortable'
+import { ChevronDown, MoreHorizontal } from "lucide-react"
 
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
 import {
   Table,
   TableBody,
@@ -24,23 +62,95 @@ interface DataTableProps<TData, TValue> {
   tableName?: string
 }
 
+// Draggable Table Header Component
+function DraggableTableHeader({
+  header,
+  table,
+}: {
+  header: any
+  table: any
+}) {
+  const { attributes, isDragging, listeners, setNodeRef, transform } =
+    useSortable({
+      id: header.column.id,
+    })
+
+  const style: React.CSSProperties = {
+    opacity: isDragging ? 0.8 : 1,
+    position: 'relative',
+    transform: CSS.Translate.toString(transform),
+    transition: 'width transform 0.2s ease-in-out',
+    whiteSpace: 'nowrap',
+    width: header.column.getSize(),
+    zIndex: isDragging ? 1 : 0,
+  }
+
+  return (
+    <TableHead
+      ref={setNodeRef}
+      style={style}
+      className="cursor-move"
+      {...attributes}
+      {...listeners}
+    >
+      {header.isPlaceholder
+        ? null
+        : flexRender(header.column.columnDef.header, header.getContext())}
+    </TableHead>
+  )
+}
+
 export function DataTable<TData, TValue>({
   columns,
   data,
   tableName,
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = useState<SortingState>([])
+  const [sorting, setSorting] = React.useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
+  const [rowSelection, setRowSelection] = React.useState({})
+  const [columnOrder, setColumnOrder] = React.useState<ColumnOrderState>(
+    columns.map((column) => column.id as string)
+  )
 
   const table = useReactTable({
     data,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    onColumnOrderChange: setColumnOrder,
     state: {
       sorting,
+      columnFilters,
+      columnVisibility,
+      rowSelection,
+      columnOrder,
     },
   })
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(MouseSensor, {}),
+    useSensor(TouchSensor, {}),
+    useSensor(KeyboardSensor, {})
+  )
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (active && over && active.id !== over.id) {
+      setColumnOrder((columnOrder) => {
+        const oldIndex = columnOrder.indexOf(active.id as string)
+        const newIndex = columnOrder.indexOf(over.id as string)
+        return arrayMove(columnOrder, oldIndex, newIndex)
+      })
+    }
+  }
 
   // Calculate optimal column widths based on content
   const calculateColumnWidths = () => {
@@ -70,106 +180,123 @@ export function DataTable<TData, TValue>({
   const columnWidths = calculateColumnWidths()
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Table Info */}
-      <div data-testid="table-info" className="flex items-center h-10 px-3 text-sm text-muted-foreground border-b bg-muted/10">
-        Showing {data.length} rows{tableName && ` from ${tableName}`}
-      </div>
-
-      {/* Table */}
-      <div className="flex-1 border-x border-b overflow-auto scrollbar-thin min-w-0" data-testid="enhanced-table">
-        <Table className="w-full" style={{ tableLayout: 'fixed' }}>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="h-10">
-                {headerGroup.headers.map((header, headerIndex) => {
-                  const width = columnWidths[headerIndex]
-                  
+    <DndContext
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+      sensors={sensors}
+    >
+      <div className="w-full">
+        <div className="flex items-center py-4">
+          <Input
+            placeholder="Filter emails..."
+            value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
+            onChange={(event) =>
+              table.getColumn("email")?.setFilterValue(event.target.value)
+            }
+            className="max-w-sm"
+          />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="ml-auto">
+                Columns <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
                   return (
-                    <TableHead 
-                      key={header.id}
-                      data-testid="column-header"
-                      className={`px-3 py-2 font-medium text-left border-r border-border/50 bg-muted/30 ${
-                        header.column.getCanSort() ? "cursor-pointer select-none hover:bg-muted/50" : ""
-                      }`}
-                      style={{ 
-                        width: `${width}px`,
-                        minWidth: '80px',
-                        maxWidth: '160px'
-                      }}
-                      onClick={header.column.getToggleSortingHandler()}
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
                     >
-                      <div className="flex items-center gap-2 truncate">
-                        <span className="truncate">
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
-                        </span>
-                        {header.column.getCanSort() && (
-                          <div data-testid="sort-indicator" className="flex flex-col flex-shrink-0">
-                            {header.column.getIsSorted() === "asc" ? (
-                              <ChevronUp className="h-4 w-4" />
-                            ) : header.column.getIsSorted() === "desc" ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <div className="h-4 w-4 flex flex-col justify-center items-center">
-                                <ChevronUp className="h-2 w-2 opacity-50" />
-                                <ChevronDown className="h-2 w-2 opacity-50" />
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </TableHead>
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
                   )
                 })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row, rowIndex) => (
-                <TableRow
-                  key={row.id}
-                  data-testid="data-row"
-                  data-state={row.getIsSelected() && "selected"}
-                  className={`h-9 ${rowIndex % 2 === 0 ? 'bg-background' : 'bg-muted/20'} hover:bg-muted/40`}
-                >
-                  {row.getVisibleCells().map((cell, cellIndex) => {
-                    const width = columnWidths[cellIndex]
-                    
-                    return (
-                      <TableCell 
-                        key={cell.id}
-                        className="px-3 py-1 border-r border-border/30 overflow-hidden"
-                        style={{ 
-                          width: `${width}px`,
-                          minWidth: '80px',
-                          maxWidth: '160px'
-                        }}
-                        title={String(cell.getValue() || '')}
-                      >
-                      <div className="truncate text-sm">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </div>
-                      </TableCell>
-                    )
-                  })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  <SortableContext
+                    items={columnOrder}
+                    strategy={horizontalListSortingStrategy}
+                  >
+                    {headerGroup.headers.map((header) => (
+                      <DraggableTableHeader
+                        key={header.id}
+                        header={header}
+                        table={table}
+                      />
+                    ))}
+                  </SortableContext>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow className="h-20">
-                <TableCell colSpan={columns.length} className="text-center text-muted-foreground">
-                  No data found in this table.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="flex items-center justify-end space-x-2 py-4">
+          <div className="flex-1 text-sm text-muted-foreground">
+            {table.getFilteredSelectedRowModel().rows.length} of{" "}
+            {table.getFilteredRowModel().rows.length} row(s) selected.
+          </div>
+          <div className="space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
       </div>
-    </div>
+    </DndContext>
   )
 }

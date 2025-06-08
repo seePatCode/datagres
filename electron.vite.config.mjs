@@ -11,7 +11,7 @@ export default defineConfig({
         exclude: [
           './services/connectionStore',
           './services/databaseService',
-          './utils/menuBuilder',
+          './services/menuBuilder',
           './services/windowManager'
         ]
       })
