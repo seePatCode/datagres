@@ -36,6 +36,7 @@ const createColumns = (columnNames: string[]): ColumnDef<any>[] => {
 
 function App() {
   console.log(`[${new Date().toISOString()}] App component initializing`)
+  console.log('window.electronAPI:', window.electronAPI)
   console.time('app-component-mount')
   
   const [connectionString, setConnectionString] = useState('')

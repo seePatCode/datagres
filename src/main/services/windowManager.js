@@ -6,7 +6,9 @@ const path = require('path')
  * @returns {BrowserWindow} The created window instance
  */
 function createMainWindow() {
-  const preloadPath = path.join(__dirname, '../../preload/index.js')
+  // Preload script path - electron-vite handles this automatically
+  const preloadPath = path.join(__dirname, '../preload/index.js')
+  console.log(`[${new Date().toISOString()}] [MAIN] Preload path: ${preloadPath}`)
   
   const win = new BrowserWindow({
     width: 1400,
@@ -59,6 +61,18 @@ function createMainWindow() {
     console.log(`[${new Date().toISOString()}] [MAIN] Showing window`)
     win.show()
   }
+
+  // Log any preload errors
+  win.webContents.on('preload-error', (event, preloadPath, error) => {
+    console.error(`[${new Date().toISOString()}] [MAIN] Preload error:`, error)
+  })
+
+  // Check if API is exposed
+  win.webContents.on('did-finish-load', () => {
+    win.webContents.executeJavaScript('typeof window.electronAPI').then(result => {
+      console.log(`[${new Date().toISOString()}] [MAIN] window.electronAPI type:`, result)
+    })
+  })
 
   return win
 }
