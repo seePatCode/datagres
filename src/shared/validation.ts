@@ -8,9 +8,9 @@
  * @returns true if valid, false otherwise
  */
 export function validateConnectionString(connectionString: string): boolean {
-  // Just check if it starts with postgres:// or postgresql://
-  // Let the PostgreSQL driver handle the actual validation
-  return connectionString.startsWith('postgres://') || connectionString.startsWith('postgresql://')
+  // VERY permissive - just check if something was provided
+  // Let the PostgreSQL driver handle all validation and error reporting
+  return connectionString.trim().length > 0
 }
 
 /**
@@ -22,22 +22,12 @@ export function validateConnectionStringWithError(connectionString: string): {
   valid: boolean
   error?: string
 } {
-  if (!connectionString) {
+  if (!connectionString || !connectionString.trim()) {
     return { valid: false, error: 'Connection string is required' }
   }
 
-  if (!connectionString.startsWith('postgresql://') && !connectionString.startsWith('postgres://')) {
-    return { valid: false, error: 'Connection string must start with postgresql:// or postgres://' }
-  }
-
-  // Basic URL validation to ensure it's parseable
-  try {
-    new URL(connectionString)
-  } catch (error) {
-    return { valid: false, error: 'Invalid URL format' }
-  }
-
-  // Let PostgreSQL handle the rest of the validation
+  // VERY permissive - let PostgreSQL handle all validation
+  // Don't check format, protocol, or URL structure
   return { valid: true }
 }
 

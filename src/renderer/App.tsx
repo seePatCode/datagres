@@ -10,6 +10,7 @@ import { ConnectionManager } from "@/components/ui/connection-manager"
 import { TitleBar } from "@/components/ui/title-bar"
 import { DatabaseSidebar } from "@/components/ui/database-sidebar"
 import { TableView } from "@/components/ui/table-view"
+import { SaveConnectionDialog } from "@/components/ui/save-connection-dialog"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { 
@@ -52,6 +53,8 @@ function App() {
   const [hasAttemptedAutoConnect, setHasAttemptedAutoConnect] = useState(false)
   const [isAutoConnecting, setIsAutoConnecting] = useState(false)
   const [isSwitchingConnection, setIsSwitchingConnection] = useState(false)
+  const [showSaveDialog, setShowSaveDialog] = useState(false)
+  const [pendingConnectionString, setPendingConnectionString] = useState('')
   
   // Tab management
   const [tabs, setTabs] = useState<TableTab[]>([])
@@ -64,7 +67,7 @@ function App() {
   }, [tabs, activeTabId])
 
   // Get saved connections to find the most recently used one
-  const { data: connectionsData } = useQuery({
+  const { data: connectionsData, refetch: refetchConnections } = useQuery({
     queryKey: ['saved-connections'],
     queryFn: async () => {
       console.log(`[${new Date().toISOString()}] Starting to fetch saved connections`)
@@ -109,6 +112,12 @@ function App() {
       setTables((data.tables || []).map(name => ({ name })))
       setIsAutoConnecting(false)
       setIsSwitchingConnection(false)
+      
+      // If this is a new connection (not from auto-connect or switching), show save dialog
+      if (!isAutoConnecting && !isSwitchingConnection) {
+        setPendingConnectionString(connectionString)
+        setShowSaveDialog(true)
+      }
     },
     onError: (error) => {
       console.log(`[${new Date().toISOString()}] Connection failed:`, error.message)
@@ -158,6 +167,23 @@ function App() {
     setConnectionString(newConnectionString)
     // Auto-connect when a saved connection is selected
     connectionMutation.mutate(newConnectionString)
+  }
+
+  const handleSaveConnection = async (name: string) => {
+    try {
+      const result = await window.electronAPI.saveConnection(pendingConnectionString, name)
+      if (result.success) {
+        console.log('Connection saved successfully:', result)
+        setShowSaveDialog(false)
+        setPendingConnectionString('')
+        // Refresh the connections list
+        refetchConnections()
+      } else {
+        console.error('Failed to save connection:', result.error)
+      }
+    } catch (error) {
+      console.error('Error saving connection:', error)
+    }
   }
 
   const handleConnectionChange = (connectionId: string) => {
@@ -362,6 +388,19 @@ function App() {
   const shouldShowStatus = () => {
     return connectionMutation.isPending || connectionMutation.isSuccess || connectionMutation.isError
   }
+  
+  // Generate a default connection name from the connection string
+  const getDefaultConnectionName = () => {
+    try {
+      const url = new URL(pendingConnectionString)
+      const username = url.username || 'user'
+      const host = url.hostname || 'localhost'
+      const database = url.pathname.substring(1) || 'database'
+      return `${username}@${host}/${database}`
+    } catch {
+      return 'New Connection'
+    }
+  }
 
   // Explorer view with sidebar + main content
   // Show explorer view if we're in explorer mode, even if connection is pending (when switching)
@@ -479,6 +518,14 @@ function App() {
             </ResizablePanel>
           </ResizablePanelGroup>
         </div>
+        
+        {/* Save Connection Dialog */}
+        <SaveConnectionDialog
+          open={showSaveDialog}
+          onOpenChange={setShowSaveDialog}
+          onSave={handleSaveConnection}
+          defaultName={getDefaultConnectionName()}
+        />
       </div>
     )
   }
@@ -540,6 +587,14 @@ function App() {
         </div>
         </div>
       </div>
+      
+      {/* Save Connection Dialog */}
+      <SaveConnectionDialog
+        open={showSaveDialog}
+        onOpenChange={setShowSaveDialog}
+        onSave={handleSaveConnection}
+        defaultName={getDefaultConnectionName()}
+      />
     </div>
   )
 }

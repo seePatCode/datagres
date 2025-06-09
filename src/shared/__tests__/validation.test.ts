@@ -27,10 +27,17 @@ describe('Connection String Validation', () => {
       expect(validateConnectionString(connStr)).toBe(true)
     })
 
-    it('should reject invalid formats', () => {
-      expect(validateConnectionString('not-a-url')).toBe(false)
-      expect(validateConnectionString('http://localhost/db')).toBe(false)
-      expect(validateConnectionString('postgres://localhost')).toBe(true) // We now accept this
+    it('should accept any non-empty string', () => {
+      expect(validateConnectionString('not-a-url')).toBe(true)
+      expect(validateConnectionString('http://localhost/db')).toBe(true)
+      expect(validateConnectionString('postgres://localhost')).toBe(true)
+      expect(validateConnectionString('host=localhost dbname=mydb')).toBe(true)
+      expect(validateConnectionString('any string at all')).toBe(true)
+    })
+
+    it('should reject only empty strings', () => {
+      expect(validateConnectionString('')).toBe(false)
+      expect(validateConnectionString('   ')).toBe(false)
     })
 
     it('should accept connection strings with query parameters', () => {
@@ -46,14 +53,28 @@ describe('Connection String Validation', () => {
       expect(result.error).toBeUndefined()
     })
 
-    it('should provide specific error messages', () => {
+    it('should accept any non-empty string', () => {
       const noProtocol = validateConnectionStringWithError('user:pass@localhost/mydb')
-      expect(noProtocol.valid).toBe(false)
-      expect(noProtocol.error).toContain('must start with postgresql://')
+      expect(noProtocol.valid).toBe(true)
+      expect(noProtocol.error).toBeUndefined()
 
       const invalidUrl = validateConnectionStringWithError('postgres://not a valid url')
-      expect(invalidUrl.valid).toBe(false)
-      expect(invalidUrl.error).toContain('Invalid URL format')
+      expect(invalidUrl.valid).toBe(true)
+      expect(invalidUrl.error).toBeUndefined()
+
+      const anyString = validateConnectionStringWithError('host=localhost dbname=mydb')
+      expect(anyString.valid).toBe(true)
+      expect(anyString.error).toBeUndefined()
+    })
+
+    it('should only reject empty strings', () => {
+      const empty = validateConnectionStringWithError('')
+      expect(empty.valid).toBe(false)
+      expect(empty.error).toContain('required')
+
+      const whitespace = validateConnectionStringWithError('   ')
+      expect(whitespace.valid).toBe(false)
+      expect(whitespace.error).toContain('required')
     })
 
     it('should accept any valid postgres URL', () => {
