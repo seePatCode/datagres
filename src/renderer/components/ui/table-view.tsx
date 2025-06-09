@@ -68,7 +68,6 @@ export function TableView({
   initialPage = 1,
   initialPageSize = 100,
 }: TableViewProps) {
-  console.log('[TableView] Rendering with props:', { tableName, connectionString, initialSearchTerm, initialPage, initialPageSize })
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({})
   
   // Fetch table schema for autocomplete

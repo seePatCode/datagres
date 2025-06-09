@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react'
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { SearchOptions, FetchTableDataResponse } from '@/shared/types'
 
@@ -47,6 +47,7 @@ export function useServerSideTableData({
   const [searchInput, setSearchInput] = useState('')
   const [searchTerm, setSearchTerm] = useState('') // Only updated on Enter
   const searchInputRef = useRef(searchInput) // Keep a ref to always have the latest value
+  const searchTermRef = useRef(searchTerm) // Keep a ref for the committed search term too
   
   // Pagination state
   const [page, setPage] = useState(1)
@@ -97,24 +98,29 @@ export function useServerSideTableData({
   
   // Update search input as user types
   const handleSearchInputChange = useCallback((input: string) => {
-    console.log('[useServerSideTableData] handleSearchInputChange called with:', input)
     setSearchInput(input)
     searchInputRef.current = input // Update the ref too
   }, [])
+  
+  // Update searchTerm ref when it changes
+  useEffect(() => {
+    searchTermRef.current = searchTerm
+  }, [searchTerm])
   
   // Commit search on Enter key
   const handleSearchCommit = useCallback(() => {
     console.log('[useServerSideTableData] handleSearchCommit called')
     console.log('[useServerSideTableData] searchInputRef.current:', searchInputRef.current)
-    console.log('[useServerSideTableData] searchTerm:', searchTerm)
-    if (searchInputRef.current !== searchTerm) {
-      console.log('[useServerSideTableData] Updating searchTerm and resetting page')
+    console.log('[useServerSideTableData] searchTermRef.current:', searchTermRef.current)
+    
+    if (searchInputRef.current !== searchTermRef.current) {
+      console.log('[useServerSideTableData] Updating searchTerm to:', searchInputRef.current)
       setSearchTerm(searchInputRef.current)
       setPage(1) // Reset to first page on new search
     } else {
-      console.log('[useServerSideTableData] No change in search term, skipping update')
+      console.log('[useServerSideTableData] No change, not updating')
     }
-  }, [searchTerm])
+  }, [])
   
   // Reset page when filters change
   const handleFiltersChange = (newFilters: SearchOptions['filters']) => {

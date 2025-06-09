@@ -49,9 +49,14 @@ export function SQLWhereEditor({
 
     // Handle Enter key
     editor.addCommand(monaco.KeyCode.Enter, () => {
+      console.log('[SQLWhereEditor] Enter key pressed')
       const suggestController = editor.getContribution('editor.contrib.suggestController') as any
+      console.log('[SQLWhereEditor] Suggest controller state:', suggestController?.model?.state)
       if (!suggestController?.model?.state) {
+        console.log('[SQLWhereEditor] No suggestions active, calling onCommit')
         onCommit()
+      } else {
+        console.log('[SQLWhereEditor] Suggestions are active, not committing')
       }
     })
 
