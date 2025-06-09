@@ -90,6 +90,20 @@ User Action → React Query Mutation → IPC Call → Main Process → PostgreSQ
 - Implement proper loading states and error handling
 - Add data-testid attributes for e2e testing
 
+### Monaco Editor Integration
+- **Async Loading Pattern**: Schema data often loads after Monaco editor mounts
+  - Track both editor ready state and data availability with separate state/refs
+  - Use `useEffect` with both dependencies to setup features when both are ready
+  - Don't rely on data being available in the `onMount` callback
+- **React Hooks Closures**: Callbacks may capture stale state values
+  - Use refs (`useRef`) to access current values in callbacks
+  - Sync state changes to refs with `useEffect` 
+  - Use `useCallback` with empty deps array when using refs
+- **Context-Aware Completions**: Analyze text before cursor to provide smart suggestions
+  - Parse current position in SQL syntax (after column, operator, keyword, etc.)
+  - Provide contextually appropriate suggestions (columns vs operators vs values)
+  - Use `model.getValueInRange()` to get text before cursor position
+
 ### Testing Strategy
 - **Always implement in a TDD approach**
 - **E2E Tests**: Playwright tests in `tests/e2e/` cover complete user journeys
