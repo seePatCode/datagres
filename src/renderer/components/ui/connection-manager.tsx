@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus, Database, Trash2, Edit2, Check, X } from 'lucide-react'
+import { Plus, Database, Trash2, Edit2, Check, X, Eye, EyeOff, Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
@@ -25,6 +26,11 @@ export function ConnectionManager({ onConnectionSelect, currentConnectionString 
   const [connectionName, setConnectionName] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editingConnection, setEditingConnection] = useState<SavedConnection | null>(null)
+  const [editingConnectionString, setEditingConnectionString] = useState('')
+  const [showConnectionString, setShowConnectionString] = useState(false)
+  const [copiedToClipboard, setCopiedToClipboard] = useState(false)
   
   const queryClient = useQueryClient()
 
@@ -66,7 +72,9 @@ export function ConnectionManager({ onConnectionSelect, currentConnectionString 
       return result
     },
     onSuccess: (data) => {
-      onConnectionSelect(data.connectionString)
+      if (data.connectionString) {
+        onConnectionSelect(data.connectionString)
+      }
     }
   })
 
@@ -95,8 +103,7 @@ export function ConnectionManager({ onConnectionSelect, currentConnectionString 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['saved-connections'] })
-      setEditingId(null)
-      setEditingName('')
+      handleCancelEdit()
     }
   })
 
@@ -120,24 +127,40 @@ export function ConnectionManager({ onConnectionSelect, currentConnectionString 
     }
   }
 
-  const handleStartEdit = (connection: SavedConnection) => {
-    setEditingId(connection.id)
+  const handleStartEdit = async (connection: SavedConnection) => {
+    setEditingConnection(connection)
     setEditingName(connection.name)
+    setEditDialogOpen(true)
+    
+    // Load the full connection string
+    const result = await window.electronAPI.loadConnection(connection.id)
+    if (result.success && result.connectionString) {
+      setEditingConnectionString(result.connectionString)
+    }
   }
 
   const handleSaveEdit = () => {
-    if (!editingId || !editingName.trim()) {
+    if (!editingConnection || !editingName.trim()) {
       return
     }
     updateNameMutation.mutate({
-      connectionId: editingId,
+      connectionId: editingConnection.id,
       newName: editingName.trim()
     })
   }
 
   const handleCancelEdit = () => {
-    setEditingId(null)
+    setEditDialogOpen(false)
+    setEditingConnection(null)
     setEditingName('')
+    setEditingConnectionString('')
+    setShowConnectionString(false)
+  }
+
+  const handleCopyToClipboard = () => {
+    navigator.clipboard.writeText(editingConnectionString)
+    setCopiedToClipboard(true)
+    setTimeout(() => setCopiedToClipboard(false), 2000)
   }
 
   const connections = connectionsData || []
@@ -218,85 +241,50 @@ export function ConnectionManager({ onConnectionSelect, currentConnectionString 
                 className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted transition-colors"
                 data-testid="saved-connection-item"
               >
-                <div className="flex-1 min-w-0">
-                  {editingId === connection.id ? (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={editingName}
-                        onChange={(e) => setEditingName(e.target.value)}
-                        className="h-8"
-                        data-testid="edit-name-input"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleSaveEdit()
-                          if (e.key === 'Escape') handleCancelEdit()
-                        }}
-                      />
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={handleSaveEdit}
-                        data-testid="save-edit-button"
-                      >
-                        <Check className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={handleCancelEdit}
-                        data-testid="cancel-edit-button"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="cursor-pointer" onClick={() => handleLoadConnection(connection.id)}>
-                      <div className="font-medium truncate" data-testid="connection-name">
-                        {connection.name}
-                      </div>
-                      <div className="text-sm text-muted-foreground truncate">
-                        {connection.username}@{connection.host}:{connection.port}/{connection.database}
-                        {connection.hasPassword && (
-                          <span className="ml-2 text-xs px-1.5 py-0.5 rounded-md bg-black/20 border" style={{
-                            borderColor: 'hsl(var(--accent-cyan))',
-                            color: 'hsl(var(--accent-cyan))',
-                            boxShadow: '0 0 4px hsla(var(--accent-cyan), 0.3)'
-                          }}>
-                            🔒 Saved
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Last used: {new Date(connection.lastUsed).toLocaleDateString()}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                {editingId !== connection.id && (
-                  <div className="flex items-center gap-1 ml-2">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleStartEdit(connection)
-                      }}
-                      data-testid="edit-connection-button"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDeleteConnection(connection.id)
-                      }}
-                      data-testid="delete-connection-button"
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handleLoadConnection(connection.id)}>
+                  <div className="font-medium truncate" data-testid="connection-name">
+                    {connection.name}
                   </div>
-                )}
+                  <div className="text-sm text-muted-foreground truncate">
+                    {connection.username}@{connection.host}:{connection.port}/{connection.database}
+                    {connection.hasPassword && (
+                      <span className="ml-2 text-xs px-1.5 py-0.5 rounded-md bg-black/20 border" style={{
+                        borderColor: 'hsl(var(--accent-cyan))',
+                        color: 'hsl(var(--accent-cyan))',
+                        boxShadow: '0 0 4px hsla(var(--accent-cyan), 0.3)'
+                      }}>
+                        🔒 Saved
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Last used: {new Date(connection.lastUsed).toLocaleDateString()}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 ml-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleStartEdit(connection)
+                    }}
+                    data-testid="edit-connection-button"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDeleteConnection(connection.id)
+                    }}
+                    data-testid="delete-connection-button"
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
@@ -312,6 +300,79 @@ export function ConnectionManager({ onConnectionSelect, currentConnectionString 
           </Alert>
         )}
       </CardContent>
+      
+      {/* Edit Connection Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Edit Connection</DialogTitle>
+            <DialogDescription>
+              Update the connection name or view the connection string
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Connection Name</Label>
+              <Input
+                id="edit-name"
+                value={editingName}
+                onChange={(e) => setEditingName(e.target.value)}
+                placeholder="Connection name"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="connection-string">Connection String</Label>
+              <div className="relative">
+                <Input
+                  id="connection-string"
+                  type={showConnectionString ? "text" : "password"}
+                  value={editingConnectionString}
+                  readOnly
+                  className="pr-20 font-mono text-sm"
+                />
+                <div className="absolute right-1 top-1 flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setShowConnectionString(!showConnectionString)}
+                    className="h-8 w-8 p-0"
+                  >
+                    {showConnectionString ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleCopyToClipboard}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              {copiedToClipboard && (
+                <p className="text-sm text-muted-foreground">Copied to clipboard!</p>
+              )}
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={handleCancelEdit}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSaveEdit}
+                disabled={!editingName.trim() || updateNameMutation.isPending}
+              >
+                {updateNameMutation.isPending ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }
