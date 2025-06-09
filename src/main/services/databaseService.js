@@ -4,6 +4,43 @@ const { Client } = require('pg')
 const mockData = {
   testdb: {
     tables: ['users', 'products', 'orders', 'categories'],
+    tableSchemas: {
+      users: {
+        tableName: 'users',
+        columns: [
+          { name: 'id', dataType: 'integer', nullable: false, isPrimaryKey: true },
+          { name: 'name', dataType: 'text', nullable: false },
+          { name: 'email', dataType: 'text', nullable: false },
+          { name: 'created_at', dataType: 'date', nullable: false }
+        ]
+      },
+      products: {
+        tableName: 'products',
+        columns: [
+          { name: 'id', dataType: 'integer', nullable: false, isPrimaryKey: true },
+          { name: 'name', dataType: 'text', nullable: false },
+          { name: 'price', dataType: 'numeric', nullable: false },
+          { name: 'category', dataType: 'text', nullable: true }
+        ]
+      },
+      orders: {
+        tableName: 'orders',
+        columns: [
+          { name: 'id', dataType: 'integer', nullable: false, isPrimaryKey: true },
+          { name: 'user_id', dataType: 'integer', nullable: false },
+          { name: 'total', dataType: 'numeric', nullable: false },
+          { name: 'status', dataType: 'text', nullable: false }
+        ]
+      },
+      categories: {
+        tableName: 'categories',
+        columns: [
+          { name: 'id', dataType: 'integer', nullable: false, isPrimaryKey: true },
+          { name: 'name', dataType: 'text', nullable: false },
+          { name: 'description', dataType: 'text', nullable: true }
+        ]
+      }
+    },
     tableData: {
       users: {
         columns: ['id', 'name', 'email', 'created_at'],
@@ -254,7 +291,99 @@ async function fetchTableData(connectionString, tableName, searchOptions = {}) {
   }
 }
 
+/**
+ * Fetch schema information for a specific table
+ * @param {string} connectionString - PostgreSQL connection string
+ * @param {string} tableName - Name of the table
+ * @returns {Promise<{success: boolean, schema?: {tableName: string, columns: Array}, error?: string}>}
+ */
+async function fetchTableSchema(connectionString, tableName) {
+  // In test mode, return mock schema
+  if (process.env.NODE_ENV === 'test') {
+    if (connectionString.includes('testdb')) {
+      const schema = mockData.testdb.tableSchemas[tableName]
+      if (schema) {
+        return {
+          success: true,
+          schema: schema
+        }
+      }
+    }
+    
+    return {
+      success: false,
+      error: 'Table not found'
+    }
+  }
+
+  const client = new Client(connectionString)
+  
+  try {
+    await client.connect()
+    
+    // Query to get column information with data types and constraints
+    const schemaQuery = `
+      SELECT 
+        c.column_name,
+        c.data_type,
+        c.is_nullable,
+        c.column_default,
+        CASE 
+          WHEN pk.column_name IS NOT NULL THEN true 
+          ELSE false 
+        END as is_primary_key
+      FROM information_schema.columns c
+      LEFT JOIN (
+        SELECT kcu.column_name
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu
+          ON tc.constraint_name = kcu.constraint_name
+          AND tc.table_schema = kcu.table_schema
+          AND tc.table_name = kcu.table_name
+        WHERE tc.table_schema = 'public'
+          AND tc.table_name = $1
+          AND tc.constraint_type = 'PRIMARY KEY'
+      ) pk ON c.column_name = pk.column_name
+      WHERE c.table_schema = 'public'
+        AND c.table_name = $1
+      ORDER BY c.ordinal_position
+    `
+    
+    const result = await client.query(schemaQuery, [tableName])
+    
+    const columns = result.rows.map(row => ({
+      name: row.column_name,
+      dataType: row.data_type,
+      nullable: row.is_nullable === 'YES',
+      isPrimaryKey: row.is_primary_key,
+      defaultValue: row.column_default
+    }))
+    
+    await client.end()
+    
+    return {
+      success: true,
+      schema: {
+        tableName: tableName,
+        columns: columns
+      }
+    }
+  } catch (error) {
+    try {
+      await client.end()
+    } catch (endError) {
+      // Ignore end errors
+    }
+    
+    return {
+      success: false,
+      error: error.message
+    }
+  }
+}
+
 module.exports = {
   connectDatabase,
-  fetchTableData
+  fetchTableData,
+  fetchTableSchema
 }

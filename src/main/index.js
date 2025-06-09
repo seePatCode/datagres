@@ -40,6 +40,11 @@ ipcMain.handle('fetch-table-data', async (_event, connectionString, tableName, s
   return await databaseService.fetchTableData(connectionString, tableName, searchOptions)
 })
 
+// Handle table schema requests
+ipcMain.handle('fetch-table-schema', async (_event, connectionString, tableName) => {
+  return await databaseService.fetchTableSchema(connectionString, tableName)
+})
+
 // Handle saving database connections
 ipcMain.handle('save-connection', async (_event, connectionString, name) => {
   if (isTestMode()) {

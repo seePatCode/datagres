@@ -390,6 +390,7 @@ function App() {
                     return (
                       <TabsContent key={tab.id} value={tab.id} className="flex-1 mt-0 overflow-hidden">
                         <TableView
+                          key={`${tab.id}_${tab.tableName}`}
                           tableName={tab.tableName}
                           connectionString={connectionString}
                           initialSearchTerm={tab.searchTerm}

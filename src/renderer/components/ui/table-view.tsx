@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
 import { Search, RefreshCw, Save, MoreHorizontal, Filter, EyeOff, Eye, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { DataTable } from '@/components/ui/data-table'
+import { SQLWhereEditor } from '@/components/ui/sql-where-editor-v2'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,6 +71,20 @@ export function TableView({
   console.log('[TableView] Rendering with props:', { tableName, connectionString, initialSearchTerm, initialPage, initialPageSize })
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({})
   
+  // Fetch table schema for autocomplete
+  const { data: schemaData } = useQuery({
+    queryKey: ['table-schema', connectionString, tableName],
+    queryFn: async () => {
+      const result = await window.electronAPI.fetchTableSchema(connectionString, tableName)
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch table schema')
+      }
+      return result.schema
+    },
+    enabled: !!connectionString && !!tableName,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  })
+  
   // Use server-side table data hook
   const {
     data,
@@ -128,23 +144,21 @@ export function TableView({
   return (
     <div className={`flex h-full flex-col min-w-0 ${className}`}>
       {/* Toolbar */}
-      <div className="flex items-center justify-between border-b bg-background overflow-visible">
-        <div className="flex-1 overflow-visible">
+      <div className="flex items-center justify-between border-b bg-background" style={{ overflow: 'visible', zIndex: 100 }}>
+        <div className="flex-1" style={{ overflow: 'visible' }}>
           {/* Search */}
-          <div className="relative m-0.5">
+          <div className="relative m-0.5 flex items-center" style={{ overflow: 'visible' }}>
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground z-10" />
-            <Input
-              placeholder="WHERE clause (e.g., location = 'NYC' AND age > 25) - Press Enter"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleSearchCommit()
-                }
-              }}
-              className="pl-9 rounded-none border focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-0 focus-visible:border-cyan-500/30 font-mono text-sm"
-              disabled={isLoading}
-            />
+            <div className="pl-9 flex-1" style={{ overflow: 'visible' }}>
+              <SQLWhereEditor
+                value={searchTerm}
+                onChange={setSearchTerm}
+                onCommit={handleSearchCommit}
+                schema={schemaData}
+                disabled={isLoading}
+                placeholder="WHERE clause (e.g., location = 'NYC' AND age > 25) - Press Enter"
+              />
+            </div>
           </div>
         </div>
 

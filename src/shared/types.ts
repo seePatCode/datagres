@@ -73,6 +73,23 @@ export interface TableInfo {
   rowCount?: number
 }
 
+export interface ColumnInfo {
+  name: string
+  dataType: string
+  nullable: boolean
+  isPrimaryKey?: boolean
+  defaultValue?: string
+}
+
+export interface TableSchema {
+  tableName: string
+  columns: ColumnInfo[]
+}
+
+export interface FetchTableSchemaResponse extends APIResponse {
+  schema?: TableSchema
+}
+
 export interface ParsedConnectionInfo {
   host: string
   port: number
@@ -86,6 +103,7 @@ export interface ElectronAPI {
   // Database operations
   connectDatabase: (connectionString: string) => Promise<ConnectDatabaseResponse>
   fetchTableData: (connectionString: string, tableName: string, searchOptions?: SearchOptions) => Promise<FetchTableDataResponse>
+  fetchTableSchema: (connectionString: string, tableName: string) => Promise<FetchTableSchemaResponse>
   
   // Connection management
   saveConnection: (connectionString: string, name: string) => Promise<SaveConnectionResponse>
