@@ -102,6 +102,7 @@ function App() {
     },
     onSuccess: (data) => {
       console.log(`[${new Date().toISOString()}] Connection successful, switching to explorer view`)
+      console.log('Connection data:', data)
       setCurrentView('explorer')
       setCurrentDatabase(data.database || '')
       setTables((data.tables || []).map(name => ({ name })))
@@ -157,9 +158,17 @@ function App() {
   }
 
   const handleConnectionChange = (connectionId: string) => {
+    console.log('[handleConnectionChange] Switching to connection:', connectionId)
+    
+    // Clear current state when switching connections
+    setTabs([])
+    setActiveTabId(null)
+    setRecentTables([])
+    
     // Load and connect to selected connection
     window.electronAPI.loadConnection(connectionId)
       .then((result) => {
+        console.log('[handleConnectionChange] Loaded connection:', result)
         if (result.success && result.connectionString) {
           setConnectionString(result.connectionString)
           connectionMutation.mutate(result.connectionString)
@@ -169,6 +178,7 @@ function App() {
         console.warn('Failed to load connection:', error)
       })
   }
+
 
   const handleTableSelect = (tableName: string) => {
     console.log('[handleTableSelect] Selected table:', tableName)
@@ -235,6 +245,12 @@ function App() {
     setCurrentView('connect')
     // Reset any previous connection state
     connectionMutation.reset()
+    // Clear all connection-related state
+    setCurrentDatabase('')
+    setTables([])
+    setTabs([])
+    setActiveTabId(null)
+    setRecentTables([])
   }
 
   const handleShowConnections = () => {

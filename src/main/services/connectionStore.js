@@ -52,7 +52,8 @@ async function initializeStore() {
                 username: { type: 'string' },
                 hasPassword: { type: 'boolean' },
                 createdAt: { type: 'string' },
-                lastUsed: { type: 'string' }
+                lastUsed: { type: 'string' },
+                originalConnectionString: { type: 'string' }
               }
             }
           }
@@ -122,7 +123,8 @@ async function saveConnection(connectionString, name = null) {
       username: parsed.username,
       hasPassword: !!parsed.password,
       createdAt: new Date().toISOString(),
-      lastUsed: new Date().toISOString()
+      lastUsed: new Date().toISOString(),
+      originalConnectionString: connectionString
     }
     
     connections.push(newConnection)
@@ -191,7 +193,28 @@ async function loadConnection(connectionId) {
     connection.lastUsed = new Date().toISOString()
     store.set('connections', connections)
     
-    const connectionString = buildConnectionString(connection, password)
+    // Use original connection string if available, otherwise build from components
+    let connectionString
+    if (connection.originalConnectionString) {
+      // If we have the original connection string, use it
+      // But we still need to handle the password separately if it was stored in keychain
+      if (connection.hasPassword && password) {
+        // Parse the original connection string and inject the password
+        try {
+          const url = new URL(connection.originalConnectionString)
+          url.password = password
+          connectionString = url.toString()
+        } catch (error) {
+          // Fallback to building from components if URL parsing fails
+          connectionString = buildConnectionString(connection, password)
+        }
+      } else {
+        connectionString = connection.originalConnectionString
+      }
+    } else {
+      // Fallback for older saved connections without originalConnectionString
+      connectionString = buildConnectionString(connection, password)
+    }
     
     return {
       success: true,
