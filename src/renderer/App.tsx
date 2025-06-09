@@ -51,6 +51,7 @@ function App() {
   const [recentTables, setRecentTables] = useState<TableInfo[]>([])
   const [hasAttemptedAutoConnect, setHasAttemptedAutoConnect] = useState(false)
   const [isAutoConnecting, setIsAutoConnecting] = useState(false)
+  const [isSwitchingConnection, setIsSwitchingConnection] = useState(false)
   
   // Tab management
   const [tabs, setTabs] = useState<TableTab[]>([])
@@ -107,10 +108,12 @@ function App() {
       setCurrentDatabase(data.database || '')
       setTables((data.tables || []).map(name => ({ name })))
       setIsAutoConnecting(false)
+      setIsSwitchingConnection(false)
     },
     onError: (error) => {
       console.log(`[${new Date().toISOString()}] Connection failed:`, error.message)
       setIsAutoConnecting(false)
+      setIsSwitchingConnection(false)
     }
   })
 
@@ -160,6 +163,9 @@ function App() {
   const handleConnectionChange = (connectionId: string) => {
     console.log('[handleConnectionChange] Switching to connection:', connectionId)
     
+    // Set switching flag to prevent UI flash
+    setIsSwitchingConnection(true)
+    
     // Clear current state when switching connections
     setTabs([])
     setActiveTabId(null)
@@ -171,11 +177,13 @@ function App() {
         console.log('[handleConnectionChange] Loaded connection:', result)
         if (result.success && result.connectionString) {
           setConnectionString(result.connectionString)
+          // Don't reset mutation state to avoid flashing
           connectionMutation.mutate(result.connectionString)
         }
       })
       .catch((error) => {
         console.warn('Failed to load connection:', error)
+        setIsSwitchingConnection(false)
       })
   }
 
@@ -356,7 +364,8 @@ function App() {
   }
 
   // Explorer view with sidebar + main content
-  if (currentView === 'explorer' && connectionMutation.isSuccess) {
+  // Show explorer view if we're in explorer mode, even if connection is pending (when switching)
+  if (currentView === 'explorer') {
     return (
       <div className="h-screen bg-background text-foreground flex flex-col">
         {/* Fixed header area */}
