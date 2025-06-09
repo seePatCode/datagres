@@ -8,9 +8,9 @@
  * @returns true if valid, false otherwise
  */
 export function validateConnectionString(connectionString: string): boolean {
-  // PostgreSQL connection string validation (password optional)
-  const pgRegex = /^postgresql:\/\/([^:@]+(:([^@]*))?@)?[^:\/]+:\d+\/[\w-]+$/
-  return pgRegex.test(connectionString)
+  // Just check if it starts with postgres:// or postgresql://
+  // Let the PostgreSQL driver handle the actual validation
+  return connectionString.startsWith('postgres://') || connectionString.startsWith('postgresql://')
 }
 
 /**
@@ -30,33 +30,14 @@ export function validateConnectionStringWithError(connectionString: string): {
     return { valid: false, error: 'Connection string must start with postgresql:// or postgres://' }
   }
 
-  // Parse components
-  const urlPattern = /^postgres(?:ql)?:\/\/(?:([^:@]+)(?::([^@]*))?@)?([^:\/]+)(?::(\d+))?\/(.+)$/
-  const match = connectionString.match(urlPattern)
-
-  if (!match) {
-    return { valid: false, error: 'Invalid connection string format' }
+  // Basic URL validation to ensure it's parseable
+  try {
+    new URL(connectionString)
+  } catch (error) {
+    return { valid: false, error: 'Invalid URL format' }
   }
 
-  const [, username, password, host, port, database] = match
-
-  // Validate components
-  if (!host) {
-    return { valid: false, error: 'Host is required' }
-  }
-
-  if (port && (isNaN(Number(port)) || Number(port) < 1 || Number(port) > 65535)) {
-    return { valid: false, error: 'Port must be a number between 1 and 65535' }
-  }
-
-  if (!database) {
-    return { valid: false, error: 'Database name is required' }
-  }
-
-  if (!/^[\w-]+$/.test(database)) {
-    return { valid: false, error: 'Database name contains invalid characters' }
-  }
-
+  // Let PostgreSQL handle the rest of the validation
   return { valid: true }
 }
 
@@ -82,6 +63,30 @@ export function validateConnectionName(name: string): {
   }
 
   return { valid: true }
+}
+
+/**
+ * Normalizes a connection string by adding default port if missing
+ * @param connectionString - The connection string to normalize
+ * @returns Normalized connection string with port
+ */
+export function normalizeConnectionString(connectionString: string): string {
+  // Check if it already has a port - handle query params
+  const urlPattern = /^(postgres(?:ql)?:\/\/(?:([^:@]+)(?::([^@]*))?@)?([^:\/]+))(?::(\d+))?(\/[^?]+)(\?.*)?$/
+  const match = connectionString.match(urlPattern)
+
+  if (!match) {
+    return connectionString
+  }
+
+  const [, baseUrl, username, password, host, port, pathAndDb, queryParams] = match
+
+  // If no port specified, add default PostgreSQL port
+  if (!port) {
+    return `${baseUrl}:5432${pathAndDb}${queryParams || ''}`
+  }
+
+  return connectionString
 }
 
 /**
