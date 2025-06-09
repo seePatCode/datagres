@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
-import { Search, RefreshCw, Save, MoreHorizontal, Filter, EyeOff, Eye, ChevronLeft, ChevronRight } from 'lucide-react'
+import { RefreshCw, Save, MoreHorizontal, Filter, EyeOff, Eye, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { DataTable } from '@/components/ui/data-table'
-import { SQLWhereEditor } from '@/components/ui/sql-where-editor-v2'
+import { SQLWhereEditor } from '@/components/ui/sql-where-editor-monaco'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -145,21 +145,14 @@ export function TableView({
     <div className={`flex h-full flex-col min-w-0 ${className}`}>
       {/* Toolbar */}
       <div className="flex items-center justify-between border-b bg-background" style={{ overflow: 'visible', zIndex: 100 }}>
-        <div className="flex-1" style={{ overflow: 'visible' }}>
-          {/* Search */}
-          <div className="relative m-0.5 flex items-center" style={{ overflow: 'visible' }}>
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground z-10" />
-            <div className="pl-9 flex-1" style={{ overflow: 'visible' }}>
-              <SQLWhereEditor
-                value={searchTerm}
-                onChange={setSearchTerm}
-                onCommit={handleSearchCommit}
-                schema={schemaData}
-                disabled={isLoading}
-                placeholder="WHERE clause (e.g., location = 'NYC' AND age > 25) - Press Enter"
-              />
-            </div>
-          </div>
+        <div className="flex-1 m-0.5" style={{ overflow: 'visible' }}>
+          <SQLWhereEditor
+            value={searchTerm}
+            onChange={setSearchTerm}
+            onCommit={handleSearchCommit}
+            schema={schemaData}
+            disabled={isLoading}
+          />
         </div>
 
         <div className="flex items-center gap-2 px-3">
