@@ -109,16 +109,9 @@ export function useServerSideTableData({
   
   // Commit search on Enter key
   const handleSearchCommit = useCallback(() => {
-    console.log('[useServerSideTableData] handleSearchCommit called')
-    console.log('[useServerSideTableData] searchInputRef.current:', searchInputRef.current)
-    console.log('[useServerSideTableData] searchTermRef.current:', searchTermRef.current)
-    
     if (searchInputRef.current !== searchTermRef.current) {
-      console.log('[useServerSideTableData] Updating searchTerm to:', searchInputRef.current)
       setSearchTerm(searchInputRef.current)
       setPage(1) // Reset to first page on new search
-    } else {
-      console.log('[useServerSideTableData] No change, not updating')
     }
   }, [])
   
