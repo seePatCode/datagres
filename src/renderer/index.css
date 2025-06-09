@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Ensure Radix UI portals (context menus, dropdowns, etc.) appear above Monaco editor */
+[data-radix-popper-content-wrapper] {
+  z-index: 9999 !important;
+}
+
 @layer base {
   :root {
     /* Light mode (default) */

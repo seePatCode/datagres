@@ -12,6 +12,12 @@ import { DatabaseSidebar } from "@/components/ui/database-sidebar"
 import { TableView } from "@/components/ui/table-view"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { 
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu'
 import { X } from 'lucide-react'
 import type { ElectronAPI, AppView, TableInfo, MenuAction, TableTab } from '@shared/types'
 import { validateConnectionString } from '@shared/validation'
@@ -212,6 +218,16 @@ function App() {
       return newTabs
     })
   }
+
+  const handleCloseAllTabs = () => {
+    setTabs([])
+    setActiveTabId(null)
+  }
+
+  const handleCloseOtherTabs = (tabId: string) => {
+    setTabs(prev => prev.filter(tab => tab.id === tabId))
+    setActiveTabId(tabId)
+  }
   
 
   const handleNewConnection = () => {
@@ -363,25 +379,49 @@ function App() {
                   <div className="border-b bg-background">
                     <TabsList className="h-auto p-0 bg-transparent rounded-none w-full justify-start">
                       {tabs.map(tab => (
-                        <div key={tab.id} className="relative group">
-                          <TabsTrigger 
-                            value={tab.id}
-                            className="rounded-none border-r data-[state=active]:bg-muted data-[state=active]:shadow-none pr-8"
-                          >
-                            <span className="max-w-[150px] truncate">{tab.tableName}</span>
-                          </TabsTrigger>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleCloseTab(tab.id)
-                            }}
-                            className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
+                        <ContextMenu key={tab.id}>
+                          <ContextMenuTrigger asChild>
+                            <div className="relative group">
+                              <TabsTrigger 
+                                value={tab.id}
+                                className="rounded-none border-r data-[state=active]:bg-muted data-[state=active]:shadow-none pr-8"
+                              >
+                                <span className="max-w-[150px] truncate">{tab.tableName}</span>
+                              </TabsTrigger>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleCloseTab(tab.id)
+                                }}
+                                className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </ContextMenuTrigger>
+                          <ContextMenuContent>
+                            <ContextMenuItem onClick={() => handleCloseTab(tab.id)}>
+                              <span className="flex items-center justify-between w-full">
+                                Close
+                                <span className="text-xs text-muted-foreground ml-4">⌘W</span>
+                              </span>
+                            </ContextMenuItem>
+                            <ContextMenuItem onClick={handleCloseAllTabs}>
+                              <span className="flex items-center justify-between w-full">
+                                Close All
+                                <span className="text-xs text-muted-foreground ml-4">⌘⇧W</span>
+                              </span>
+                            </ContextMenuItem>
+                            <ContextMenuItem 
+                              onClick={() => handleCloseOtherTabs(tab.id)}
+                              disabled={tabs.length === 1}
+                            >
+                              Close Others
+                            </ContextMenuItem>
+                          </ContextMenuContent>
+                        </ContextMenu>
                       ))}
                     </TabsList>
                   </div>
