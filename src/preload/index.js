@@ -6,7 +6,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   fetchTableData: (connectionString, tableName, searchOptions) => ipcRenderer.invoke('fetch-table-data', connectionString, tableName, searchOptions),
   fetchTableSchema: (connectionString, tableName) => ipcRenderer.invoke('fetch-table-schema', connectionString, tableName),
   updateTableData: (connectionString, request) => ipcRenderer.invoke('update-table-data', connectionString, request),
-  executeSQL: (connectionString, request) => ipcRenderer.invoke('execute-sql', connectionString, request),
   saveConnection: (connectionString, name) => ipcRenderer.invoke('save-connection', connectionString, name),
   getSavedConnections: () => ipcRenderer.invoke('get-saved-connections'),
   loadConnection: (connectionId) => ipcRenderer.invoke('load-connection', connectionId),

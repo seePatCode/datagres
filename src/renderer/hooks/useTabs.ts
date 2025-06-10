@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { Tab, TableTab, QueryTab, TableInfo } from '@shared/types'
+import type { Tab, TableTab, TableInfo } from '@shared/types'
 
 interface UseTabsOptions {
   onTabChange?: (tabId: string) => void
@@ -82,27 +82,6 @@ export function useTabs(options: UseTabsOptions = {}) {
     }
   }
 
-  const handleNewQueryTab = () => {
-    const newTab: QueryTab = {
-      id: `query_${Date.now()}`,
-      type: 'query',
-      title: 'New Query',
-      query: '',
-      isSaved: false
-    }
-    
-    setTabs(prev => [...prev, newTab])
-    setActiveTabId(newTab.id)
-    options.onTabChange?.(newTab.id)
-  }
-
-  const updateQueryTab = (tabId: string, updates: Partial<QueryTab>) => {
-    setTabs(prev => prev.map(tab => 
-      tab.id === tabId && tab.type === 'query' 
-        ? { ...tab, ...updates } 
-        : tab
-    ))
-  }
 
   return {
     // State
@@ -118,7 +97,5 @@ export function useTabs(options: UseTabsOptions = {}) {
     handleCloseOtherTabs,
     resetTabs,
     getActiveTab,
-    handleNewQueryTab,
-    updateQueryTab,
   }
 }

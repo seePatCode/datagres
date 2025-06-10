@@ -50,10 +50,6 @@ ipcMain.handle('update-table-data', async (_event, connectionString, request) =>
   return await databaseService.updateTableData(connectionString, request)
 })
 
-// Handle SQL execution
-ipcMain.handle('execute-sql', async (_event, connectionString, request) => {
-  return await databaseService.executeSQL(connectionString, request)
-})
 
 // Handle saving database connections
 ipcMain.handle('save-connection', async (_event, connectionString, name) => {

@@ -19,7 +19,6 @@ function App() {
   const [currentView, setCurrentView] = useState<AppView>('connect')
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [pendingConnectionString, setPendingConnectionString] = useState('')
-  const [executeQueryFn, setExecuteQueryFn] = useState<(() => void) | null>(null)
   
   // Navigation history
   const {
@@ -69,8 +68,6 @@ function App() {
     handleCloseAllTabs,
     handleCloseOtherTabs,
     resetTabs,
-    handleNewQueryTab,
-    updateQueryTab,
   } = useTabs({
     onTabChange: (tabId) => {
       pushEntry({ type: 'tab', tabId })
@@ -163,7 +160,6 @@ function App() {
     onGoForward: handleGoForward,
     canGoBack,
     canGoForward,
-    onExecuteQuery: executeQueryFn || undefined
   })
 
 
@@ -193,9 +189,6 @@ function App() {
         onNavigateForward={handleGoForward}
         canGoBack={canGoBack}
         canGoForward={canGoForward}
-        onNewQueryTab={handleNewQueryTab}
-        onUpdateQueryTab={updateQueryTab}
-        onExecuteQuery={setExecuteQueryFn}
       />
     )
   }

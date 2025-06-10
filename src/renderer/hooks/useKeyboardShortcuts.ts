@@ -10,7 +10,6 @@ interface UseKeyboardShortcutsOptions {
   onGoForward?: () => void
   canGoBack?: boolean
   canGoForward?: boolean
-  onExecuteQuery?: () => void
 }
 
 export function useKeyboardShortcuts({
@@ -29,18 +28,8 @@ export function useKeyboardShortcuts({
       // Allow navigation shortcuts to work even when focused in editor
       const isNavigationShortcut = (e.metaKey || e.ctrlKey) && (e.key === '[' || e.key === ']')
       
-      // Cmd/Ctrl + Enter to execute query (only in query tabs)
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        const activeTab = tabs.find(t => t.id === activeTabId)
-        if (activeTab && activeTab.type === 'query' && onExecuteQuery) {
-          e.preventDefault()
-          e.stopPropagation()
-          onExecuteQuery()
-        }
-        return false
-      }
       // Cmd/Ctrl + [ to go back (Mac style, like Safari)
-      else if ((e.metaKey || e.ctrlKey) && e.key === '[') {
+      if ((e.metaKey || e.ctrlKey) && e.key === '[') {
         e.preventDefault()
         e.stopPropagation() // Stop the event from reaching Monaco
         if (canGoBack && onGoBack) {
@@ -95,5 +84,5 @@ export function useKeyboardShortcuts({
     // Use capture phase to intercept events before Monaco editor
     window.addEventListener('keydown', handleKeyDown, true)
     return () => window.removeEventListener('keydown', handleKeyDown, true)
-  }, [tabs, activeTabId, onCloseTab, setActiveTabId, onGoBack, onGoForward, canGoBack, canGoForward, onExecuteQuery])
+  }, [tabs, activeTabId, onCloseTab, setActiveTabId, onGoBack, onGoForward, canGoBack, canGoForward])
 }
