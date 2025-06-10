@@ -24,19 +24,26 @@ export function useKeyboardShortcuts({
 }: UseKeyboardShortcutsOptions) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Allow navigation shortcuts to work even when focused in editor
+      const isNavigationShortcut = (e.metaKey || e.ctrlKey) && (e.key === '[' || e.key === ']')
+      
       // Cmd/Ctrl + [ to go back (Mac style, like Safari)
       if ((e.metaKey || e.ctrlKey) && e.key === '[') {
         e.preventDefault()
+        e.stopPropagation() // Stop the event from reaching Monaco
         if (canGoBack && onGoBack) {
           onGoBack()
         }
+        return false // Prevent default browser behavior
       }
       // Cmd/Ctrl + ] to go forward (Mac style, like Safari)
       else if ((e.metaKey || e.ctrlKey) && e.key === ']') {
         e.preventDefault()
+        e.stopPropagation() // Stop the event from reaching Monaco
         if (canGoForward && onGoForward) {
           onGoForward()
         }
+        return false // Prevent default browser behavior
       }
       // Cmd/Ctrl + W to close current tab
       else if ((e.metaKey || e.ctrlKey) && e.key === 'w') {
@@ -73,7 +80,8 @@ export function useKeyboardShortcuts({
       }
     }
     
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    // Use capture phase to intercept events before Monaco editor
+    window.addEventListener('keydown', handleKeyDown, true)
+    return () => window.removeEventListener('keydown', handleKeyDown, true)
   }, [tabs, activeTabId, onCloseTab, setActiveTabId, onGoBack, onGoForward, canGoBack, canGoForward])
 }

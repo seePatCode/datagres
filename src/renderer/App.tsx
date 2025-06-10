@@ -186,6 +186,10 @@ function App() {
         setShowSaveDialog={setShowSaveDialog}
         onSaveConnection={handleSaveConnection}
         setActiveTabId={setActiveTabId}
+        onNavigateBack={handleGoBack}
+        onNavigateForward={handleGoForward}
+        canGoBack={canGoBack}
+        canGoForward={canGoForward}
       />
     )
   }
@@ -207,6 +211,10 @@ function App() {
       setShowSaveDialog={setShowSaveDialog}
       onSaveConnection={handleSaveConnection}
       pendingConnectionString={pendingConnectionString}
+      onNavigateBack={handleGoBack}
+      onNavigateForward={handleGoForward}
+      canGoBack={canGoBack}
+      canGoForward={canGoForward}
     />
   )
 }

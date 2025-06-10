@@ -1,12 +1,23 @@
 import { useState, useEffect } from 'react'
-import { Minus, Square, X } from 'lucide-react'
+import { Minus, Square, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 interface TitleBarProps {
   title?: string
+  onNavigateBack?: () => void
+  onNavigateForward?: () => void
+  canGoBack?: boolean
+  canGoForward?: boolean
 }
 
-export function TitleBar({ title = 'Datagres' }: TitleBarProps) {
+export function TitleBar({ 
+  title = 'Datagres',
+  onNavigateBack,
+  onNavigateForward,
+  canGoBack = false,
+  canGoForward = false
+}: TitleBarProps) {
   const [isMacOS, setIsMacOS] = useState(false)
 
   useEffect(() => {
@@ -36,13 +47,54 @@ export function TitleBar({ title = 'Datagres' }: TitleBarProps) {
     // macOS: Title bar with padding for native traffic lights
     return (
       <div className="h-8 bg-background border-b border-border flex items-center select-none">
-        {/* Title with left padding for traffic lights */}
+        {/* Left side - Traffic lights space + Navigation */}
+        <div className="flex items-center">
+          {/* Space for traffic lights */}
+          <div className="w-[70px]" />
+          
+          {/* Navigation buttons */}
+          <div className="flex items-center gap-1 px-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "h-6 w-6 p-0 rounded-sm",
+                !canGoBack && "opacity-50 cursor-not-allowed"
+              )}
+              onClick={onNavigateBack}
+              disabled={!canGoBack}
+              style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+              title="Go back (⌘[)"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "h-6 w-6 p-0 rounded-sm",
+                !canGoForward && "opacity-50 cursor-not-allowed"
+              )}
+              onClick={onNavigateForward}
+              disabled={!canGoForward}
+              style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+              title="Go forward (⌘])"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        
+        {/* Center - Title */}
         <div 
-          className="flex-1 pl-20 pr-20 text-sm font-medium text-foreground cursor-default text-center"
+          className="flex-1 text-sm font-medium text-foreground cursor-default text-center"
           style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
         >
           {title}
         </div>
+        
+        {/* Right side - Balance the layout */}
+        <div className="w-[120px]" />
       </div>
     )
   }
@@ -50,12 +102,46 @@ export function TitleBar({ title = 'Datagres' }: TitleBarProps) {
   // Windows/Linux: Custom window controls
   return (
     <div className="h-8 bg-background border-b border-border flex items-center justify-between select-none">
-      {/* Left side - Title (draggable area) */}
-      <div 
-        className="flex-1 px-3 text-sm font-medium text-foreground cursor-default"
-        style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
-      >
-        {title}
+      {/* Left side - Navigation buttons */}
+      <div className="flex items-center">
+        <div className="flex items-center gap-1 px-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "h-6 w-6 p-0 rounded-sm",
+              !canGoBack && "opacity-50 cursor-not-allowed"
+            )}
+            onClick={onNavigateBack}
+            disabled={!canGoBack}
+            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+            title="Go back (Ctrl+[)"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "h-6 w-6 p-0 rounded-sm",
+              !canGoForward && "opacity-50 cursor-not-allowed"
+            )}
+            onClick={onNavigateForward}
+            disabled={!canGoForward}
+            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+            title="Go forward (Ctrl+])"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        {/* Title (draggable area) */}
+        <div 
+          className="px-3 text-sm font-medium text-foreground cursor-default"
+          style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
+        >
+          {title}
+        </div>
       </div>
 
       {/* Right side - Window controls */}

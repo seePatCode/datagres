@@ -251,6 +251,12 @@ async function fetchTableData(connectionString, tableName, searchOptions = {}) {
         `${order.column} ${order.direction.toUpperCase()}`
       )
       orderByClause = `ORDER BY ${orderParts.join(', ')}`
+    } else {
+      // Default to ordering by first column to ensure stable sort order
+      // This prevents rows from jumping around after updates
+      if (columns.length > 0) {
+        orderByClause = `ORDER BY 1`
+      }
     }
     
     // Pagination

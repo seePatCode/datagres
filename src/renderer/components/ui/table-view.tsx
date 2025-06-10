@@ -73,6 +73,7 @@ export function TableView({
   const [editedCells, setEditedCells] = useState<Map<string, any>>(new Map())
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [optimisticData, setOptimisticData] = useState<any>(null)
   
   // Fetch table schema for autocomplete
   const { data: schemaData } = useQuery({
@@ -123,9 +124,10 @@ export function TableView({
         handleSearchCommit()
       }
     }
-    // Clear edited cells and errors when switching tables
+    // Clear edited cells, errors, and optimistic data when switching tables
     setEditedCells(new Map())
     setSaveError(null)
+    setOptimisticData(null)
   }, [tableName, initialSearchTerm])
   
   // Initialize pagination from props when table changes
@@ -219,10 +221,35 @@ export function TableView({
       
       if (result.success) {
         console.log(`Successfully updated ${result.updatedCount} rows`)
-        // Clear edited cells and refresh data
+        
+        // Apply updates to current data optimistically
+        if (data) {
+          const updatedData = {
+            ...data,
+            rows: [...data.rows] // Create a new array to trigger re-render
+          }
+          
+          for (const update of updates) {
+            const { rowIndex, columnName, value } = update
+            const columnIndex = data.columns.indexOf(columnName)
+            if (columnIndex >= 0 && updatedData.rows[rowIndex]) {
+              // Create a new row array to ensure immutability
+              updatedData.rows[rowIndex] = [...updatedData.rows[rowIndex]]
+              updatedData.rows[rowIndex][columnIndex] = value
+            }
+          }
+          
+          setOptimisticData(updatedData)
+        }
+        
+        // Clear edited cells and errors
         setEditedCells(new Map())
-        refetch()
         setSaveError(null)
+        
+        // Refetch in the background and clear optimistic data when done
+        refetch().then(() => {
+          setOptimisticData(null)
+        })
       } else {
         console.error('Failed to update data:', result.error)
         setSaveError(result.error || 'Failed to save changes')
@@ -358,10 +385,10 @@ export function TableView({
               </Button>
             </div>
           </div>
-        ) : data && data.columns.length > 0 ? (
+        ) : (optimisticData || data) && (optimisticData || data).columns.length > 0 ? (
           <EditableDataTable 
             columns={columns}
-            data={data.rows}
+            data={(optimisticData || data).rows}
             tableName={tableName}
             columnVisibility={columnVisibility}
             onColumnVisibilityChange={setColumnVisibility}

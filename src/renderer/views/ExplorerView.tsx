@@ -44,6 +44,10 @@ interface ExplorerViewProps {
   setShowSaveDialog: (show: boolean) => void
   onSaveConnection: (name: string) => Promise<void>
   setActiveTabId: (tabId: string) => void
+  onNavigateBack?: () => void
+  onNavigateForward?: () => void
+  canGoBack?: boolean
+  canGoForward?: boolean
 }
 
 export function ExplorerView({
@@ -64,7 +68,11 @@ export function ExplorerView({
   onCloseOtherTabs,
   setShowSaveDialog,
   onSaveConnection,
-  setActiveTabId
+  setActiveTabId,
+  onNavigateBack,
+  onNavigateForward,
+  canGoBack,
+  canGoForward
 }: ExplorerViewProps) {
   const getDefaultConnectionName = () => {
     try {
@@ -82,9 +90,15 @@ export function ExplorerView({
     <div className="h-screen bg-background text-foreground flex flex-col">
       {/* Fixed header area */}
       <div className="flex-none">
-        <TitleBar title={activeTabId && tabs.find(t => t.id === activeTabId) 
-          ? `Datagres - ${tabs.find(t => t.id === activeTabId)!.tableName}` 
-          : `Datagres - ${currentDatabase}`} />
+        <TitleBar 
+          title={activeTabId && tabs.find(t => t.id === activeTabId) 
+            ? `Datagres - ${tabs.find(t => t.id === activeTabId)!.tableName}` 
+            : `Datagres - ${currentDatabase}`}
+          onNavigateBack={onNavigateBack}
+          onNavigateForward={onNavigateForward}
+          canGoBack={canGoBack}
+          canGoForward={canGoForward}
+        />
       </div>
       
       {/* Main layout with resizable panels */}

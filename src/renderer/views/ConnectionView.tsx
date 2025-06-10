@@ -22,6 +22,10 @@ interface ConnectionViewProps {
   setShowSaveDialog: (show: boolean) => void
   onSaveConnection: (name: string) => Promise<void>
   pendingConnectionString: string
+  onNavigateBack?: () => void
+  onNavigateForward?: () => void
+  canGoBack?: boolean
+  canGoForward?: boolean
 }
 
 export function ConnectionView({
@@ -33,7 +37,11 @@ export function ConnectionView({
   showSaveDialog,
   setShowSaveDialog,
   onSaveConnection,
-  pendingConnectionString
+  pendingConnectionString,
+  onNavigateBack,
+  onNavigateForward,
+  canGoBack,
+  canGoForward
 }: ConnectionViewProps) {
   const getStatusVariant = () => {
     if (connectionMutation.isSuccess) return 'default'
@@ -74,7 +82,12 @@ export function ConnectionView({
     <div className="h-screen bg-background text-foreground flex flex-col">
       {/* Fixed header area */}
       <div className="flex-none">
-        <TitleBar />
+        <TitleBar 
+          onNavigateBack={onNavigateBack}
+          onNavigateForward={onNavigateForward}
+          canGoBack={canGoBack}
+          canGoForward={canGoForward}
+        />
       </div>
       
       {/* Scrollable content area */}
