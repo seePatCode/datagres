@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
 import { Button } from "@/components/ui/button"
@@ -28,6 +28,9 @@ declare global {
     electronAPI: ElectronAPI
   }
 }
+
+// Memoized TableView to prevent unnecessary re-renders
+const MemoizedTableView = memo(TableView)
 
 // Helper function to create columns dynamically
 const createColumns = (columnNames: string[]): ColumnDef<any>[] => {
@@ -494,8 +497,13 @@ function App() {
                   {tabs.map(tab => {
                     console.log('[TabsContent] Rendering tab content for:', tab)
                     return (
-                      <TabsContent key={tab.id} value={tab.id} className="flex-1 mt-0 overflow-hidden">
-                        <TableView
+                      <TabsContent 
+                        key={tab.id} 
+                        value={tab.id} 
+                        className="flex-1 mt-0 overflow-hidden data-[state=inactive]:hidden"
+                        forceMount
+                      >
+                        <MemoizedTableView
                           key={`${tab.id}_${tab.tableName}`}
                           tableName={tab.tableName}
                           connectionString={connectionString}
