@@ -104,6 +104,19 @@ export interface UpdateTableDataResponse extends APIResponse {
   updatedCount?: number
 }
 
+export interface ExecuteSQLRequest {
+  query: string
+}
+
+export interface ExecuteSQLResponse extends APIResponse {
+  data?: {
+    columns: string[]
+    rows: any[][]
+    rowCount: number
+  }
+  queryTime?: number
+}
+
 
 export interface ParsedConnectionInfo {
   host: string
@@ -120,6 +133,7 @@ export interface ElectronAPI {
   fetchTableData: (connectionString: string, tableName: string, searchOptions?: SearchOptions) => Promise<FetchTableDataResponse>
   fetchTableSchema: (connectionString: string, tableName: string) => Promise<FetchTableSchemaResponse>
   updateTableData: (connectionString: string, request: UpdateTableDataRequest) => Promise<UpdateTableDataResponse>
+  executeSQL: (connectionString: string, request: ExecuteSQLRequest) => Promise<ExecuteSQLResponse>
   
   // Connection management
   saveConnection: (connectionString: string, name: string) => Promise<SaveConnectionResponse>
@@ -156,4 +170,12 @@ export interface TableTab {
   pageSize: number
 }
 
-export type Tab = TableTab
+export interface QueryTab {
+  id: string
+  type: 'query'
+  title: string
+  query: string
+  isSaved?: boolean
+}
+
+export type Tab = TableTab | QueryTab
