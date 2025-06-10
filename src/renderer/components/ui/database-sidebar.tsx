@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Database, Search, Table, Clock, ChevronDown, ChevronRight } from 'lucide-react'
+import { Database, Search, Table, Clock, ChevronDown, ChevronRight, FileCode2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -27,6 +27,7 @@ interface DatabaseSidebarProps {
   onTableSelect: (tableName: string) => void
   selectedTable?: string
   className?: string
+  onNewQuery?: () => void
 }
 
 export function DatabaseSidebar({
@@ -38,6 +39,7 @@ export function DatabaseSidebar({
   onTableSelect,
   selectedTable,
   className,
+  onNewQuery,
 }: DatabaseSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [recentExpanded, setRecentExpanded] = useState(true)
@@ -81,6 +83,21 @@ export function DatabaseSidebar({
           </SelectContent>
         </Select>
       </div>
+
+      {/* New Query Button */}
+      {onNewQuery && (
+        <div className="p-3 border-b">
+          <Button 
+            onClick={onNewQuery}
+            className="w-full justify-start gap-2"
+            variant="outline"
+            size="sm"
+          >
+            <FileCode2 className="h-4 w-4" />
+            New Query
+          </Button>
+        </div>
+      )}
 
       {/* Tables Section */}
       <div className="flex-1 flex flex-col min-h-0">

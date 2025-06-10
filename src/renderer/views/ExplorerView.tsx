@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { TitleBar } from "@/components/ui/title-bar"
 import { DatabaseSidebar } from "@/components/ui/database-sidebar"
 import { TableView } from "@/components/ui/table-view"
+import { SQLEditor } from "@/components/ui/sql-editor"
 import { SaveConnectionDialog } from "@/components/ui/save-connection-dialog"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -13,9 +14,10 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 import { X } from 'lucide-react'
-import type { TableInfo, TableTab } from '@shared/types'
+import type { TableInfo, Tab } from '@shared/types'
 
 const MemoizedTableView = memo(TableView)
+const MemoizedSQLEditor = memo(SQLEditor)
 
 interface ExplorerViewProps {
   currentDatabase: string
@@ -31,7 +33,7 @@ interface ExplorerViewProps {
     name: string
     database: string
   }
-  tabs: TableTab[]
+  tabs: Tab[]
   activeTabId: string | null
   connectionString: string
   showSaveDialog: boolean
@@ -48,6 +50,8 @@ interface ExplorerViewProps {
   onNavigateForward?: () => void
   canGoBack?: boolean
   canGoForward?: boolean
+  onNewQueryTab?: () => void
+  onUpdateQueryTab?: (tabId: string, updates: any) => void
 }
 
 export function ExplorerView({
@@ -72,7 +76,9 @@ export function ExplorerView({
   onNavigateBack,
   onNavigateForward,
   canGoBack,
-  canGoForward
+  canGoForward,
+  onNewQueryTab,
+  onUpdateQueryTab
 }: ExplorerViewProps) {
   const getDefaultConnectionName = () => {
     try {
@@ -91,9 +97,12 @@ export function ExplorerView({
       {/* Fixed header area */}
       <div className="flex-none">
         <TitleBar 
-          title={activeTabId && tabs.find(t => t.id === activeTabId) 
-            ? `Datagres - ${tabs.find(t => t.id === activeTabId)!.tableName}` 
-            : `Datagres - ${currentDatabase}`}
+          title={(() => {
+            const activeTab = tabs.find(t => t.id === activeTabId)
+            if (!activeTab) return `Datagres - ${currentDatabase}`
+            if (activeTab.type === 'table') return `Datagres - ${activeTab.tableName}`
+            return `Datagres - ${activeTab.title}`
+          })()}
           onNavigateBack={onNavigateBack}
           onNavigateForward={onNavigateForward}
           canGoBack={canGoBack}
@@ -113,7 +122,8 @@ export function ExplorerView({
               recentTables={recentTables}
               onConnectionChange={onConnectionChange}
               onTableSelect={onTableSelect}
-              selectedTable={tabs.find(t => t.id === activeTabId)?.tableName || ''}
+              selectedTable={tabs.find(t => t.id === activeTabId && t.type === 'table')?.tableName || ''}
+              onNewQuery={onNewQueryTab}
             />
           </ResizablePanel>
           
@@ -134,7 +144,9 @@ export function ExplorerView({
                               value={tab.id}
                               className="rounded-none border-r data-[state=active]:bg-muted data-[state=active]:shadow-none pr-8"
                             >
-                              <span className="max-w-[150px] truncate">{tab.tableName}</span>
+                              <span className="max-w-[150px] truncate">
+                                {tab.type === 'table' ? tab.tableName : tab.title}
+                              </span>
                             </TabsTrigger>
                             <Button
                               variant="ghost"
@@ -180,14 +192,23 @@ export function ExplorerView({
                     className="flex-1 mt-0 overflow-hidden data-[state=inactive]:hidden"
                     forceMount
                   >
-                    <MemoizedTableView
-                      key={`${tab.id}_${tab.tableName}`}
-                      tableName={tab.tableName}
-                      connectionString={connectionString}
-                      initialSearchTerm={tab.searchTerm}
-                      initialPage={tab.page}
-                      initialPageSize={tab.pageSize}
-                    />
+                    {tab.type === 'table' ? (
+                      <MemoizedTableView
+                        key={`${tab.id}_${tab.tableName}`}
+                        tableName={tab.tableName}
+                        connectionString={connectionString}
+                        initialSearchTerm={tab.searchTerm}
+                        initialPage={tab.page}
+                        initialPageSize={tab.pageSize}
+                      />
+                    ) : (
+                      <MemoizedSQLEditor
+                        key={tab.id}
+                        connectionString={connectionString}
+                        initialQuery={tab.query}
+                        onQueryChange={(query) => onUpdateQueryTab?.(tab.id, { query })}
+                      />
+                    )}
                   </TabsContent>
                 ))}
               </Tabs>

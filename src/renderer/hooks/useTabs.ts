@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
-import type { TableTab, TableInfo } from '@shared/types'
+import type { Tab, TableTab, QueryTab, TableInfo } from '@shared/types'
 
 interface UseTabsOptions {
   onTabChange?: (tabId: string) => void
 }
 
 export function useTabs(options: UseTabsOptions = {}) {
-  const [tabs, setTabs] = useState<TableTab[]>([])
+  const [tabs, setTabs] = useState<Tab[]>([])
   const [activeTabId, setActiveTabId] = useState<string | null>(null)
   const [recentTables, setRecentTables] = useState<TableInfo[]>([])
 
@@ -22,7 +22,7 @@ export function useTabs(options: UseTabsOptions = {}) {
     console.log('[handleTableSelect] Current activeTabId:', activeTabId)
     
     // Check if table is already open in a tab
-    const existingTab = tabs.find(tab => tab.tableName === tableName)
+    const existingTab = tabs.find(tab => tab.type === 'table' && tab.tableName === tableName)
     
     if (existingTab) {
       console.log('[handleTableSelect] Found existing tab:', existingTab)
@@ -33,6 +33,7 @@ export function useTabs(options: UseTabsOptions = {}) {
       // Create new tab
       const newTab: TableTab = {
         id: `${tableName}_${Date.now()}`,
+        type: 'table',
         tableName,
         searchTerm: '',
         page: 1,
@@ -95,6 +96,28 @@ export function useTabs(options: UseTabsOptions = {}) {
     }
   }
 
+  const handleNewQueryTab = () => {
+    const newTab: QueryTab = {
+      id: `query_${Date.now()}`,
+      type: 'query',
+      title: 'New Query',
+      query: '',
+      isSaved: false
+    }
+    
+    setTabs(prev => [...prev, newTab])
+    setActiveTabId(newTab.id)
+    options.onTabChange?.(newTab.id)
+  }
+
+  const updateQueryTab = (tabId: string, updates: Partial<QueryTab>) => {
+    setTabs(prev => prev.map(tab => 
+      tab.id === tabId && tab.type === 'query' 
+        ? { ...tab, ...updates } 
+        : tab
+    ))
+  }
+
   return {
     // State
     tabs,
@@ -109,5 +132,7 @@ export function useTabs(options: UseTabsOptions = {}) {
     handleCloseOtherTabs,
     resetTabs,
     getActiveTab,
+    handleNewQueryTab,
+    updateQueryTab,
   }
 }

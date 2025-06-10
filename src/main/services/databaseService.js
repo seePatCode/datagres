@@ -463,9 +463,86 @@ async function updateTableData(connectionString, request) {
   }
 }
 
+/**
+ * Execute arbitrary SQL query
+ * @param {string} connectionString - PostgreSQL connection string
+ * @param {Object} request - Request containing SQL query
+ * @returns {Promise<{success: boolean, data?: {columns: string[], rows: any[][], rowCount: number}, queryTime?: number, error?: string}>}
+ */
+async function executeSQL(connectionString, request) {
+  const { query } = request
+  
+  // In test mode, return mock results
+  if (process.env.NODE_ENV === 'test') {
+    return {
+      success: true,
+      data: {
+        columns: ['result'],
+        rows: [['Query executed in test mode']],
+        rowCount: 1
+      },
+      queryTime: 10
+    }
+  }
+
+  const client = new Client(connectionString)
+  
+  try {
+    await client.connect()
+    
+    const startTime = Date.now()
+    const result = await client.query(query)
+    const queryTime = Date.now() - startTime
+    
+    // Handle different types of queries
+    if (result.command === 'SELECT' || result.rows) {
+      // SELECT query - return rows
+      const columns = result.fields ? result.fields.map(field => field.name) : []
+      const rows = result.rows.map(row => columns.map(col => row[col]))
+      
+      await client.end()
+      
+      return {
+        success: true,
+        data: {
+          columns,
+          rows,
+          rowCount: result.rowCount || rows.length
+        },
+        queryTime
+      }
+    } else {
+      // Non-SELECT query (INSERT, UPDATE, DELETE, etc.)
+      await client.end()
+      
+      return {
+        success: true,
+        data: {
+          columns: ['result'],
+          rows: [[`Query OK, ${result.rowCount || 0} rows affected`]],
+          rowCount: 1
+        },
+        queryTime
+      }
+    }
+  } catch (error) {
+    try {
+      await client.end()
+    } catch (endError) {
+      // Ignore end errors
+    }
+    
+    return {
+      success: false,
+      error: error.message
+    }
+  }
+}
+
 module.exports = {
   connectDatabase,
   fetchTableData,
   fetchTableSchema,
-  updateTableData
+  updateTableData,
+  executeSQL
 }
