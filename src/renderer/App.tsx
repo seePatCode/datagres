@@ -165,6 +165,8 @@ function App() {
 
   const handleConnectionSelect = (newConnectionString: string) => {
     setConnectionString(newConnectionString)
+    // Set switching flag to prevent save dialog from appearing
+    setIsSwitchingConnection(true)
     // Auto-connect when a saved connection is selected
     connectionMutation.mutate(newConnectionString)
   }
