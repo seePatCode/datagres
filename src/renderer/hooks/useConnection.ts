@@ -23,9 +23,7 @@ export function useConnection(options: UseConnectionOptions = {}) {
   const { data: connectionsData, refetch: refetchConnections } = useQuery({
     queryKey: ['saved-connections'],
     queryFn: async () => {
-      console.log(`[${new Date().toISOString()}] Starting to fetch saved connections`)
       const result = await window.electronAPI.getSavedConnections()
-      console.log(`[${new Date().toISOString()}] Finished fetching saved connections:`, result.success ? `${result.connections?.length} connections` : result.error)
       if (!result.success) {
         throw new Error(result.error || 'Failed to load connections')
       }
@@ -35,7 +33,6 @@ export function useConnection(options: UseConnectionOptions = {}) {
 
   const connectionMutation = useMutation({
     mutationFn: async (connectionString: string) => {
-      console.log(`[${new Date().toISOString()}] Starting database connection attempt`)
       const trimmedConnection = connectionString.trim()
       
       if (!trimmedConnection) {
@@ -46,9 +43,7 @@ export function useConnection(options: UseConnectionOptions = {}) {
         throw new Error('Invalid connection string format')
       }
 
-      console.log(`[${new Date().toISOString()}] Calling electronAPI.connectDatabase`)
       const result = await window.electronAPI.connectDatabase(trimmedConnection)
-      console.log(`[${new Date().toISOString()}] Database connection result:`, result.success ? `Connected to ${result.database}, ${result.tables?.length} tables` : result.error)
       
       if (!result.success) {
         throw new Error(result.error || 'Connection failed')
@@ -57,8 +52,6 @@ export function useConnection(options: UseConnectionOptions = {}) {
       return result
     },
     onSuccess: (data) => {
-      console.log(`[${new Date().toISOString()}] Connection successful`)
-      console.log('Connection data:', data)
       setCurrentDatabase(data.database || '')
       setTables((data.tables || []).map(name => ({ name })))
       setIsAutoConnecting(false)
@@ -68,7 +61,6 @@ export function useConnection(options: UseConnectionOptions = {}) {
       options.onConnectionSuccess?.(data)
     },
     onError: (error) => {
-      console.log(`[${new Date().toISOString()}] Connection failed:`, error.message)
       setIsAutoConnecting(false)
       setIsSwitchingConnection(false)
     }
@@ -98,7 +90,6 @@ export function useConnection(options: UseConnectionOptions = {}) {
             }
           })
           .catch((error) => {
-            console.warn('Failed to auto-connect to last used database:', error)
             setIsAutoConnecting(false)
             options.onAutoConnectEnd?.()
           })
@@ -122,8 +113,6 @@ export function useConnection(options: UseConnectionOptions = {}) {
   }
 
   const handleConnectionChange = (connectionId: string) => {
-    console.log('[handleConnectionChange] Switching to connection:', connectionId)
-    
     // Set switching flag to prevent UI flash
     setIsSwitchingConnection(true)
     options.onSwitchingConnectionStart?.()
@@ -131,14 +120,12 @@ export function useConnection(options: UseConnectionOptions = {}) {
     // Load and connect to selected connection
     window.electronAPI.loadConnection(connectionId)
       .then((result) => {
-        console.log('[handleConnectionChange] Loaded connection:', result)
         if (result.success && result.connectionString) {
           setConnectionString(result.connectionString)
           connectionMutation.mutate(result.connectionString)
         }
       })
       .catch((error) => {
-        console.warn('Failed to load connection:', error)
         setIsSwitchingConnection(false)
         options.onSwitchingConnectionEnd?.()
       })

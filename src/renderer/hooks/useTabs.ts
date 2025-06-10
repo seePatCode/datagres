@@ -10,22 +10,13 @@ export function useTabs(options: UseTabsOptions = {}) {
   const [activeTabId, setActiveTabId] = useState<string | null>(null)
   const [recentTables, setRecentTables] = useState<TableInfo[]>([])
 
-  // Debug logging for tab state
-  useEffect(() => {
-    console.log('[Tab State Changed] tabs:', tabs)
-    console.log('[Tab State Changed] activeTabId:', activeTabId)
-  }, [tabs, activeTabId])
+  // Tab state tracking (removed debug logging)
 
   const handleTableSelect = (tableName: string) => {
-    console.log('[handleTableSelect] Selected table:', tableName)
-    console.log('[handleTableSelect] Current tabs:', tabs)
-    console.log('[handleTableSelect] Current activeTabId:', activeTabId)
-    
     // Check if table is already open in a tab
     const existingTab = tabs.find(tab => tab.type === 'table' && tab.tableName === tableName)
     
     if (existingTab) {
-      console.log('[handleTableSelect] Found existing tab:', existingTab)
       // Switch to existing tab
       setActiveTabId(existingTab.id)
       options.onTabChange?.(existingTab.id)
@@ -39,12 +30,7 @@ export function useTabs(options: UseTabsOptions = {}) {
         page: 1,
         pageSize: 100
       }
-      console.log('[handleTableSelect] Creating new tab:', newTab)
-      setTabs(prev => {
-        const newTabs = [...prev, newTab]
-        console.log('[handleTableSelect] New tabs array:', newTabs)
-        return newTabs
-      })
+      setTabs(prev => [...prev, newTab])
       setActiveTabId(newTab.id)
       options.onTabChange?.(newTab.id)
     }

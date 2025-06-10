@@ -1,9 +1,9 @@
-import { memo } from 'react'
+import { memo, useRef, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { TitleBar } from "@/components/ui/title-bar"
 import { DatabaseSidebar } from "@/components/ui/database-sidebar"
 import { TableView } from "@/components/ui/table-view"
-import { SQLEditor } from "@/components/ui/sql-editor"
+import { SQLEditor, SQLEditorHandle } from "@/components/ui/sql-editor"
 import { SaveConnectionDialog } from "@/components/ui/save-connection-dialog"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -52,6 +52,7 @@ interface ExplorerViewProps {
   canGoForward?: boolean
   onNewQueryTab?: () => void
   onUpdateQueryTab?: (tabId: string, updates: any) => void
+  onExecuteQuery?: (execute: () => void) => void
 }
 
 export function ExplorerView({
@@ -78,8 +79,24 @@ export function ExplorerView({
   canGoBack,
   canGoForward,
   onNewQueryTab,
-  onUpdateQueryTab
+  onUpdateQueryTab,
+  onExecuteQuery
 }: ExplorerViewProps) {
+  const sqlEditorRefs = useRef<Map<string, SQLEditorHandle>>(new Map())
+  
+  // Update execute function when active tab changes
+  useEffect(() => {
+    if (activeTabId && onExecuteQuery) {
+      const activeTab = tabs.find(t => t.id === activeTabId)
+      if (activeTab && activeTab.type === 'query') {
+        const editorRef = sqlEditorRefs.current.get(activeTabId)
+        if (editorRef) {
+          onExecuteQuery(() => editorRef.execute())
+        }
+      }
+    }
+  }, [activeTabId, tabs, onExecuteQuery])
+  
   const getDefaultConnectionName = () => {
     try {
       const url = new URL(pendingConnectionString)
@@ -122,7 +139,10 @@ export function ExplorerView({
               recentTables={recentTables}
               onConnectionChange={onConnectionChange}
               onTableSelect={onTableSelect}
-              selectedTable={tabs.find(t => t.id === activeTabId && t.type === 'table')?.tableName || ''}
+              selectedTable={(() => {
+                const activeTab = tabs.find(t => t.id === activeTabId)
+                return activeTab && activeTab.type === 'table' ? activeTab.tableName : ''
+              })()}
               onNewQuery={onNewQueryTab}
             />
           </ResizablePanel>
@@ -204,6 +224,13 @@ export function ExplorerView({
                     ) : (
                       <MemoizedSQLEditor
                         key={tab.id}
+                        ref={(ref) => {
+                          if (ref) {
+                            sqlEditorRefs.current.set(tab.id, ref)
+                          } else {
+                            sqlEditorRefs.current.delete(tab.id)
+                          }
+                        }}
                         connectionString={connectionString}
                         initialQuery={tab.query}
                         onQueryChange={(query) => onUpdateQueryTab?.(tab.id, { query })}

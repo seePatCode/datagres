@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react'
 import Editor, { OnMount } from '@monaco-editor/react'
 import { useMutation } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,10 @@ interface SQLEditorProps {
   connectionString: string
   initialQuery?: string
   onQueryChange?: (query: string) => void
+}
+
+export interface SQLEditorHandle {
+  execute: () => void
 }
 
 // Helper function to create columns dynamically
@@ -43,7 +47,7 @@ const createColumns = (columnNames: string[]): ColumnDef<any>[] => {
   }))
 }
 
-export function SQLEditor({ connectionString, initialQuery = '', onQueryChange }: SQLEditorProps) {
+export const SQLEditor = forwardRef<SQLEditorHandle, SQLEditorProps>(({ connectionString, initialQuery = '', onQueryChange }, ref) => {
   const [query, setQuery] = useState(initialQuery)
   const [selectedText, setSelectedText] = useState('')
   const editorRef = useRef<any>(null)
@@ -86,11 +90,6 @@ export function SQLEditor({ connectionString, initialQuery = '', onQueryChange }
     
     monaco.editor.setTheme('sql-dark')
 
-    // Add keyboard shortcuts
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-      handleExecute()
-    })
-
     // Track selection changes
     editor.onDidChangeCursorSelection((e: any) => {
       const selection = editor.getSelection()
@@ -109,6 +108,11 @@ export function SQLEditor({ connectionString, initialQuery = '', onQueryChange }
       executeMutation.mutate(queryToExecute)
     }
   }
+  
+  // Expose execute function to parent components
+  useImperativeHandle(ref, () => ({
+    execute: handleExecute
+  }), [query, selectedText])
 
   const handleQueryChange = (value: string | undefined) => {
     const newQuery = value || ''
@@ -217,4 +221,6 @@ export function SQLEditor({ connectionString, initialQuery = '', onQueryChange }
       </div>
     </div>
   )
-}
+})
+
+SQLEditor.displayName = 'SQLEditor'

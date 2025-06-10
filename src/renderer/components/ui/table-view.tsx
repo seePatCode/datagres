@@ -179,13 +179,13 @@ export function TableView({
     
     setIsSaving(true)
     setSaveError(null)
-    console.log('Saving changes:', editedCells)
+    // Process edited cells for saving
     
     // Get primary key columns from schema
     const primaryKeyColumns = schemaData.columns.filter(col => col.isPrimaryKey).map(col => col.name)
     
     if (primaryKeyColumns.length === 0) {
-      console.error('No primary key found for table', tableName)
+      // No primary key found for table
       setSaveError('Cannot save: table has no primary key')
       setIsSaving(false)
       return
@@ -225,7 +225,7 @@ export function TableView({
       })
       
       if (result.success) {
-        console.log(`Successfully updated ${result.updatedCount} rows`)
+        // Successfully updated rows
         
         // Don't use optimistic updates when there's an active search
         // because the optimistic data doesn't apply the WHERE clause
@@ -257,11 +257,11 @@ export function TableView({
           setOptimisticData(null)
         })
       } else {
-        console.error('Failed to update data:', result.error)
+        // Failed to update data
         setSaveError(result.error || 'Failed to save changes')
       }
     } catch (error) {
-      console.error('Error updating data:', error)
+      // Error updating data
       setSaveError('An error occurred while saving')
     } finally {
       setIsSaving(false)

@@ -19,6 +19,7 @@ function App() {
   const [currentView, setCurrentView] = useState<AppView>('connect')
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [pendingConnectionString, setPendingConnectionString] = useState('')
+  const [executeQueryFn, setExecuteQueryFn] = useState<(() => void) | null>(null)
   
   // Navigation history
   const {
@@ -118,16 +119,15 @@ function App() {
     try {
       const result = await window.electronAPI.saveConnection(pendingConnectionString, name)
       if (result.success) {
-        console.log('Connection saved successfully:', result)
         setShowSaveDialog(false)
         setPendingConnectionString('')
         // Refresh the connections list
         refetchConnections()
       } else {
-        console.error('Failed to save connection:', result.error)
+        // Handle error silently or with user notification
       }
     } catch (error) {
-      console.error('Error saving connection:', error)
+      // Handle error silently or with user notification
     }
   }
 
@@ -162,7 +162,8 @@ function App() {
     onGoBack: handleGoBack,
     onGoForward: handleGoForward,
     canGoBack,
-    canGoForward
+    canGoForward,
+    onExecuteQuery: executeQueryFn || undefined
   })
 
 
@@ -194,6 +195,7 @@ function App() {
         canGoForward={canGoForward}
         onNewQueryTab={handleNewQueryTab}
         onUpdateQueryTab={updateQueryTab}
+        onExecuteQuery={setExecuteQueryFn}
       />
     )
   }
