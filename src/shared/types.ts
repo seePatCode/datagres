@@ -90,6 +90,20 @@ export interface FetchTableSchemaResponse extends APIResponse {
   schema?: TableSchema
 }
 
+export interface UpdateTableDataRequest {
+  tableName: string
+  updates: Array<{
+    rowIndex: number
+    columnName: string
+    value: any
+    primaryKeyColumns: Record<string, any> // For WHERE clause
+  }>
+}
+
+export interface UpdateTableDataResponse extends APIResponse {
+  updatedCount?: number
+}
+
 export interface ParsedConnectionInfo {
   host: string
   port: number
@@ -104,6 +118,7 @@ export interface ElectronAPI {
   connectDatabase: (connectionString: string) => Promise<ConnectDatabaseResponse>
   fetchTableData: (connectionString: string, tableName: string, searchOptions?: SearchOptions) => Promise<FetchTableDataResponse>
   fetchTableSchema: (connectionString: string, tableName: string) => Promise<FetchTableSchemaResponse>
+  updateTableData: (connectionString: string, request: UpdateTableDataRequest) => Promise<UpdateTableDataResponse>
   
   // Connection management
   saveConnection: (connectionString: string, name: string) => Promise<SaveConnectionResponse>

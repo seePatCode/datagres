@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
-import { RefreshCw, Save, MoreHorizontal, Filter, EyeOff, Eye, ChevronLeft, ChevronRight } from 'lucide-react'
+import { RefreshCw, Save, MoreHorizontal, Filter, EyeOff, Eye, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { DataTable } from '@/components/ui/data-table'
+import { EditableDataTable } from '@/components/ui/editable-data-table'
 import { SQLWhereEditor } from '@/components/ui/sql-where-editor-monaco'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,6 +70,9 @@ export function TableView({
   initialPageSize = 100,
 }: TableViewProps) {
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({})
+  const [editedCells, setEditedCells] = useState<Map<string, any>>(new Map())
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   
   // Fetch table schema for autocomplete
   const { data: schemaData } = useQuery({
@@ -119,6 +123,9 @@ export function TableView({
         handleSearchCommit()
       }
     }
+    // Clear edited cells and errors when switching tables
+    setEditedCells(new Map())
+    setSaveError(null)
   }, [tableName, initialSearchTerm])
   
   // Initialize pagination from props when table changes
@@ -140,8 +147,106 @@ export function TableView({
     return `${(count / 1000000).toFixed(1)}M`
   }
 
+  const handleCellEdit = (rowIndex: number, columnId: string, value: any) => {
+    const cellKey = `${rowIndex}-${columnId}`
+    const newEditedCells = new Map(editedCells)
+    
+    // Get original value to compare
+    // Column ID is the column name, we need to find the index
+    const columnIndex = data?.columns.findIndex((col: string) => col === columnId) ?? -1
+    const originalValue = columnIndex >= 0 ? data?.rows[rowIndex]?.[columnIndex] : undefined
+    
+    if (value === originalValue) {
+      // If value is same as original, remove from edited cells
+      newEditedCells.delete(cellKey)
+    } else {
+      // Add to edited cells
+      newEditedCells.set(cellKey, value)
+    }
+    
+    setEditedCells(newEditedCells)
+  }
+
+  const handleSaveChanges = async () => {
+    if (!data || !schemaData || editedCells.size === 0) return
+    
+    setIsSaving(true)
+    setSaveError(null)
+    console.log('Saving changes:', editedCells)
+    
+    // Get primary key columns from schema
+    const primaryKeyColumns = schemaData.columns.filter(col => col.isPrimaryKey).map(col => col.name)
+    
+    if (primaryKeyColumns.length === 0) {
+      console.error('No primary key found for table', tableName)
+      setSaveError('Cannot save: table has no primary key')
+      setIsSaving(false)
+      return
+    }
+    
+    // Build updates array
+    const updates: any[] = []
+    
+    for (const [cellKey, value] of editedCells) {
+      const [rowIndexStr, columnId] = cellKey.split('-')
+      const rowIndex = parseInt(rowIndexStr)
+      const row = data.rows[rowIndex]
+      
+      if (!row) continue
+      
+      // Build primary key values for WHERE clause
+      const primaryKeyValues: Record<string, any> = {}
+      for (const pkColumn of primaryKeyColumns) {
+        const pkColumnIndex = data.columns.indexOf(pkColumn)
+        if (pkColumnIndex >= 0) {
+          primaryKeyValues[pkColumn] = row[pkColumnIndex]
+        }
+      }
+      
+      updates.push({
+        rowIndex,
+        columnName: columnId,
+        value,
+        primaryKeyColumns: primaryKeyValues
+      })
+    }
+    
+    try {
+      const result = await window.electronAPI.updateTableData(connectionString, {
+        tableName,
+        updates
+      })
+      
+      if (result.success) {
+        console.log(`Successfully updated ${result.updatedCount} rows`)
+        // Clear edited cells and refresh data
+        setEditedCells(new Map())
+        refetch()
+        setSaveError(null)
+      } else {
+        console.error('Failed to update data:', result.error)
+        setSaveError(result.error || 'Failed to save changes')
+      }
+    } catch (error) {
+      console.error('Error updating data:', error)
+      setSaveError('An error occurred while saving')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const hasEdits = editedCells.size > 0
+
   return (
     <div className={`flex h-full flex-col min-w-0 ${className}`}>
+      {/* Error Alert */}
+      {saveError && (
+        <Alert variant="destructive" className="mb-2">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{saveError}</AlertDescription>
+        </Alert>
+      )}
+      
       {/* Toolbar */}
       <div className="flex items-center justify-between border-b bg-background" style={{ overflow: 'visible', zIndex: 100 }}>
         <div className="flex-1 m-0.5" style={{ overflow: 'visible' }}>
@@ -156,10 +261,25 @@ export function TableView({
 
         <div className="flex items-center gap-2 px-3">
           {/* Save button (if changes) */}
-          {hasUnsavedChanges && onSave && (
-            <Button onClick={onSave} size="sm" className="gap-1">
-              <Save className="h-4 w-4" />
-              Save Changes
+          {hasEdits && (
+            <Button 
+              onClick={handleSaveChanges} 
+              size="sm" 
+              className="gap-1" 
+              variant="default"
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Save {editedCells.size} Change{editedCells.size > 1 ? 's' : ''}
+                </>
+              )}
             </Button>
           )}
           
@@ -167,7 +287,10 @@ export function TableView({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => refetch()}
+            onClick={() => {
+              setEditedCells(new Map())
+              refetch()
+            }}
             disabled={isLoading}
             className="gap-1"
           >
@@ -188,7 +311,7 @@ export function TableView({
                 Column Visibility
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {(data?.columns || []).map((columnName) => {
+              {(data?.columns || []).map((columnName: string) => {
                 const isVisible = columnVisibility[columnName] !== false
                 return (
                   <DropdownMenuCheckboxItem
@@ -236,12 +359,14 @@ export function TableView({
             </div>
           </div>
         ) : data && data.columns.length > 0 ? (
-          <DataTable 
+          <EditableDataTable 
             columns={columns}
             data={data.rows}
             tableName={tableName}
             columnVisibility={columnVisibility}
             onColumnVisibilityChange={setColumnVisibility}
+            onCellEdit={handleCellEdit}
+            editedCells={editedCells}
           />
         ) : isLoading ? (
           <div className="flex h-full items-center justify-center">
@@ -300,8 +425,10 @@ export function TableView({
               </Button>
             </div>
           )}
-          {hasUnsavedChanges && (
-            <span className="text-orange-600">Unsaved changes</span>
+          {hasEdits && (
+            <span className="text-orange-600">
+              {editedCells.size} unsaved change{editedCells.size > 1 ? 's' : ''}
+            </span>
           )}
           {isLoading && (
             <span className="text-cyan-600">Loading...</span>

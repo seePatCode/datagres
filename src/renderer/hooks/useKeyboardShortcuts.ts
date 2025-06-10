@@ -6,18 +6,40 @@ interface UseKeyboardShortcutsOptions {
   activeTabId: string | null
   onCloseTab: (tabId: string) => void
   setActiveTabId: (tabId: string) => void
+  onGoBack?: () => void
+  onGoForward?: () => void
+  canGoBack?: boolean
+  canGoForward?: boolean
 }
 
 export function useKeyboardShortcuts({
   tabs,
   activeTabId,
   onCloseTab,
-  setActiveTabId
+  setActiveTabId,
+  onGoBack,
+  onGoForward,
+  canGoBack = false,
+  canGoForward = false
 }: UseKeyboardShortcutsOptions) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd/Ctrl + [ to go back (Mac style, like Safari)
+      if ((e.metaKey || e.ctrlKey) && e.key === '[') {
+        e.preventDefault()
+        if (canGoBack && onGoBack) {
+          onGoBack()
+        }
+      }
+      // Cmd/Ctrl + ] to go forward (Mac style, like Safari)
+      else if ((e.metaKey || e.ctrlKey) && e.key === ']') {
+        e.preventDefault()
+        if (canGoForward && onGoForward) {
+          onGoForward()
+        }
+      }
       // Cmd/Ctrl + W to close current tab
-      if ((e.metaKey || e.ctrlKey) && e.key === 'w') {
+      else if ((e.metaKey || e.ctrlKey) && e.key === 'w') {
         e.preventDefault()
         if (activeTabId) {
           onCloseTab(activeTabId)
@@ -53,5 +75,5 @@ export function useKeyboardShortcuts({
     
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [tabs, activeTabId, onCloseTab, setActiveTabId])
+  }, [tabs, activeTabId, onCloseTab, setActiveTabId, onGoBack, onGoForward, canGoBack, canGoForward])
 }

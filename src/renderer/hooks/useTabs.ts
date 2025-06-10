@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
 import type { TableTab, TableInfo } from '@shared/types'
 
-export function useTabs() {
+interface UseTabsOptions {
+  onTabChange?: (tabId: string) => void
+}
+
+export function useTabs(options: UseTabsOptions = {}) {
   const [tabs, setTabs] = useState<TableTab[]>([])
   const [activeTabId, setActiveTabId] = useState<string | null>(null)
   const [recentTables, setRecentTables] = useState<TableInfo[]>([])
@@ -24,6 +28,7 @@ export function useTabs() {
       console.log('[handleTableSelect] Found existing tab:', existingTab)
       // Switch to existing tab
       setActiveTabId(existingTab.id)
+      options.onTabChange?.(existingTab.id)
     } else {
       // Create new tab
       const newTab: TableTab = {
@@ -40,6 +45,7 @@ export function useTabs() {
         return newTabs
       })
       setActiveTabId(newTab.id)
+      options.onTabChange?.(newTab.id)
     }
     
     // Add to recent tables
@@ -81,6 +87,14 @@ export function useTabs() {
     return tabs.find(tab => tab.id === activeTabId)
   }
 
+  // Wrapper for setActiveTabId to track changes
+  const handleSetActiveTabId = (tabId: string) => {
+    if (tabId !== activeTabId) {
+      setActiveTabId(tabId)
+      options.onTabChange?.(tabId)
+    }
+  }
+
   return {
     // State
     tabs,
@@ -88,7 +102,7 @@ export function useTabs() {
     recentTables,
     
     // Actions
-    setActiveTabId,
+    setActiveTabId: handleSetActiveTabId,
     handleTableSelect,
     handleCloseTab,
     handleCloseAllTabs,
