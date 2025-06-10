@@ -130,6 +130,11 @@ export function TableView({
     setOptimisticData(null)
   }, [tableName, initialSearchTerm])
   
+  // Clear optimistic data when search changes
+  useEffect(() => {
+    setOptimisticData(null)
+  }, [activeSearchTerm])
+  
   // Initialize pagination from props when table changes
   useEffect(() => {
     if (initialPage !== page) {
@@ -222,8 +227,9 @@ export function TableView({
       if (result.success) {
         console.log(`Successfully updated ${result.updatedCount} rows`)
         
-        // Apply updates to current data optimistically
-        if (data) {
+        // Don't use optimistic updates when there's an active search
+        // because the optimistic data doesn't apply the WHERE clause
+        if (data && !activeSearchTerm) {
           const updatedData = {
             ...data,
             rows: [...data.rows] // Create a new array to trigger re-render
