@@ -1,27 +1,9 @@
-import { useState, useEffect, memo } from 'react'
+import { useState, useEffect } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { ColumnDef } from '@tanstack/react-table'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { DataTable } from "@/components/ui/data-table"
-import { ConnectionManager } from "@/components/ui/connection-manager"
-import { TitleBar } from "@/components/ui/title-bar"
-import { DatabaseSidebar } from "@/components/ui/database-sidebar"
-import { TableView } from "@/components/ui/table-view"
-import { SaveConnectionDialog } from "@/components/ui/save-connection-dialog"
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { 
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from '@/components/ui/context-menu'
-import { X } from 'lucide-react'
 import type { ElectronAPI, AppView, TableInfo, MenuAction, TableTab } from '@shared/types'
 import { validateConnectionString } from '@shared/validation'
+import { ConnectionView } from '@/views/ConnectionView'
+import { ExplorerView } from '@/views/ExplorerView'
 
 declare global {
   interface Window {
@@ -29,22 +11,6 @@ declare global {
   }
 }
 
-// Memoized TableView to prevent unnecessary re-renders
-const MemoizedTableView = memo(TableView)
-
-// Helper function to create columns dynamically
-const createColumns = (columnNames: string[]): ColumnDef<any>[] => {
-  return columnNames.map((columnName, index) => ({
-    accessorKey: index.toString(),
-    header: columnName,
-    cell: ({ getValue }) => {
-      const value = getValue()
-      return value !== null ? String(value) : (
-        <span className="text-muted-foreground italic">NULL</span>
-      )
-    },
-  }))
-}
 
 function App() {
   
@@ -371,241 +337,51 @@ function App() {
     conn.database === currentDatabase
   )
 
-  const getStatusVariant = () => {
-    if (connectionMutation.isSuccess) return 'default' // Green-ish
-    if (connectionMutation.isError) return 'destructive' // Red
-    return 'default' // Default styling
-  }
 
-  const getButtonText = () => {
-    if (connectionMutation.isPending) return 'Connecting...'
-    if (connectionMutation.isSuccess) return 'Connected'
-    return 'Connect'
-  }
-
-  const getStatusMessage = () => {
-    if (connectionMutation.isPending) return 'Connecting...'
-    if (connectionMutation.isSuccess) return `Connected to ${connectionMutation.data?.database}`
-    if (connectionMutation.isError) return `Connection error: ${connectionMutation.error?.message}`
-    return ''
-  }
-
-  const shouldShowStatus = () => {
-    return connectionMutation.isPending || connectionMutation.isSuccess || connectionMutation.isError
-  }
-  
-  // Generate a default connection name from the connection string
-  const getDefaultConnectionName = () => {
-    try {
-      const url = new URL(pendingConnectionString)
-      const username = url.username || 'user'
-      const host = url.hostname || 'localhost'
-      const database = url.pathname.substring(1) || 'database'
-      return `${username}@${host}/${database}`
-    } catch {
-      return 'New Connection'
-    }
-  }
-
-  // Explorer view with sidebar + main content
-  // Show explorer view if we're in explorer mode, even if connection is pending (when switching)
+  // Render appropriate view based on current state
   if (currentView === 'explorer') {
     return (
-      <div className="h-screen bg-background text-foreground flex flex-col">
-        {/* Fixed header area */}
-        <div className="flex-none">
-          <TitleBar title={activeTabId && tabs.find(t => t.id === activeTabId) 
-            ? `Datagres - ${tabs.find(t => t.id === activeTabId)!.tableName}` 
-            : `Datagres - ${currentDatabase}`} />
-        </div>
-        
-        {/* Main layout with resizable panels */}
-        <div className="flex-1 overflow-hidden">
-          <ResizablePanelGroup direction="horizontal">
-            {/* Sidebar Panel */}
-            <ResizablePanel defaultSize={25} minSize={5} maxSize={95}>
-              <DatabaseSidebar
-                connections={connections}
-                currentConnection={currentConnection}
-                tables={tables}
-                recentTables={recentTables}
-                onConnectionChange={handleConnectionChange}
-                onTableSelect={handleTableSelect}
-                selectedTable={tabs.find(t => t.id === activeTabId)?.tableName || ''}
-              />
-            </ResizablePanel>
-            
-            {/* Resize handle */}
-            <ResizableHandle />
-            
-            {/* Main content panel */}
-            <ResizablePanel defaultSize={75} minSize={5}>
-              {tabs.length > 0 ? (
-                <Tabs value={activeTabId || ''} onValueChange={(value) => {
-                  console.log('[Tabs] Tab changed to:', value)
-                  setActiveTabId(value)
-                }} className="h-full flex flex-col">
-                  <div className="border-b bg-background">
-                    <TabsList className="h-auto p-0 bg-transparent rounded-none w-full justify-start">
-                      {tabs.map(tab => (
-                        <ContextMenu key={tab.id}>
-                          <ContextMenuTrigger asChild>
-                            <div className="relative group">
-                              <TabsTrigger 
-                                value={tab.id}
-                                className="rounded-none border-r data-[state=active]:bg-muted data-[state=active]:shadow-none pr-8"
-                              >
-                                <span className="max-w-[150px] truncate">{tab.tableName}</span>
-                              </TabsTrigger>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleCloseTab(tab.id)
-                                }}
-                                className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </ContextMenuTrigger>
-                          <ContextMenuContent>
-                            <ContextMenuItem onClick={() => handleCloseTab(tab.id)}>
-                              <span className="flex items-center justify-between w-full">
-                                Close
-                                <span className="text-xs text-muted-foreground ml-4">⌘W</span>
-                              </span>
-                            </ContextMenuItem>
-                            <ContextMenuItem onClick={handleCloseAllTabs}>
-                              <span className="flex items-center justify-between w-full">
-                                Close All
-                                <span className="text-xs text-muted-foreground ml-4">⌘⇧W</span>
-                              </span>
-                            </ContextMenuItem>
-                            <ContextMenuItem 
-                              onClick={() => handleCloseOtherTabs(tab.id)}
-                              disabled={tabs.length === 1}
-                            >
-                              Close Others
-                            </ContextMenuItem>
-                          </ContextMenuContent>
-                        </ContextMenu>
-                      ))}
-                    </TabsList>
-                  </div>
-                  {tabs.map(tab => {
-                    console.log('[TabsContent] Rendering tab content for:', tab)
-                    return (
-                      <TabsContent 
-                        key={tab.id} 
-                        value={tab.id} 
-                        className="flex-1 mt-0 overflow-hidden data-[state=inactive]:hidden"
-                        forceMount
-                      >
-                        <MemoizedTableView
-                          key={`${tab.id}_${tab.tableName}`}
-                          tableName={tab.tableName}
-                          connectionString={connectionString}
-                          initialSearchTerm={tab.searchTerm}
-                          initialPage={tab.page}
-                          initialPageSize={tab.pageSize}
-                        />
-                      </TabsContent>
-                    )
-                  })}
-                </Tabs>
-              ) : (
-                <div className="flex h-full items-center justify-center">
-                  <div className="text-center">
-                    <h3 className="text-lg font-medium mb-2">Select a table to view data</h3>
-                    <p className="text-muted-foreground">
-                      Choose a table from the sidebar to start exploring your data
-                    </p>
-                  </div>
-                </div>
-              )}
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        </div>
-        
-        {/* Save Connection Dialog */}
-        <SaveConnectionDialog
-          open={showSaveDialog}
-          onOpenChange={setShowSaveDialog}
-          onSave={handleSaveConnection}
-          defaultName={getDefaultConnectionName()}
-        />
-      </div>
+      <ExplorerView
+        currentDatabase={currentDatabase}
+        tables={tables}
+        recentTables={recentTables}
+        connections={connections}
+        currentConnection={currentConnection}
+        tabs={tabs}
+        activeTabId={activeTabId}
+        connectionString={connectionString}
+        showSaveDialog={showSaveDialog}
+        pendingConnectionString={pendingConnectionString}
+        onConnectionChange={handleConnectionChange}
+        onTableSelect={handleTableSelect}
+        onCloseTab={handleCloseTab}
+        onCloseAllTabs={handleCloseAllTabs}
+        onCloseOtherTabs={handleCloseOtherTabs}
+        setShowSaveDialog={setShowSaveDialog}
+        onSaveConnection={handleSaveConnection}
+        setActiveTabId={setActiveTabId}
+      />
     )
   }
 
-  // Connection Form View (default)
   return (
-    <div className="h-screen bg-background text-foreground flex flex-col">
-      {/* Fixed header area */}
-      <div className="flex-none">
-        <TitleBar />
-      </div>
-      
-      {/* Scrollable content area */}
-      <div className="flex-1 overflow-auto">
-        <div className="flex flex-col items-center justify-center min-h-full p-4">
-      <Card className="w-full max-w-md">
-        <CardContent className="pt-6">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-semibold text-foreground">
-              Datagres - Database Explorer
-            </h2>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="flex gap-2">
-              <Input 
-                placeholder="Paste connection string here"
-                value={connectionString}
-                onChange={(e) => setConnectionString(e.target.value)}
-                className="flex-1"
-                disabled={connectionMutation.isPending}
-              />
-              <Button 
-                onClick={handleConnect}
-                disabled={connectionMutation.isPending}
-                className={connectionMutation.isSuccess ? 'bg-green-600 hover:bg-green-700' : ''}
-              >
-                {getButtonText()}
-              </Button>
-            </div>
-
-            {shouldShowStatus() && !connectionMutation.isSuccess && (
-              <Alert variant={getStatusVariant()}>
-                <AlertDescription data-testid="connection-status">
-                  {getStatusMessage()}
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* Connection Manager */}
-      <div className="mt-6 w-full max-w-md">
-        <ConnectionManager 
-          onConnectionSelect={handleConnectionSelect}
-          currentConnectionString={connectionMutation.isSuccess ? connectionString : undefined}
-        />
-        </div>
-        </div>
-      </div>
-      
-      {/* Save Connection Dialog */}
-      <SaveConnectionDialog
-        open={showSaveDialog}
-        onOpenChange={setShowSaveDialog}
-        onSave={handleSaveConnection}
-        defaultName={getDefaultConnectionName()}
-      />
-    </div>
+    <ConnectionView
+      connectionString={connectionString}
+      setConnectionString={setConnectionString}
+      connectionMutation={{
+        isPending: connectionMutation.isPending,
+        isSuccess: connectionMutation.isSuccess,
+        isError: connectionMutation.isError,
+        error: connectionMutation.error,
+        data: connectionMutation.data ? { database: connectionMutation.data.database || '' } : undefined
+      }}
+      onConnect={handleConnect}
+      onConnectionSelect={handleConnectionSelect}
+      showSaveDialog={showSaveDialog}
+      setShowSaveDialog={setShowSaveDialog}
+      onSaveConnection={handleSaveConnection}
+      pendingConnectionString={pendingConnectionString}
+    />
   )
 }
 
