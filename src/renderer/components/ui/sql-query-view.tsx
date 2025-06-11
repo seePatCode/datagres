@@ -148,9 +148,9 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* SQL Editor */}
-      <div className="flex-1 min-h-[200px] border-b">
+      <div className="flex-1 min-h-[200px] max-h-[50%] border-b">
         <div className="h-full flex flex-col">
           <div className="flex items-center justify-between p-2 border-b bg-muted/30">
             <div className="flex items-center gap-4">
@@ -214,7 +214,7 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
       </div>
 
       {/* Results */}
-      <div className="flex-1 min-h-0 flex flex-col">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         {executeMutation.error && (
           <Alert variant="destructive" className="m-2">
             <AlertCircle className="h-4 w-4" />
@@ -223,9 +223,9 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
         )}
 
         {executeMutation.data && (
-          <>
+          <div className="flex flex-col h-full">
             {/* Query stats */}
-            <div className="flex items-center gap-4 px-3 py-2 border-b bg-muted/20 text-sm">
+            <div className="flex items-center gap-4 px-3 py-2 border-b bg-muted/20 text-sm flex-shrink-0">
               <span className="flex items-center gap-1 text-muted-foreground">
                 <Clock className="h-3 w-3" />
                 {formatTime(executeMutation.data.queryTime || 0)}
@@ -235,8 +235,8 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
               </span>
             </div>
 
-            {/* Results table */}
-            <div className="flex-1 overflow-auto">
+            {/* Results table with its own scroll container */}
+            <div className="flex-1 min-h-0">
               {executeMutation.data.data && executeMutation.data.data.columns.length > 0 && (
                 <DataTable
                   columns={createColumns(executeMutation.data.data.columns)}
@@ -244,7 +244,7 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
                 />
               )}
             </div>
-          </>
+          </div>
         )}
 
         {!executeMutation.data && !executeMutation.error && (

@@ -193,7 +193,7 @@ export function ExplorerView({
                   <TabsContent 
                     key={tab.id} 
                     value={tab.id} 
-                    className="flex-1 mt-0 overflow-hidden data-[state=inactive]:hidden"
+                    className="flex-1 mt-0 overflow-hidden data-[state=inactive]:hidden h-full"
                     forceMount
                   >
                     {tab.type === 'table' ? (
