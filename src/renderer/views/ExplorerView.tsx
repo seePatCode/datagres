@@ -211,6 +211,7 @@ export function ExplorerView({
                         connectionString={connectionString}
                         initialQuery={tab.query}
                         onQueryChange={(query) => onUpdateQueryTab?.(tab.id, { query })}
+                        tables={tables}
                       />
                     )}
                   </TabsContent>

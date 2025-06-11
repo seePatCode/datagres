@@ -11,11 +11,13 @@ import { useSqlSettings } from '@/contexts/SqlSettingsContext'
 import { useDebounce } from '@/hooks/useDebounce'
 import { Play, Loader2, AlertCircle, Clock, Eye } from 'lucide-react'
 import { ColumnDef } from '@tanstack/react-table'
+import type { TableSchema, TableInfo } from '@shared/types'
 
 interface SQLQueryViewProps {
   connectionString: string
   initialQuery?: string
   onQueryChange?: (query: string) => void
+  tables?: TableInfo[]
 }
 
 // Helper function to create columns dynamically
@@ -48,13 +50,44 @@ const createColumns = (columnNames: string[]): ColumnDef<any>[] => {
   }))
 }
 
-export function SQLQueryView({ connectionString, initialQuery = '', onQueryChange }: SQLQueryViewProps) {
+export function SQLQueryView({ connectionString, initialQuery = '', onQueryChange, tables = [] }: SQLQueryViewProps) {
   const [query, setQuery] = useState(initialQuery)
   const editorRef = useRef<SQLEditorHandle>(null)
   const { livePreview, setLivePreview } = useSqlSettings()
+  const [schemas, setSchemas] = useState<TableSchema[]>([])
   
   // Only debounce when live preview is on
   const debouncedQuery = useDebounce(query, livePreview ? 500 : 0)
+  
+  
+  // Fetch schemas for all tables
+  useEffect(() => {
+    if (!tables || tables.length === 0) {
+      setSchemas([])
+      return
+    }
+    
+    // Fetch schemas for all tables
+    const fetchSchemas = async () => {
+      const schemaPromises = tables.map(async (table) => {
+        try {
+          const result = await window.electronAPI.fetchTableSchema(connectionString, table.name)
+          if (result.success && result.schema) {
+            return result.schema
+          }
+        } catch (error) {
+          console.error(`Failed to fetch schema for ${table.name}:`, error)
+        }
+        return null
+      })
+      
+      const results = await Promise.all(schemaPromises)
+      const validSchemas = results.filter((schema): schema is TableSchema => schema !== null)
+      setSchemas(validSchemas)
+    }
+    
+    fetchSchemas()
+  }, [tables, connectionString])
 
   const executeMutation = useMutation({
     mutationFn: async (sqlQuery: string) => {
@@ -174,6 +207,7 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
               value={query}
               onChange={handleQueryChange}
               onExecute={handleExecute}
+              schemas={schemas}
             />
           </div>
         </div>
