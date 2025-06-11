@@ -183,6 +183,7 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
               </TooltipProvider>
             </div>
             <Button
+              variant="primary"
               size="sm"
               onClick={handleExecute}
               disabled={executeMutation.isPending || !query.trim()}

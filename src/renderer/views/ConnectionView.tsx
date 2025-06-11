@@ -111,9 +111,10 @@ export function ConnectionView({
                     disabled={connectionMutation.isPending}
                   />
                   <Button 
+                    variant={connectionMutation.isSuccess ? 'default' : 'primary'}
                     onClick={onConnect}
                     disabled={connectionMutation.isPending}
-                    className={connectionMutation.isSuccess ? 'bg-green-600 hover:bg-green-700' : ''}
+                    className={connectionMutation.isSuccess ? 'bg-green-600/20 hover:bg-green-600/30 text-green-400 border-green-600/50' : ''}
                   >
                     {getButtonText()}
                   </Button>
