@@ -58,23 +58,6 @@ function App() {
   }
   
   // Use custom hooks
-  const {
-    tabs,
-    activeTabId,
-    recentTables,
-    setActiveTabId,
-    handleTableSelect,
-    handleCloseTab,
-    handleCloseAllTabs,
-    handleCloseOtherTabs,
-    resetTabs,
-    handleNewQueryTab,
-    updateQueryTab,
-  } = useTabs({
-    onTabChange: (tabId) => {
-      pushEntry({ type: 'tab', tabId })
-    }
-  })
 
   const {
     connectionString,
@@ -108,6 +91,24 @@ function App() {
     }
   })
 
+  const {
+    tabs,
+    activeTabId,
+    recentTables,
+    setActiveTabId,
+    handleTableSelect,
+    handleCloseTab,
+    handleCloseAllTabs,
+    handleCloseOtherTabs,
+    resetTabs,
+    handleNewQueryTab,
+    updateQueryTab,
+  } = useTabs({
+    onTabChange: (tabId) => {
+      pushEntry({ type: 'tab', tabId })
+    },
+    connectionString: connectionMutation.isSuccess ? connectionString : undefined
+  })
 
   // Wrapper for connection change to handle tab clearing
   const handleConnectionChange = (connectionId: string) => {
