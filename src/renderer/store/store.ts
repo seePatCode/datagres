@@ -1,0 +1,28 @@
+import { configureStore } from '@reduxjs/toolkit'
+import { setupListeners } from '@reduxjs/toolkit/query'
+import settingsReducer from './slices/settingsSlice'
+import { persistenceMiddleware, loadPersistedState } from './middleware/persistence'
+
+// Load persisted state
+const preloadedState = loadPersistedState()
+
+export const store = configureStore({
+  reducer: {
+    settings: settingsReducer,
+  },
+  preloadedState,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        // Ignore these action types
+        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+      },
+    }).concat(persistenceMiddleware),
+})
+
+// Infer the `RootState` and `AppDispatch` types from the store itself
+export type RootState = ReturnType<typeof store.getState>
+export type AppDispatch = typeof store.dispatch
+
+// Enable refetchOnFocus/refetchOnReconnect behaviors
+setupListeners(store.dispatch)

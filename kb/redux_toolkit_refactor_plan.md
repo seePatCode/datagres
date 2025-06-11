@@ -548,28 +548,204 @@ test('Redux state persists across restarts', async () => {
 7. **Predictable**: Clear action → reducer → state flow
 8. **Testable**: Easy to test reducers and selectors
 
-## Timeline Estimate
+## Complete State Inventory
 
-- Day 1: Redux setup and infrastructure
-- Day 2: Create slices and RTK Query setup
-- Day 3: Refactor major components
-- Day 4: Persistence and testing
-- Day 5: Cleanup and documentation
+### Global State (Currently in Custom Hooks)
+1. **Connection State** (`useConnection`)
+   - connectionString, currentDatabase, tables
+   - Auto-connection flags
+   - Connection switching state
 
-Total: 5 days
+2. **Tab State** (`useTabs`)
+   - Open tabs array (per connection)
+   - Active tab ID
+   - Recent tables list
+   - Persistence to localStorage
 
-## Success Criteria
+3. **Navigation History** (`useNavigationHistory`)
+   - History stack with refs
+   - Current index
+   - Can go back/forward flags
 
-1. **All state in Redux**: No component-level state management
-2. **Clean components**: No callbacks or prop drilling
-3. **Full persistence**: State survives app restarts
-4. **Redux DevTools working**: Can inspect all state changes
-5. **All tests passing**: Unit and integration tests
-6. **Performance maintained**: No degradation vs current
+4. **App-Level UI State** (`App.tsx`)
+   - Current view (connect/explorer)
+   - Save dialog visibility
+   - Pending connection string
+
+### Context-Based State
+1. **Theme** (`ThemeProvider`)
+   - Theme preference (dark/light/system)
+   - System theme listener
+
+2. **SQL Settings** (`SqlSettingsContext`)
+   - Live preview toggle
+
+### Component-Local State (Need to Evaluate)
+1. **ConnectionManager**: Dialog states, editing states
+2. **DatabaseSidebar**: Search query, expanded sections
+3. **TableView**: Column visibility, edited cells, filters
+4. **SQLQueryView**: Query text, schemas for autocomplete
+5. **DataTable**: TanStack Table state (sorting, filtering, etc.)
+
+## Iterative Migration Plan
+
+### Phase 1: Redux Infrastructure (Day 1)
+**Goal**: Set up Redux without breaking anything
+
+1. Install dependencies
+2. Create basic store configuration
+3. Add Redux Provider to app
+4. Create empty slices
+5. Verify app still works
+
+**Testing**: 
+- App should start without errors
+- All existing functionality should work
+- Redux DevTools should show empty state
+
+### Phase 2: Migrate Theme & SQL Settings (Day 2)
+**Goal**: Replace Context API with Redux for simple global state
+
+1. Create `settingsSlice` with theme and SQL settings
+2. Add persistence middleware for settings
+3. Replace ThemeProvider with Redux selectors
+4. Replace SqlSettingsContext with Redux
+5. Remove old Context files
+
+**Testing**:
+- Theme switching should work
+- Theme should persist on restart
+- Live preview toggle should work
+- Settings should persist
+
+### Phase 3: Migrate UI State (Day 3)
+**Goal**: Move app-level UI state to Redux
+
+1. Create `uiSlice` for:
+   - Current view
+   - Dialog states
+   - Sidebar width
+2. Update App.tsx to use Redux
+3. Connect ExplorerView to Redux
+
+**Testing**:
+- Navigation between views
+- Dialog open/close
+- Sidebar resize persistence
+
+### Phase 4: Migrate Connection State (Days 4-5)
+**Goal**: Replace useConnection with Redux + RTK Query
+
+1. Create `connectionSlice` for connection state
+2. Create RTK Query endpoints for:
+   - Connect database
+   - Get saved connections
+   - Save/load connections
+3. Update components to use new endpoints
+4. Remove useConnection hook
+
+**Testing**:
+- Connection flow
+- Auto-connect on startup
+- Connection switching
+- Saved connections CRUD
+
+### Phase 5: Migrate Tab State (Days 6-7)
+**Goal**: The most complex migration - tabs
+
+1. Create comprehensive `tabsSlice`
+2. Add tab persistence middleware
+3. Migrate tab-related components one by one:
+   - ExplorerView (tab rendering)
+   - TableView (tab updates)
+   - SQLQueryView (tab updates)
+4. Remove useTabs hook
+
+**Testing**:
+- Tab creation/switching/closing
+- Tab state persistence
+- Search/pagination persistence
+- Recent tables list
+
+### Phase 6: Migrate Table Data (Days 8-9)
+**Goal**: Replace React Query with RTK Query for data
+
+1. Create RTK Query endpoints for:
+   - Fetch table data
+   - Fetch table schema
+   - Update table data
+   - Execute SQL
+2. Update useServerSideTableData to use RTK Query
+3. Update components gradually
+
+**Testing**:
+- Table data loading
+- Pagination/sorting/filtering
+- Data updates
+- SQL execution
+
+### Phase 7: Component State Cleanup (Day 10)
+**Goal**: Evaluate remaining component state
+
+1. Identify truly local state (should stay)
+2. Identify state that should be global
+3. Create slices for any missing global state
+4. Clean up unnecessary state
+
+**Testing**:
+- All features still work
+- No unnecessary re-renders
+- Clean component code
+
+### Phase 8: Final Cleanup (Day 11)
+**Goal**: Remove old code and optimize
+
+1. Remove all old hooks
+2. Remove unused dependencies
+3. Optimize selectors with reselect
+4. Add missing TypeScript types
+5. Update documentation
+
+**Testing**:
+- Full app regression test
+- Performance testing
+- Build and package app
+
+## Testing Strategy for Each Phase
+
+### Unit Tests
+- Test each reducer in isolation
+- Test selectors return correct data
+- Test actions update state correctly
+
+### Integration Tests
+- Test state persistence works
+- Test middleware side effects
+- Test component integration
+
+### E2E Tests
+- Run existing Playwright tests after each phase
+- Add new tests for Redux-specific features
+- Test app restart scenarios
+
+## Rollback Strategy
+
+1. Each phase in separate PR
+2. Feature flag for Redux vs old system
+3. Keep old code until phase is stable
+4. Easy revert if issues found
+
+## Success Metrics
+
+1. **No regressions**: All existing features work
+2. **Better performance**: Fewer re-renders
+3. **Cleaner code**: Less prop drilling
+4. **Better debugging**: Redux DevTools
+5. **Easier testing**: Isolated reducers
 
 ## Next Steps
 
-1. Get team buy-in on Redux Toolkit approach
+1. Review and approve this plan
 2. Create feature branch `refactor/redux-toolkit`
-3. Install dependencies and set up store
-4. Begin incremental migration starting with tabs state
+3. Set up CI to run tests on each commit
+4. Begin Phase 1: Redux Infrastructure
