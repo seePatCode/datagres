@@ -18,8 +18,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   close: () => ipcRenderer.invoke('window-close'),
   // Menu actions
   onMenuAction: (callback) => {
-    ipcRenderer.on('menu-action', (event, action) => {
+    const handler = (event, action) => {
       callback(action)
-    })
+    }
+    ipcRenderer.on('menu-action', handler)
+    // Return cleanup function
+    return () => {
+      ipcRenderer.removeListener('menu-action', handler)
+    }
   }
 })

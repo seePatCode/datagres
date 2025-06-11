@@ -35,14 +35,10 @@ export function useMenuActions({
         }
       }
 
-      window.electronAPI.onMenuAction(handleMenuAction)
+      const cleanup = window.electronAPI.onMenuAction(handleMenuAction)
       
-      // Cleanup function - electron doesn't provide a way to remove the listener
-      // but returning a function here follows React conventions
-      return () => {
-        // In a real implementation, we'd want to remove the listener
-        // For now, this is just a placeholder
-      }
+      // Return the cleanup function
+      return cleanup
     }
   }, [currentView, activeTabId, onNewConnection, onShowConnections, onCloseTab])
 }

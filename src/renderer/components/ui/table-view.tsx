@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
 import { RefreshCw, Save, MoreHorizontal, Filter, EyeOff, Eye, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
@@ -26,6 +26,9 @@ interface TableViewProps {
   initialSearchTerm?: string
   initialPage?: number
   initialPageSize?: number
+  onSearchChange?: (searchTerm: string) => void
+  onPageChange?: (page: number) => void
+  onPageSizeChange?: (pageSize: number) => void
 }
 
 // Helper function to create columns dynamically
@@ -68,6 +71,9 @@ export function TableView({
   initialSearchTerm = '',
   initialPage = 1,
   initialPageSize = 100,
+  onSearchChange,
+  onPageChange,
+  onPageSizeChange,
 }: TableViewProps) {
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({})
   const [editedCells, setEditedCells] = useState<Map<string, any>>(new Map())
@@ -134,6 +140,22 @@ export function TableView({
   useEffect(() => {
     setOptimisticData(null)
   }, [activeSearchTerm])
+  
+  // Wrap the setters to notify parent
+  const handleSearchChange = useCallback((newSearchTerm: string) => {
+    setSearchTerm(newSearchTerm)
+    onSearchChange?.(newSearchTerm)
+  }, [onSearchChange])
+  
+  const handlePageChange = useCallback((newPage: number) => {
+    setPage(newPage)
+    onPageChange?.(newPage)
+  }, [onPageChange])
+  
+  const handlePageSizeChange = useCallback((newPageSize: number) => {
+    setPageSize(newPageSize)
+    onPageSizeChange?.(newPageSize)
+  }, [onPageSizeChange])
   
   // Initialize pagination from props when table changes
   useEffect(() => {
@@ -285,7 +307,7 @@ export function TableView({
         <div className="flex-1 m-0.5" style={{ overflow: 'visible' }}>
           <SQLWhereEditor
             value={searchTerm}
-            onChange={setSearchTerm}
+            onChange={handleSearchChange}
             onCommit={handleSearchCommit}
             schema={schemaData}
             disabled={isLoading}
@@ -440,7 +462,7 @@ export function TableView({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setPage(page - 1)}
+                onClick={() => handlePageChange(page - 1)}
                 disabled={!hasPreviousPage || isLoading}
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -451,7 +473,7 @@ export function TableView({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setPage(page + 1)}
+                onClick={() => handlePageChange(page + 1)}
                 disabled={!hasNextPage || isLoading}
               >
                 <ChevronRight className="h-4 w-4" />

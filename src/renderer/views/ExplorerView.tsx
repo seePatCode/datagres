@@ -52,6 +52,7 @@ interface ExplorerViewProps {
   canGoForward?: boolean
   onNewQueryTab?: () => void
   onUpdateQueryTab?: (tabId: string, updates: any) => void
+  onUpdateTableTab?: (tabId: string, updates: any) => void
 }
 
 export function ExplorerView({
@@ -79,6 +80,7 @@ export function ExplorerView({
   canGoForward,
   onNewQueryTab,
   onUpdateQueryTab,
+  onUpdateTableTab,
 }: ExplorerViewProps) {
   
   const getDefaultConnectionName = () => {
@@ -204,6 +206,9 @@ export function ExplorerView({
                         initialSearchTerm={tab.searchTerm}
                         initialPage={tab.page}
                         initialPageSize={tab.pageSize}
+                        onSearchChange={(searchTerm) => onUpdateTableTab?.(tab.id, { searchTerm })}
+                        onPageChange={(page) => onUpdateTableTab?.(tab.id, { page })}
+                        onPageSizeChange={(pageSize) => onUpdateTableTab?.(tab.id, { pageSize })}
                       />
                     ) : (
                       <MemoizedSQLQueryView

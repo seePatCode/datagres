@@ -103,6 +103,7 @@ function App() {
     resetTabs,
     handleNewQueryTab,
     updateQueryTab,
+    updateTableTab,
   } = useTabs({
     onTabChange: (tabId) => {
       pushEntry({ type: 'tab', tabId })
@@ -194,6 +195,7 @@ function App() {
         canGoForward={canGoForward}
         onNewQueryTab={handleNewQueryTab}
         onUpdateQueryTab={updateQueryTab}
+        onUpdateTableTab={updateTableTab}
       />
     )
   }
