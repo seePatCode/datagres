@@ -1,4 +1,4 @@
-import { forwardRef, useRef, useImperativeHandle } from 'react'
+import { forwardRef, useRef, useImperativeHandle, useEffect } from 'react'
 import Editor, { OnMount } from '@monaco-editor/react'
 
 interface SQLEditorProps {
@@ -16,6 +16,12 @@ export const SQLEditor = forwardRef<SQLEditorHandle, SQLEditorProps>(
   ({ value, onChange, onExecute }, ref) => {
     const editorRef = useRef<any>(null)
     const monacoRef = useRef<any>(null)
+    const onExecuteRef = useRef(onExecute)
+    
+    // Keep the ref updated with the latest callback
+    useEffect(() => {
+      onExecuteRef.current = onExecute
+    }, [onExecute])
 
     const handleEditorDidMount: OnMount = (editor, monaco) => {
       editorRef.current = editor
@@ -46,7 +52,7 @@ export const SQLEditor = forwardRef<SQLEditorHandle, SQLEditorProps>(
         label: 'Execute Query',
         keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
         run: () => {
-          onExecute?.()
+          onExecuteRef.current?.()
         }
       })
     }

@@ -76,8 +76,9 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
   }
 
   const handleExecute = () => {
-    const selectedText = editorRef.current?.getSelectedText()
-    const queryToExecute = selectedText || query
+    // Get selected text if any, otherwise use the entire query
+    const selectedText = editorRef.current?.getSelectedText() || ''
+    const queryToExecute = selectedText.trim() ? selectedText : query
     
     if (queryToExecute.trim()) {
       executeMutation.mutate(queryToExecute)
