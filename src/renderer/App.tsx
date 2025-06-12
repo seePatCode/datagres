@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react'
-import type { ElectronAPI, AppView } from '@shared/types'
+import { useEffect } from 'react'
+import type { ElectronAPI } from '@shared/types'
 import { ConnectionView } from '@/views/ConnectionView'
 import { ExplorerView } from '@/views/ExplorerView'
 import { useConnection } from '@/hooks/useConnection'
 import { useTabs } from '@/hooks/useTabs'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useMenuActions } from '@/hooks/useMenuActions'
-import { useNavigationHistory } from '@/hooks/useNavigationHistory'
+import { useUI } from '@/hooks/useUI'
 
 declare global {
   interface Window {
@@ -16,44 +16,33 @@ declare global {
 
 
 function App() {
-  const [currentView, setCurrentView] = useState<AppView>('connect')
-  const [showSaveDialog, setShowSaveDialog] = useState(false)
-  const [pendingConnectionString, setPendingConnectionString] = useState('')
-  
-  // Navigation history
+  // UI state from Redux
   const {
-    pushEntry,
+    currentView,
+    showSaveDialog,
+    pendingConnectionString,
+    canGoBack,
+    canGoForward,
+    setView,
+    showSaveConnection,
+    hideSaveConnection,
     goBack,
     goForward,
-    canGoBack,
-    canGoForward
-  } = useNavigationHistory()
-  
-  // Initialize navigation history
-  useEffect(() => {
-    pushEntry({ type: 'view', viewName: 'connect' })
-  }, [])
+    pushNavigation,
+  } = useUI()
   
   // Handle navigation history actions
   const handleGoBack = () => {
     const entry = goBack()
-    if (entry) {
-      if (entry.type === 'view') {
-        setCurrentView(entry.viewName as AppView)
-      } else if (entry.type === 'tab' && entry.tabId) {
-        setActiveTabId(entry.tabId)
-      }
+    if (entry && entry.type === 'tab' && entry.tabId) {
+      setActiveTabId(entry.tabId)
     }
   }
   
   const handleGoForward = () => {
     const entry = goForward()
-    if (entry) {
-      if (entry.type === 'view') {
-        setCurrentView(entry.viewName as AppView)
-      } else if (entry.type === 'tab' && entry.tabId) {
-        setActiveTabId(entry.tabId)
-      }
+    if (entry && entry.type === 'tab' && entry.tabId) {
+      setActiveTabId(entry.tabId)
     }
   }
   
@@ -76,18 +65,16 @@ function App() {
     refetchConnections,
   } = useConnection({
     onConnectionSuccess: () => {
-      setCurrentView('explorer')
-      pushEntry({ type: 'view', viewName: 'explorer' })
+      setView('explorer')
       
       // If this is a new connection (not from auto-connect or switching), show save dialog
       if (!isAutoConnecting && !isSwitchingConnection) {
-        setPendingConnectionString(connectionString)
-        setShowSaveDialog(true)
+        showSaveConnection(connectionString)
       }
     },
     onSwitchingConnectionStart: () => {
-      // Clear tabs when switching connections
-      resetTabs()
+      // Don't reset tabs here - useTabs will automatically load the correct tabs
+      // for the new connection string from localStorage
     }
   })
 
@@ -106,9 +93,9 @@ function App() {
     updateTableTab,
   } = useTabs({
     onTabChange: (tabId) => {
-      pushEntry({ type: 'tab', tabId })
+      pushNavigation({ type: 'tab', tabId })
     },
-    connectionString: connectionMutation.isSuccess ? connectionString : undefined
+    connectionString: connectionString || undefined
   })
 
   // Wrapper for connection change to handle tab clearing
@@ -120,8 +107,7 @@ function App() {
     try {
       const result = await window.electronAPI.saveConnection(pendingConnectionString, name)
       if (result.success) {
-        setShowSaveDialog(false)
-        setPendingConnectionString('')
+        hideSaveConnection()
         // Refresh the connections list
         refetchConnections()
       } else {
@@ -134,15 +120,14 @@ function App() {
 
 
   const handleNewConnection = () => {
-    setCurrentView('connect')
-    pushEntry({ type: 'view', viewName: 'connect' })
+    setView('connect')
+    // Only reset the connection form state, not the tabs
+    // Tabs will be managed per-connection by useTabs
     resetConnection()
-    resetTabs()
   }
 
   const handleShowConnections = () => {
-    setCurrentView('connect')
-    pushEntry({ type: 'view', viewName: 'connect' })
+    setView('connect')
   }
 
   // Use menu actions hook
@@ -186,7 +171,7 @@ function App() {
         onCloseTab={handleCloseTab}
         onCloseAllTabs={handleCloseAllTabs}
         onCloseOtherTabs={handleCloseOtherTabs}
-        setShowSaveDialog={setShowSaveDialog}
+        setShowSaveDialog={hideSaveConnection}
         onSaveConnection={handleSaveConnection}
         setActiveTabId={setActiveTabId}
         onNavigateBack={handleGoBack}
@@ -214,7 +199,7 @@ function App() {
       onConnect={handleConnect}
       onConnectionSelect={handleConnectionSelect}
       showSaveDialog={showSaveDialog}
-      setShowSaveDialog={setShowSaveDialog}
+      setShowSaveDialog={hideSaveConnection}
       onSaveConnection={handleSaveConnection}
       pendingConnectionString={pendingConnectionString}
       onNavigateBack={handleGoBack}

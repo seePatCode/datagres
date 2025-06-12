@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { setupListeners } from '@reduxjs/toolkit/query'
 import settingsReducer from './slices/settingsSlice'
+import uiReducer from './slices/uiSlice'
 import { persistenceMiddleware, loadPersistedState } from './middleware/persistence'
 
 // Load persisted state
@@ -9,6 +10,7 @@ const preloadedState = loadPersistedState()
 export const store = configureStore({
   reducer: {
     settings: settingsReducer,
+    ui: uiReducer,
   },
   preloadedState,
   middleware: (getDefaultMiddleware) =>

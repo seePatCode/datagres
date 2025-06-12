@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import type { Tab, TableTab, QueryTab, TableInfo } from '@shared/types'
 
 const TAB_STATE_KEY = 'datagres-tab-state'
-const RECENT_TABLES_KEY = 'datagres-recent-tables'
 
 interface TabState {
   tabs: Tab[]
@@ -20,43 +19,58 @@ export function useTabs(options: UseTabsOptions = {}) {
   const [tabs, setTabs] = useState<Tab[]>([])
   const [activeTabId, setActiveTabId] = useState<string | null>(null)
   const [recentTables, setRecentTables] = useState<TableInfo[]>([])
-  const [hasRestoredState, setHasRestoredState] = useState(false)
   const isInitialMount = useRef(true)
 
-  // Load persisted state on mount
+  // Track the previous connection string
+  const prevConnectionRef = useRef(options.connectionString)
+
+  // Handle connection string changes
   useEffect(() => {
-    if (!options.connectionString || hasRestoredState) return
+    if (!options.connectionString) return
     
-    try {
-      const savedStateJson = localStorage.getItem(`${TAB_STATE_KEY}-${options.connectionString}`)
-      if (savedStateJson) {
-        const savedState: TabState = JSON.parse(savedStateJson)
-        
-        // Only restore if saved within last 7 days
-        const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000)
-        if (savedState.savedAt > sevenDaysAgo) {
-          setTabs(savedState.tabs)
-          setActiveTabId(savedState.activeTabId)
-          setRecentTables(savedState.recentTables)
+    // If connection string changed, clear tabs first
+    if (prevConnectionRef.current !== options.connectionString) {
+      setTabs([])
+      setActiveTabId(null)
+      
+      // Then load saved state for the new connection
+      try {
+        const savedStateJson = localStorage.getItem(`${TAB_STATE_KEY}-${options.connectionString}`)
+        if (savedStateJson) {
+          const savedState: TabState = JSON.parse(savedStateJson)
+          
+          // Only restore if saved within last 7 days
+          const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000)
+          if (savedState.savedAt > sevenDaysAgo) {
+            setTabs(savedState.tabs)
+            setActiveTabId(savedState.activeTabId)
+            setRecentTables(savedState.recentTables || [])
+          } else {
+            // Clear recent tables if saved state is too old
+            setRecentTables([])
+          }
+        } else {
+          // No saved state for this connection, clear recent tables
+          setRecentTables([])
         }
+      } catch (error) {
+        console.error('Failed to restore tab state:', error)
+        setRecentTables([])
       }
       
-      // Also load recent tables (global, not per connection)
-      const savedRecentTables = localStorage.getItem(RECENT_TABLES_KEY)
-      if (savedRecentTables) {
-        setRecentTables(JSON.parse(savedRecentTables))
-      }
-    } catch (error) {
-      console.error('Failed to restore tab state:', error)
+      prevConnectionRef.current = options.connectionString
     }
-    
-    setHasRestoredState(true)
   }, [options.connectionString])
 
-  // Save state whenever it changes (after initial mount and restore)
+  // Set initial mount flag to false after first render
   useEffect(() => {
-    // Skip if no connection string or haven't restored yet
-    if (!options.connectionString || !hasRestoredState) {
+    isInitialMount.current = false
+  }, [])
+
+  // Save state whenever it changes (after initial mount)
+  useEffect(() => {
+    // Skip if no connection string or it's the initial mount
+    if (!options.connectionString || isInitialMount.current) {
       return
     }
     
@@ -71,14 +85,13 @@ export function useTabs(options: UseTabsOptions = {}) {
       
       try {
         localStorage.setItem(`${TAB_STATE_KEY}-${options.connectionString}`, JSON.stringify(stateToSave))
-        localStorage.setItem(RECENT_TABLES_KEY, JSON.stringify(recentTables))
       } catch (error) {
         console.error('Failed to save tab state:', error)
       }
     }, 500) // 500ms delay to batch changes
     
     return () => clearTimeout(timeoutId)
-  }, [tabs, activeTabId, recentTables, options.connectionString, hasRestoredState])
+  }, [tabs, activeTabId, recentTables, options.connectionString])
 
   const handleTableSelect = (tableName: string) => {
     // Check if table is already open in a tab
