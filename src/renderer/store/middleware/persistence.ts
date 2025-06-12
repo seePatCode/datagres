@@ -1,11 +1,11 @@
-import { Middleware } from '@reduxjs/toolkit'
-import type { RootState } from '../store'
+import { Middleware, AnyAction } from '@reduxjs/toolkit'
+import type { StoreState } from '../types'
 
 // Keys to persist
 const PERSISTED_KEYS = ['settings'] as const
 
 // Middleware to persist state changes
-export const persistenceMiddleware: Middleware<{}, RootState> = (store) => (next) => (action) => {
+export const persistenceMiddleware: Middleware<{}, StoreState> = (store) => (next) => (action: AnyAction) => {
   const result = next(action)
   
   // Only persist for specific slices
@@ -15,24 +15,29 @@ export const persistenceMiddleware: Middleware<{}, RootState> = (store) => (next
     
     // Save to localStorage for now (will move to electron-store later)
     try {
-      localStorage.setItem(`redux-${actionPrefix}`, JSON.stringify(state[actionPrefix as keyof RootState]))
+      localStorage.setItem(`redux-${actionPrefix}`, JSON.stringify(state[actionPrefix as keyof StoreState]))
     } catch (error) {
       console.error(`Failed to persist ${actionPrefix}:`, error)
     }
+  }
+  
+  // Update menu when theme changes
+  if (action.type === 'settings/setTheme' && window.electronAPI?.updateTheme) {
+    window.electronAPI.updateTheme(action.payload)
   }
   
   return result
 }
 
 // Helper to load persisted state
-export const loadPersistedState = () => {
-  const persistedState: Partial<RootState> = {}
+export const loadPersistedState = (): Partial<StoreState> => {
+  const persistedState: Partial<StoreState> = {}
   
   PERSISTED_KEYS.forEach(key => {
     try {
       const item = localStorage.getItem(`redux-${key}`)
       if (item) {
-        persistedState[key as keyof RootState] = JSON.parse(item)
+        persistedState[key as keyof StoreState] = JSON.parse(item)
       }
     } catch (error) {
       console.error(`Failed to load ${key}:`, error)

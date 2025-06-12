@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadConnection: (connectionId) => ipcRenderer.invoke('load-connection', connectionId),
   deleteConnection: (connectionId) => ipcRenderer.invoke('delete-connection', connectionId),
   updateConnectionName: (connectionId, newName) => ipcRenderer.invoke('update-connection-name', connectionId, newName),
+  // Theme updates
+  updateTheme: (theme) => ipcRenderer.invoke('update-theme', theme),
   // Window controls
   minimize: () => ipcRenderer.invoke('window-minimize'),
   maximize: () => ipcRenderer.invoke('window-maximize'),

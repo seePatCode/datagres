@@ -3,8 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Provider } from 'react-redux'
 import { store } from './store/store'
-import { ThemeProvider } from './components/theme-provider'
-import { SqlSettingsProvider } from './contexts/SqlSettingsContext'
+import { ThemeInitializer } from './components/ThemeInitializer'
 import './index.css'
 import App from './App'
 
@@ -24,13 +23,11 @@ const queryClient = new QueryClient({
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Provider store={store}>
-      <ThemeProvider defaultTheme="system">
+      <ThemeInitializer>
         <QueryClientProvider client={queryClient}>
-          <SqlSettingsProvider>
-            <App />
-          </SqlSettingsProvider>
+          <App />
         </QueryClientProvider>
-      </ThemeProvider>
+      </ThemeInitializer>
     </Provider>
   </StrictMode>,
 )

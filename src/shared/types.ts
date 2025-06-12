@@ -142,6 +142,9 @@ export interface ElectronAPI {
   deleteConnection: (connectionId: string) => Promise<APIResponse>
   updateConnectionName: (connectionId: string, newName: string) => Promise<APIResponse>
   
+  // Theme updates
+  updateTheme?: (theme: 'dark' | 'light' | 'system') => Promise<APIResponse>
+  
   // Window controls (optional as they may not be available in tests)
   minimize?: () => Promise<void>
   maximize?: () => Promise<void>
@@ -156,6 +159,9 @@ export type MenuAction =
   | 'new-connection'
   | 'show-connections'
   | 'back-to-tables'
+  | 'set-theme-dark'
+  | 'set-theme-light'
+  | 'set-theme-system'
 
 // View states
 export type AppView = 'connect' | 'explorer'

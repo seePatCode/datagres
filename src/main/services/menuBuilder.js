@@ -3,8 +3,9 @@ const { Menu } = require('electron')
 /**
  * Creates and sets the application menu
  * @param {BrowserWindow} mainWindow - The main application window
+ * @param {string} currentTheme - The current theme setting ('dark', 'light', or 'system')
  */
-function createApplicationMenu(mainWindow) {
+function createApplicationMenu(mainWindow, currentTheme = 'dark') {
   const isMac = process.platform === 'darwin'
 
   const template = [
@@ -85,7 +86,37 @@ function createApplicationMenu(mainWindow) {
         { label: 'Zoom In', role: 'zoomIn' },
         { label: 'Zoom Out', role: 'zoomOut' },
         { type: 'separator' },
-        { label: 'Toggle Fullscreen', role: 'togglefullscreen' }
+        { label: 'Toggle Fullscreen', role: 'togglefullscreen' },
+        { type: 'separator' },
+        {
+          label: 'Theme',
+          submenu: [
+            {
+              label: 'Dark',
+              type: 'radio',
+              checked: currentTheme === 'dark',
+              click: () => {
+                mainWindow.webContents.send('menu-action', 'set-theme-dark')
+              }
+            },
+            {
+              label: 'Light',
+              type: 'radio',
+              checked: currentTheme === 'light',
+              click: () => {
+                mainWindow.webContents.send('menu-action', 'set-theme-light')
+              }
+            },
+            {
+              label: 'System',
+              type: 'radio',
+              checked: currentTheme === 'system',
+              click: () => {
+                mainWindow.webContents.send('menu-action', 'set-theme-system')
+              }
+            }
+          ]
+        }
       ]
     },
     
@@ -120,6 +151,16 @@ function createApplicationMenu(mainWindow) {
   Menu.setApplicationMenu(menu)
 }
 
+/**
+ * Updates the menu with the current theme
+ * @param {BrowserWindow} mainWindow - The main application window  
+ * @param {string} theme - The current theme
+ */
+function updateMenuTheme(mainWindow, theme) {
+  createApplicationMenu(mainWindow, theme)
+}
+
 module.exports = {
-  createApplicationMenu
+  createApplicationMenu,
+  updateMenuTheme
 }

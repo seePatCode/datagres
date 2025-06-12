@@ -17,7 +17,7 @@ export const store = configureStore({
         // Ignore these action types
         ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
       },
-    }).concat(persistenceMiddleware),
+    }).concat(persistenceMiddleware as any),
 })
 
 // Infer the `RootState` and `AppDispatch` types from the store itself

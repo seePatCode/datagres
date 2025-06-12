@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useTheme } from './useSettings'
 import type { MenuAction, AppView } from '@shared/types'
 
 interface UseMenuActionsOptions {
@@ -16,6 +17,8 @@ export function useMenuActions({
   onShowConnections,
   onCloseTab
 }: UseMenuActionsOptions) {
+  const { setTheme } = useTheme()
+  
   useEffect(() => {
     if (window.electronAPI?.onMenuAction) {
       const handleMenuAction = (action: MenuAction) => {
@@ -32,6 +35,15 @@ export function useMenuActions({
               onCloseTab(activeTabId)
             }
             break
+          case 'set-theme-dark':
+            setTheme('dark')
+            break
+          case 'set-theme-light':
+            setTheme('light')
+            break
+          case 'set-theme-system':
+            setTheme('system')
+            break
         }
       }
 
@@ -40,5 +52,5 @@ export function useMenuActions({
       // Return the cleanup function
       return cleanup
     }
-  }, [currentView, activeTabId, onNewConnection, onShowConnections, onCloseTab])
+  }, [currentView, activeTabId, onNewConnection, onShowConnections, onCloseTab, setTheme])
 }

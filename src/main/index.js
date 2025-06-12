@@ -3,7 +3,7 @@ const { app, ipcMain } = require('electron')
 // Import services
 const connectionStore = require('./services/connectionStore')
 const databaseService = require('./services/databaseService')
-const { createApplicationMenu } = require('./services/menuBuilder')
+const { createApplicationMenu, updateMenuTheme } = require('./services/menuBuilder')
 const { createMainWindow, setupWindowControlHandlers } = require('./services/windowManager')
 const { testMocks, isTestMode } = require('./services/testMocks')
 
@@ -13,7 +13,18 @@ app.setName('Datagres')
 app.whenReady().then(async () => {
   await connectionStore.initialize()
   const mainWindow = createMainWindow()
-  createApplicationMenu(mainWindow)
+  
+  // Get current theme from renderer's localStorage when ready
+  mainWindow.webContents.once('did-finish-load', () => {
+    mainWindow.webContents.executeJavaScript(`localStorage.getItem('datagres-ui-theme') || 'dark'`)
+      .then(theme => {
+        createApplicationMenu(mainWindow, theme)
+      })
+      .catch(() => {
+        createApplicationMenu(mainWindow, 'dark')
+      })
+  })
+  
   setupWindowControlHandlers()
 
   app.on('activate', () => {
@@ -100,4 +111,13 @@ ipcMain.handle('update-connection-name', async (_event, connectionId, newName) =
   }
   
   return connectionStore.updateConnectionName(connectionId, newName)
+})
+
+// Handle theme updates
+ipcMain.handle('update-theme', async (_event, theme) => {
+  const mainWindow = require('electron').BrowserWindow.getFocusedWindow()
+  if (mainWindow) {
+    updateMenuTheme(mainWindow, theme)
+  }
+  return { success: true }
 })
