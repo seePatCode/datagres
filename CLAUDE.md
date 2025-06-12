@@ -309,3 +309,15 @@ pnpm dlx shadcn@latest add [component-name]
 **Why It Broke:** Connection strings were parsed and rebuilt, losing original parameters
 **How We Detected:** User reported all connections showing same data
 **How We Fixed:** Added `originalConnectionString` field to preserve exact user input
+
+#### 6. Heroku PostgreSQL SSL Connection Error
+**What Broke:** Connection to Heroku PostgreSQL failed with "no pg_hba.conf entry...no encryption" error, then "self signed certificate" error
+**Why It Broke:** 
+1. First: Heroku requires SSL connections but the app wasn't using SSL
+2. Then: Heroku uses self-signed certificates which Node.js rejects by default
+**How We Detected:** User reported connection errors with Heroku database
+**How We Fixed:** 
+- Created `createClient()` helper function that detects cloud providers (amazonaws, heroku, azure, googlecloud)
+- For cloud providers, configures SSL with `rejectUnauthorized: false` to accept self-signed certificates
+- Also honors explicit `sslmode=require` in connection strings
+- Applied fix to all database operations (connect, fetch, update, execute)

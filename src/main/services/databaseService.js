@@ -1,5 +1,46 @@
 const { Client } = require('pg')
 
+/**
+ * Create a PostgreSQL client with SSL configuration if needed
+ * @param {string} connectionString - PostgreSQL connection string
+ * @returns {Client} Configured PostgreSQL client
+ */
+function createClient(connectionString) {
+  let clientConfig;
+  
+  if (typeof connectionString === 'string') {
+    // Check if SSL is needed (common for Heroku and other cloud providers)
+    const needsSSL = connectionString.includes('amazonaws.com') || 
+                     connectionString.includes('heroku') ||
+                     connectionString.includes('azure') ||
+                     connectionString.includes('googlecloud');
+    
+    if (needsSSL) {
+      // For cloud providers, use SSL with rejectUnauthorized: false to handle self-signed certificates
+      clientConfig = {
+        connectionString: connectionString,
+        ssl: {
+          rejectUnauthorized: false
+        }
+      };
+    } else if (connectionString.includes('sslmode=require')) {
+      // If sslmode is explicitly set, honor it
+      clientConfig = {
+        connectionString: connectionString,
+        ssl: {
+          rejectUnauthorized: false
+        }
+      };
+    } else {
+      clientConfig = connectionString;
+    }
+  } else {
+    clientConfig = connectionString;
+  }
+  
+  return new Client(clientConfig);
+}
+
 // Test mode mock data
 const mockData = {
   testdb: {
@@ -104,7 +145,7 @@ async function connectDatabase(connectionString) {
   }
 
   console.log(`[${new Date().toISOString()}] [MAIN] Creating PostgreSQL client`)
-  const client = new Client(connectionString)
+  const client = createClient(connectionString)
   
   try {
     console.log(`[${new Date().toISOString()}] [MAIN] Connecting to PostgreSQL...`)
@@ -220,7 +261,7 @@ async function fetchTableData(connectionString, tableName, searchOptions = {}) {
     }
   }
 
-  const client = new Client(connectionString)
+  const client = createClient(connectionString)
   
   try {
     await client.connect()
@@ -322,7 +363,7 @@ async function fetchTableSchema(connectionString, tableName) {
     }
   }
 
-  const client = new Client(connectionString)
+  const client = createClient(connectionString)
   
   try {
     await client.connect()
@@ -405,7 +446,7 @@ async function updateTableData(connectionString, request) {
     }
   }
 
-  const client = new Client(connectionString)
+  const client = createClient(connectionString)
   let updatedCount = 0
   
   try {
@@ -486,7 +527,7 @@ async function executeSQL(connectionString, request) {
     }
   }
 
-  const client = new Client(connectionString)
+  const client = createClient(connectionString)
   
   try {
     await client.connect()
