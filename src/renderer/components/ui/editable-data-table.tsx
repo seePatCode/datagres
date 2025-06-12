@@ -15,6 +15,8 @@ interface EditableDataTableProps<TData, TValue> {
   onColumnVisibilityChange?: (visibility: Record<string, boolean>) => void
   onCellEdit?: (rowIndex: number, columnId: string, value: any) => void
   editedCells?: Map<string, any> // Map of "rowIndex-columnId" to edited value
+  scrollContainerRef?: React.RefObject<HTMLDivElement>
+  infiniteScrollContent?: React.ReactNode
 }
 
 interface EditableCellProps {
@@ -109,7 +111,9 @@ export function EditableDataTable<TData, TValue>({
   columnVisibility,
   onColumnVisibilityChange,
   onCellEdit,
-  editedCells = new Map()
+  editedCells = new Map(),
+  scrollContainerRef,
+  infiniteScrollContent
 }: EditableDataTableProps<TData, TValue>) {
   // Create editable columns
   const editableColumns = columns.map((col) => ({
@@ -140,6 +144,8 @@ export function EditableDataTable<TData, TValue>({
       tableName={tableName}
       columnVisibility={columnVisibility}
       onColumnVisibilityChange={onColumnVisibilityChange}
+      scrollContainerRef={scrollContainerRef}
+      infiniteScrollContent={infiniteScrollContent}
     />
   )
 }

@@ -60,6 +60,10 @@ User Action → React Query Mutation → IPC Call → Main Process → PostgreSQ
 - **App.tsx**: Central state manager with view routing (`connect` | `tables` | `tableData`)
 - **ConnectionManager**: Persistent CRUD operations for saved connections
 - **DataTable**: Virtual scrolling grid with advanced features
+- **TableView**: Infinite scroll implementation for seamless data browsing
+  - Uses intersection observer to detect when user nears bottom
+  - Automatically loads next page of data (100 rows at a time)
+  - Maintains all previously loaded data in view
 
 ### Error Handling
 - All IPC operations return `{success: boolean, error?: string, ...data}` pattern

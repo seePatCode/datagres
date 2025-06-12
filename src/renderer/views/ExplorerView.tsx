@@ -212,11 +212,7 @@ export function ExplorerView({
                         tableName={tab.tableName}
                         connectionString={connectionString}
                         initialSearchTerm={tab.searchTerm}
-                        initialPage={tab.page}
-                        initialPageSize={tab.pageSize}
                         onSearchChange={(searchTerm) => onUpdateTableTab?.(tab.id, { searchTerm })}
-                        onPageChange={(page) => onUpdateTableTab?.(tab.id, { page })}
-                        onPageSizeChange={(pageSize) => onUpdateTableTab?.(tab.id, { pageSize })}
                       />
                     ) : (
                       <MemoizedSQLQueryView

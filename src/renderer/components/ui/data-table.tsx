@@ -9,8 +9,6 @@ import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
-  getGlobalFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
   VisibilityState,
@@ -63,6 +61,8 @@ interface DataTableProps<TData, TValue> {
   tableName?: string
   columnVisibility?: VisibilityState
   onColumnVisibilityChange?: (visibility: VisibilityState) => void
+  scrollContainerRef?: React.RefObject<HTMLDivElement>
+  infiniteScrollContent?: React.ReactNode
 }
 
 // Draggable Table Header Component
@@ -147,6 +147,8 @@ export function DataTable<TData, TValue>({
   tableName,
   columnVisibility: externalColumnVisibility,
   onColumnVisibilityChange,
+  scrollContainerRef,
+  infiniteScrollContent,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -167,7 +169,7 @@ export function DataTable<TData, TValue>({
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    // Remove pagination - we'll show all rows for infinite scroll
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
@@ -235,9 +237,10 @@ export function DataTable<TData, TValue>({
       sensors={sensors}
     >
       <div className="w-full h-full flex flex-col">
-        <div className="flex-1 min-h-0 rounded-md border overflow-auto">
-          <Table>
-            <TableHeader>
+        <div className="flex-1 min-h-0 rounded-md border overflow-hidden flex flex-col">
+          <div ref={scrollContainerRef} className="flex-1 overflow-auto">
+            <Table>
+              <TableHeader className="sticky top-0 z-10 bg-background">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   <SortableContext
@@ -292,30 +295,8 @@ export function DataTable<TData, TValue>({
                 </TableRow>
               )}
             </TableBody>
-          </Table>
-        </div>
-        <div className="flex items-center justify-end space-x-2 py-2 px-4 border-t bg-background flex-shrink-0">
-          <div className="flex-1 text-sm text-muted-foreground">
-            {table.getFilteredSelectedRowModel().rows.length} of{" "}
-            {table.getFilteredRowModel().rows.length} row(s) selected.
-          </div>
-          <div className="space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              Next
-            </Button>
+            </Table>
+            {infiniteScrollContent}
           </div>
         </div>
       </div>
