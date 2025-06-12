@@ -1,10 +1,11 @@
-import { memo, useRef, useEffect } from 'react'
+import { memo, useRef, useEffect, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { TitleBar } from "@/components/ui/title-bar"
 import { DatabaseSidebar } from "@/components/ui/database-sidebar"
 import { TableView } from "@/components/ui/table-view"
 import { SQLQueryView } from "@/components/ui/sql-query-view"
 import { SaveConnectionDialog } from "@/components/ui/save-connection-dialog"
+import { QuickSearch } from "@/components/ui/quick-search"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { 
@@ -14,6 +15,7 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 import { X } from 'lucide-react'
+import { useDoubleShift } from '@/hooks/useDoubleShift'
 import type { TableInfo, Tab } from '@shared/types'
 
 const MemoizedTableView = memo(TableView)
@@ -82,6 +84,12 @@ export function ExplorerView({
   onUpdateQueryTab,
   onUpdateTableTab,
 }: ExplorerViewProps) {
+  const [quickSearchOpen, setQuickSearchOpen] = useState(false)
+  
+  // Set up double-shift keyboard shortcut
+  useDoubleShift({
+    onDoubleShift: () => setQuickSearchOpen(true)
+  })
   
   const getDefaultConnectionName = () => {
     try {
@@ -242,6 +250,14 @@ export function ExplorerView({
         onOpenChange={setShowSaveDialog}
         onSave={onSaveConnection}
         defaultName={getDefaultConnectionName()}
+      />
+      
+      {/* Quick Search Dialog */}
+      <QuickSearch
+        open={quickSearchOpen}
+        onOpenChange={setQuickSearchOpen}
+        tables={tables}
+        onSelectTable={onTableSelect}
       />
     </div>
   )

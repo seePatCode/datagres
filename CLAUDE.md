@@ -252,6 +252,7 @@ Before claiming an implementation is complete, verify the following without runn
 Datagres aims to be "the world's fastest database exploration tool" with a focus on:
 - **Speed**: Connection to data view in under 15 seconds
 - **Keyboard-driven**: Cmd+K navigation, minimal mouse usage
+  - **Shift+Shift**: Quick table search (like Spotlight on macOS)
 - **Zero configuration**: Paste connection string and start exploring
 - **Safe editing**: Preview SQL before execution, transaction safety
 
