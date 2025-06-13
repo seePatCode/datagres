@@ -1,20 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
-import { RefreshCw, Save, MoreHorizontal, Filter, EyeOff, Eye, AlertCircle } from 'lucide-react'
+import { RefreshCw, AlertCircle } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { EditableDataTable } from '@/components/ui/editable-data-table'
-import { SQLWhereEditor } from '@/components/ui/sql-where-editor-monaco'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { TableToolbar } from '@/components/ui/table-toolbar'
+import { TableStatusBar } from '@/components/ui/table-status-bar'
 import { useInfiniteTableData } from '@/hooks/useInfiniteTableData'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 
@@ -154,11 +146,6 @@ export function TableView({
   // Create column definitions
   const columns = data ? createColumns(data.columns) : []
 
-  const formatRowCount = (count: number) => {
-    if (count < 1000) return count.toLocaleString()
-    if (count < 1000000) return `${(count / 1000).toFixed(1)}k`
-    return `${(count / 1000000).toFixed(1)}M`
-  }
 
   const handleCellEdit = (rowIndex: number, columnId: string, value: any) => {
     const cellKey = `${rowIndex}-${columnId}`
@@ -287,102 +274,24 @@ export function TableView({
       )}
       
       {/* Toolbar */}
-      <div className="flex items-center justify-between border-b bg-background" style={{ overflow: 'visible', zIndex: 100 }}>
-        <div className="flex-1 m-0.5" style={{ overflow: 'visible' }}>
-          <SQLWhereEditor
-            value={searchTerm}
-            onChange={handleSearchChange}
-            onCommit={handleSearchCommit}
-            schema={schemaData}
-            disabled={isLoading}
-          />
-        </div>
-
-        <div className="flex items-center gap-2 px-3">
-          {/* Save button (if changes) */}
-          {hasEdits && (
-            <Button 
-              onClick={handleSaveChanges} 
-              size="sm" 
-              className="gap-1" 
-              variant="default"
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <>
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4" />
-                  Save {editedCells.size} Change{editedCells.size > 1 ? 's' : ''}
-                </>
-              )}
-            </Button>
-          )}
-          
-          {/* Refresh button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setEditedCells(new Map())
-              refetch()
-            }}
-            disabled={isLoading}
-            className="gap-1"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-          
-          {/* More options */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel className="flex items-center gap-2">
-                <Eye className="h-4 w-4" />
-                Column Visibility
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {(data?.columns || []).map((columnName: string) => {
-                const isVisible = columnVisibility[columnName] !== false
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={columnName}
-                    checked={isVisible}
-                    onCheckedChange={(checked) => {
-                      setColumnVisibility(prev => ({
-                        ...prev,
-                        [columnName]: checked
-                      }))
-                    }}
-                    onSelect={(event) => {
-                      // Prevent dropdown from closing when clicking checkbox
-                      event.preventDefault()
-                    }}
-                    className="capitalize"
-                  >
-                    <div className="flex items-center gap-2">
-                      {isVisible ? (
-                        <Eye className="h-3 w-3" />
-                      ) : (
-                        <EyeOff className="h-3 w-3" />
-                      )}
-                      {columnName}
-                    </div>
-                  </DropdownMenuCheckboxItem>
-                )
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
+      <TableToolbar
+        searchTerm={searchTerm}
+        onSearchChange={handleSearchChange}
+        onSearchCommit={handleSearchCommit}
+        schemaData={schemaData}
+        hasEdits={hasEdits}
+        editedCellsCount={editedCells.size}
+        isSaving={isSaving}
+        onSave={handleSaveChanges}
+        isLoading={isLoading}
+        onRefresh={() => {
+          setEditedCells(new Map())
+          refetch()
+        }}
+        columns={data?.columns || []}
+        columnVisibility={columnVisibility}
+        onColumnVisibilityChange={setColumnVisibility}
+      />
 
       {/* Data Table */}
       <div className="flex-1 overflow-hidden">
@@ -460,28 +369,14 @@ export function TableView({
       </div>
 
       {/* Status Bar */}
-      <div className="flex items-center justify-between px-3 py-2 border-t bg-muted/20 text-sm text-muted-foreground">
-        <div className="flex items-center gap-4">
-          <span>
-            {data ? `${formatRowCount(data.rows.length)} of ${formatRowCount(totalRows)}` : '0'} rows
-            {activeSearchTerm && ` WHERE ${activeSearchTerm}`}
-          </span>
-          {data && data.columns.length > 0 && (
-            <span>{data.columns.length} columns</span>
-          )}
-        </div>
-        
-        <div className="flex items-center gap-4">
-          {hasEdits && (
-            <span className="text-orange-600">
-              {editedCells.size} unsaved change{editedCells.size > 1 ? 's' : ''}
-            </span>
-          )}
-          {isLoadingMore && (
-            <span className="text-cyan-600">Loading more...</span>
-          )}
-        </div>
-      </div>
+      <TableStatusBar
+        rowCount={data?.rows.length || 0}
+        totalRows={totalRows}
+        columnCount={data?.columns.length || 0}
+        activeSearchTerm={activeSearchTerm}
+        unsavedChangesCount={editedCells.size}
+        isLoadingMore={isLoadingMore}
+      />
     </div>
   )
 }

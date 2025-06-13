@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { Plus, Database, Trash2, Edit2, Eye, EyeOff, Copy } from 'lucide-react'
+import { Plus, Database } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
@@ -14,6 +13,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { SavedConnectionItem, EmptyConnectionsState } from '@/components/ui/saved-connection-item'
+import { EditConnectionDialog } from '@/components/ui/edit-connection-dialog'
 import type { SavedConnection } from '@shared/types'
 import type { AppDispatch } from '@/store/store'
 import { 
@@ -34,10 +35,7 @@ export function ConnectionManager({ onConnectionSelect, onSavedConnectionSelect,
   const [connectionName, setConnectionName] = useState('')
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editingConnection, setEditingConnection] = useState<SavedConnection | null>(null)
-  const [editingName, setEditingName] = useState('')
   const [editingConnectionString, setEditingConnectionString] = useState('')
-  const [showConnectionString, setShowConnectionString] = useState(false)
-  const [copiedToClipboard, setCopiedToClipboard] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -90,7 +88,6 @@ export function ConnectionManager({ onConnectionSelect, onSavedConnectionSelect,
 
   const handleStartEdit = async (connection: SavedConnection) => {
     setEditingConnection(connection)
-    setEditingName(connection.name)
     setEditDialogOpen(true)
     
     // Load the full connection string
@@ -100,15 +97,13 @@ export function ConnectionManager({ onConnectionSelect, onSavedConnectionSelect,
     }
   }
 
-  const handleSaveEdit = async () => {
-    if (!editingConnection || !editingName.trim()) {
-      return
-    }
+  const handleSaveEdit = async (newName: string) => {
+    if (!editingConnection) return
     
     setIsLoading(true)
     const result = await dispatch(updateConnectionName({ 
       connectionId: editingConnection.id, 
-      newName: editingName.trim() 
+      newName
     }))
     
     if (result.meta.requestStatus === 'fulfilled') {
@@ -120,15 +115,7 @@ export function ConnectionManager({ onConnectionSelect, onSavedConnectionSelect,
   const handleCancelEdit = () => {
     setEditDialogOpen(false)
     setEditingConnection(null)
-    setEditingName('')
     setEditingConnectionString('')
-    setShowConnectionString(false)
-  }
-
-  const handleCopyToClipboard = () => {
-    navigator.clipboard.writeText(editingConnectionString)
-    setCopiedToClipboard(true)
-    setTimeout(() => setCopiedToClipboard(false), 2000)
   }
 
   return (
@@ -188,132 +175,32 @@ export function ConnectionManager({ onConnectionSelect, onSavedConnectionSelect,
       </CardHeader>
       <CardContent>
         {connections.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Database className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>No saved connections yet.</p>
-            <p className="text-sm">Connect to a database and save it for quick access.</p>
-          </div>
+          <EmptyConnectionsState />
         ) : (
           <div className="space-y-2" data-testid="saved-connections-list">
             {connections.map((connection) => (
-              <div
+              <SavedConnectionItem
                 key={connection.id}
-                className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted transition-colors"
-                data-testid="saved-connection-item"
-              >
-                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handleLoadConnection(connection.id)}>
-                  <div className="font-medium truncate" data-testid="connection-name">
-                    {connection.name}
-                  </div>
-                  <div className="text-sm text-muted-foreground truncate">
-                    {connection.username}@{connection.host}:{connection.port}/{connection.database}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Last used: {new Date(connection.lastUsed).toLocaleDateString()}
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 ml-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleStartEdit(connection)
-                    }}
-                    data-testid="edit-connection-button"
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDeleteConnection(connection.id)
-                    }}
-                    data-testid="delete-connection-button"
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </div>
+                connection={connection}
+                onLoad={handleLoadConnection}
+                onEdit={handleStartEdit}
+                onDelete={handleDeleteConnection}
+              />
             ))}
           </div>
         )}
       </CardContent>
       
       {/* Edit Connection Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Edit Connection</DialogTitle>
-            <DialogDescription>
-              Update the connection name or view the connection string
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-name">Connection Name</Label>
-              <Input
-                id="edit-name"
-                value={editingName}
-                onChange={(e) => setEditingName(e.target.value)}
-                placeholder="Connection name"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="connection-string">Connection String</Label>
-              <div className="relative">
-                <Input
-                  id="connection-string"
-                  type={showConnectionString ? "text" : "password"}
-                  value={editingConnectionString}
-                  readOnly
-                  className="pr-20 font-mono text-sm"
-                />
-                <div className="absolute right-1 top-1 flex gap-1">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setShowConnectionString(!showConnectionString)}
-                    className="h-8 w-8 p-0"
-                  >
-                    {showConnectionString ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={handleCopyToClipboard}
-                    className="h-8 w-8 p-0"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              {copiedToClipboard && (
-                <p className="text-sm text-muted-foreground">Copied to clipboard!</p>
-              )}
-            </div>
-            
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={handleCancelEdit}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleSaveEdit}
-                disabled={!editingName.trim() || isLoading}
-              >
-                {isLoading ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <EditConnectionDialog
+        isOpen={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        connectionName={editingConnection?.name || ''}
+        connectionString={editingConnectionString}
+        isLoading={isLoading}
+        onSave={handleSaveEdit}
+        onCancel={handleCancelEdit}
+      />
     </Card>
   )
 }
