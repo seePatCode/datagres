@@ -65,15 +65,10 @@ export function ConnectionManager({ onConnectionSelect, onSavedConnectionSelect,
   }
 
   const handleLoadConnection = (connectionId: string) => {
-    console.log('handleLoadConnection called with:', connectionId)
-    console.log('onSavedConnectionSelect available?', !!onSavedConnectionSelect)
-    
     // Use the dedicated handler for saved connections if available
     if (onSavedConnectionSelect) {
-      console.log('Using onSavedConnectionSelect')
       onSavedConnectionSelect(connectionId)
     } else {
-      console.log('Falling back to onConnectionSelect')
       // Fallback to loading and using connection string
       window.electronAPI.loadConnection(connectionId).then((result) => {
         if (result.success && result.connectionString) {

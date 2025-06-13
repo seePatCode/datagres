@@ -69,10 +69,6 @@ function App() {
     onConnectionSuccess: (connectionInfo) => {
       setView('explorer')
       
-      // Debug logging
-      console.log('onConnectionSuccess - connectionInfo:', connectionInfo)
-      console.log('onConnectionSuccess - savedConnectionId:', connectionInfo?.savedConnectionId)
-      
       // Show save dialog only if this connection isn't already saved
       if (!connectionInfo?.savedConnectionId) {
         showSaveConnection(connectionString)
