@@ -19,26 +19,12 @@ export interface ConnectionState {
   
   // Saved connections
   savedConnections: SavedConnection[]
-  savedConnectionsStatus: 'idle' | 'loading' | 'success' | 'error'
-  savedConnectionsError?: string
-  
-  // UI state
-  isSwitchingConnection: boolean
-  isAutoConnecting: boolean
-  hasAttemptedAutoConnect: boolean
-  testConnectionStatus: 'idle' | 'testing' | 'success' | 'error'
-  testConnectionError?: string
 }
 
 const initialState: ConnectionState = {
   activeConnection: null,
   tables: [],
   savedConnections: [],
-  savedConnectionsStatus: 'idle',
-  isSwitchingConnection: false,
-  isAutoConnecting: false,
-  hasAttemptedAutoConnect: false,
-  testConnectionStatus: 'idle',
 }
 
 // Async thunks
@@ -169,18 +155,6 @@ export const connectionSlice = createSlice({
       }
     },
     
-    setIsSwitchingConnection: (state, action: PayloadAction<boolean>) => {
-      state.isSwitchingConnection = action.payload
-    },
-    
-    setIsAutoConnecting: (state, action: PayloadAction<boolean>) => {
-      state.isAutoConnecting = action.payload
-    },
-    
-    setHasAttemptedAutoConnect: (state, action: PayloadAction<boolean>) => {
-      state.hasAttemptedAutoConnect = action.payload
-    },
-    
     resetConnection: (state) => {
       state.activeConnection = null
       state.tables = []
@@ -295,9 +269,6 @@ export const connectionSlice = createSlice({
 
 export const {
   setConnectionString,
-  setIsSwitchingConnection,
-  setIsAutoConnecting,
-  setHasAttemptedAutoConnect,
   resetConnection,
   clearConnectionError,
 } = connectionSlice.actions
@@ -308,9 +279,6 @@ export const selectConnectionString = (state: RootState) => state.connection.act
 export const selectCurrentDatabase = (state: RootState) => state.connection.activeConnection?.database || ''
 export const selectTables = (state: RootState) => state.connection.tables
 export const selectSavedConnections = (state: RootState) => state.connection.savedConnections
-export const selectIsSwitchingConnection = (state: RootState) => state.connection.isSwitchingConnection
-export const selectIsAutoConnecting = (state: RootState) => state.connection.isAutoConnecting
-export const selectHasAttemptedAutoConnect = (state: RootState) => state.connection.hasAttemptedAutoConnect
 export const selectConnectionStatus = (state: RootState) => state.connection.activeConnection?.status || 'idle'
 export const selectConnectionError = (state: RootState) => state.connection.activeConnection?.error
 export const selectCurrentConnection = (state: RootState) => {

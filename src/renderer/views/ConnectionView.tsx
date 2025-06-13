@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -5,67 +7,109 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ConnectionManager } from "@/components/ui/connection-manager"
 import { SaveConnectionDialog } from "@/components/ui/save-connection-dialog"
 import { TitleBar } from "@/components/ui/title-bar"
+import type { AppDispatch } from '@/store/store'
+import {
+  connectToDatabase,
+  loadAndConnectToSavedConnection,
+  saveConnection,
+  selectActiveConnection,
+  selectConnectionStatus,
+  selectConnectionError,
+} from '@/store/slices/connectionSlice'
+import {
+  selectShowSaveDialog,
+  selectPendingConnectionString,
+  selectCanGoBack,
+  selectCanGoForward,
+  hideSaveConnectionDialog,
+  navigateBack,
+  navigateForward,
+  setCurrentView,
+  pushNavigationEntry,
+  showSaveConnectionDialog,
+} from '@/store/slices/uiSlice'
 
-interface ConnectionViewProps {
-  connectionString: string
-  setConnectionString: (value: string) => void
-  connectionMutation: {
-    isPending: boolean
-    isSuccess: boolean
-    isError: boolean
-    error: Error | null
-    data?: { database: string }
+export function ConnectionView() {
+  const dispatch = useDispatch<AppDispatch>()
+  
+  // Local state for form
+  const [connectionString, setConnectionString] = useState('')
+  
+  // Redux state
+  const activeConnection = useSelector(selectActiveConnection)
+  const connectionStatus = useSelector(selectConnectionStatus)
+  const connectionError = useSelector(selectConnectionError)
+  const showSaveDialog = useSelector(selectShowSaveDialog)
+  const pendingConnectionString = useSelector(selectPendingConnectionString)
+  const canGoBack = useSelector(selectCanGoBack)
+  const canGoForward = useSelector(selectCanGoForward)
+  
+  const isConnecting = connectionStatus === 'connecting'
+  const isConnected = connectionStatus === 'connected'
+  const isError = connectionStatus === 'error'
+  
+  const handleConnect = () => {
+    dispatch(connectToDatabase({ connectionString })).then((result) => {
+      if (result.meta.requestStatus === 'fulfilled') {
+        dispatch(setCurrentView('explorer'))
+        dispatch(pushNavigationEntry({ type: 'view', viewName: 'explorer' }))
+        
+        // Show save dialog only if this connection isn't already saved
+        const savedId = (result.payload as any)?.savedConnectionId
+        if (!savedId) {
+          dispatch(showSaveConnectionDialog(connectionString))
+        }
+      }
+    })
   }
-  onConnect: () => void
-  onConnectionSelect: (connectionString: string) => void
-  onSavedConnectionSelect?: (connectionId: string) => void
-  showSaveDialog: boolean
-  setShowSaveDialog: (show: boolean) => void
-  onSaveConnection: (name: string) => Promise<void>
-  pendingConnectionString: string
-  onNavigateBack?: () => void
-  onNavigateForward?: () => void
-  canGoBack?: boolean
-  canGoForward?: boolean
-}
-
-export function ConnectionView({
-  connectionString,
-  setConnectionString,
-  connectionMutation,
-  onConnect,
-  onConnectionSelect,
-  onSavedConnectionSelect,
-  showSaveDialog,
-  setShowSaveDialog,
-  onSaveConnection,
-  pendingConnectionString,
-  onNavigateBack,
-  onNavigateForward,
-  canGoBack,
-  canGoForward
-}: ConnectionViewProps) {
+  
+  const handleConnectionSelect = (connString: string) => {
+    setConnectionString(connString)
+    // Connect with the new connection string
+    dispatch(connectToDatabase({ connectionString: connString })).then((result) => {
+      if (result.meta.requestStatus === 'fulfilled') {
+        dispatch(setCurrentView('explorer'))
+        dispatch(pushNavigationEntry({ type: 'view', viewName: 'explorer' }))
+        
+        // Show save dialog only if this connection isn't already saved
+        const savedId = (result.payload as any)?.savedConnectionId
+        if (!savedId) {
+          dispatch(showSaveConnectionDialog(connString))
+        }
+      }
+    })
+  }
+  
+  const handleSavedConnectionSelect = (connectionId: string) => {
+    dispatch(loadAndConnectToSavedConnection(connectionId)).then((result) => {
+      if (result.meta.requestStatus === 'fulfilled') {
+        dispatch(setCurrentView('explorer'))
+        dispatch(pushNavigationEntry({ type: 'view', viewName: 'explorer' }))
+      }
+    })
+  }
+  
+  const handleSaveConnection = async (name: string) => {
+    const result = await dispatch(saveConnection({ connectionString: pendingConnectionString, name }))
+    if (result.meta.requestStatus === 'fulfilled') {
+      dispatch(hideSaveConnectionDialog())
+    }
+  }
+  
+  const handleNavigateBack = () => dispatch(navigateBack())
+  const handleNavigateForward = () => dispatch(navigateForward())
+  
   const getStatusVariant = () => {
-    if (connectionMutation.isSuccess) return 'default'
-    if (connectionMutation.isError) return 'destructive'
-    return 'default'
+    if (isConnected) return 'default'
+    if (isError) return 'destructive'
+    return 'secondary'
   }
 
-  const getButtonText = () => {
-    if (connectionMutation.isPending) return 'Connecting...'
-    if (connectionMutation.isSuccess) return 'Connected'
-    return 'Connect'
-  }
-
-  const getStatusMessage = () => {
-    if (connectionMutation.isPending) return 'Connecting...'
-    if (connectionMutation.isSuccess) return `Connected to ${connectionMutation.data?.database}`
-    if (connectionMutation.isError) return `Connection error: ${connectionMutation.error?.message}`
-    return ''
-  }
-
-  const shouldShowStatus = () => {
-    return connectionMutation.isPending || connectionMutation.isSuccess || connectionMutation.isError
+  const getStatusText = () => {
+    if (isConnecting) return '🔄 Connecting...'
+    if (isConnected && activeConnection) return `✅ Connected to ${activeConnection.database}`
+    if (isError) return '❌ Connection failed'
+    return '○ Not connected'
   }
 
   const getDefaultConnectionName = () => {
@@ -81,74 +125,80 @@ export function ConnectionView({
   }
 
   return (
-    <div className="h-screen bg-background text-foreground flex flex-col">
-      {/* Fixed header area */}
-      <div className="flex-none">
-        <TitleBar 
-          onNavigateBack={onNavigateBack}
-          onNavigateForward={onNavigateForward}
-          canGoBack={canGoBack}
-          canGoForward={canGoForward}
+    <div className="min-h-screen bg-background text-foreground">
+      <TitleBar 
+        title="Datagres - Connect to Database"
+        onNavigateBack={canGoBack ? handleNavigateBack : undefined}
+        onNavigateForward={canGoForward ? handleNavigateForward : undefined}
+        canGoBack={!!canGoBack}
+        canGoForward={!!canGoForward}
+      />
+      
+      <div className="container mx-auto p-8 max-w-4xl">
+        <Card className="mb-8">
+          <CardContent className="pt-6">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold mb-2">PostgreSQL Connection</h2>
+              <p className="text-sm text-muted-foreground">
+                Enter your PostgreSQL connection string or select a saved connection
+              </p>
+            </div>
+            
+            <form onSubmit={(e) => { e.preventDefault(); handleConnect(); }} className="space-y-4">
+              <div className="space-y-2">
+                <Input
+                  type="text"
+                  placeholder="postgresql://username:password@host:port/database"
+                  value={connectionString}
+                  onChange={(e) => setConnectionString(e.target.value)}
+                  disabled={isConnecting}
+                  className="font-mono"
+                  data-testid="connection-string-input"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Example: postgresql://myuser:mypassword@localhost:5432/mydatabase
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button 
+                  type="submit" 
+                  disabled={!connectionString.trim() || isConnecting}
+                  data-testid="connect-button"
+                >
+                  {isConnecting ? 'Connecting...' : 'Connect'}
+                </Button>
+                <div className={`px-3 py-1 rounded-md text-sm ${
+                  isConnected ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 
+                  isError ? 'bg-destructive/10 text-destructive' : 
+                  'bg-muted text-muted-foreground'
+                }`}>
+                  {getStatusText()}
+                </div>
+              </div>
+            </form>
+            
+            {isError && connectionError && (
+              <Alert variant="destructive" className="mt-4">
+                <AlertDescription>
+                  {connectionError}
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+        
+        <ConnectionManager
+          onConnectionSelect={handleConnectionSelect}
+          onSavedConnectionSelect={handleSavedConnectionSelect}
+          currentConnectionString={connectionString}
         />
       </div>
       
-      {/* Scrollable content area */}
-      <div className="flex-1 overflow-auto">
-        <div className="flex flex-col items-center justify-center min-h-full p-4">
-          <Card className="w-full max-w-md">
-            <CardContent className="pt-6">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-semibold text-foreground">
-                  Datagres - Database Explorer
-                </h2>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="flex gap-2">
-                  <Input 
-                    placeholder="Paste connection string here"
-                    value={connectionString}
-                    onChange={(e) => setConnectionString(e.target.value)}
-                    className="flex-1"
-                    disabled={connectionMutation.isPending}
-                  />
-                  <Button 
-                    variant={connectionMutation.isSuccess ? 'default' : 'primary'}
-                    onClick={onConnect}
-                    disabled={connectionMutation.isPending}
-                    className={connectionMutation.isSuccess ? 'bg-green-600/20 hover:bg-green-600/30 text-green-400 border-green-600/50' : ''}
-                  >
-                    {getButtonText()}
-                  </Button>
-                </div>
-
-                {shouldShowStatus() && !connectionMutation.isSuccess && (
-                  <Alert variant={getStatusVariant()}>
-                    <AlertDescription data-testid="connection-status">
-                      {getStatusMessage()}
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Connection Manager */}
-          <div className="mt-6 w-full max-w-md">
-            <ConnectionManager 
-              onConnectionSelect={onConnectionSelect}
-              onSavedConnectionSelect={onSavedConnectionSelect}
-              currentConnectionString={connectionMutation.isSuccess ? connectionString : undefined}
-            />
-          </div>
-        </div>
-      </div>
-      
-      {/* Save Connection Dialog */}
       <SaveConnectionDialog
         open={showSaveDialog}
-        onOpenChange={setShowSaveDialog}
-        onSave={onSaveConnection}
+        onOpenChange={() => dispatch(hideSaveConnectionDialog())}
+        onSave={handleSaveConnection}
         defaultName={getDefaultConnectionName()}
       />
     </div>
