@@ -9,6 +9,7 @@ import type { AppDispatch } from '@/store/store'
 import {
   loadSavedConnections,
   selectActiveConnection,
+  resetConnection,
 } from '@/store/slices/connectionSlice'
 import {
   selectTabs,
@@ -24,7 +25,6 @@ import {
   selectCurrentView,
   selectCanGoBack,
   selectCanGoForward,
-  resetConnection,
 } from '@/store/slices/uiSlice'
 
 declare global {
