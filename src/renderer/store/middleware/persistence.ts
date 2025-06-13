@@ -19,7 +19,7 @@ export const persistenceMiddleware: Middleware<{}, StoreState> = (store) => (nex
       try {
         localStorage.setItem(`redux-${actionPrefix}`, JSON.stringify(state[actionPrefix as keyof StoreState]))
       } catch (error) {
-        console.error(`Failed to persist ${actionPrefix}:`, error)
+        // Silently fail - persistence is not critical
       }
     }
     
@@ -43,7 +43,7 @@ export const loadPersistedState = (): Partial<StoreState> => {
         persistedState[key as keyof StoreState] = JSON.parse(item)
       }
     } catch (error) {
-      console.error(`Failed to load ${key}:`, error)
+      // Silently fail - will use default state
     }
   })
   

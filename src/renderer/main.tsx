@@ -17,7 +17,7 @@ if (persistedTabs) {
     const tabsState = JSON.parse(persistedTabs)
     store.dispatch(hydrateTabsState(tabsState))
   } catch (error) {
-    console.error('Failed to hydrate tabs state:', error)
+    // Silently ignore hydration errors - tabs will start fresh
   }
 }
 

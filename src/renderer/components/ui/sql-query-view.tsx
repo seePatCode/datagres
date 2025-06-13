@@ -76,7 +76,7 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
             return result.schema
           }
         } catch (error) {
-          console.error(`Failed to fetch schema for ${table.name}:`, error)
+          // Schema fetch failed - continue without it
         }
         return null
       })

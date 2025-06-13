@@ -91,7 +91,7 @@ export function useConnectionManager() {
         await loadConnection(mostRecent.id)
         return true
       } catch (error) {
-        console.error('Auto-connect failed:', error)
+        // Auto-connect failed - user will need to connect manually
         return false
       }
     }
