@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useSelector } from 'react-redux'
 import { Plus, Database, Trash2, Edit2, Eye, EyeOff, Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'

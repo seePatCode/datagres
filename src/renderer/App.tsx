@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import type { ElectronAPI } from '@shared/types'
 import { ConnectionView } from '@/views/ConnectionView'
 import { ExplorerView } from '@/views/ExplorerView'
@@ -49,13 +48,10 @@ function App() {
   // Use custom hooks
 
   const {
-    activeConnection,
     connectionString,
     setConnectionString,
     currentDatabase,
     tables,
-    isAutoConnecting,
-    isSwitchingConnection,
     connections,
     currentConnection,
     connectionMutation,
@@ -63,7 +59,6 @@ function App() {
     handleConnectionSelect,
     handleConnectionChange: connectionHandleConnectionChange,
     resetConnection,
-    refetchConnections,
     saveConnection,
   } = useConnection({
     onConnectionSuccess: (connectionInfo) => {
@@ -85,7 +80,6 @@ function App() {
     handleCloseTab,
     handleCloseAllTabs,
     handleCloseOtherTabs,
-    resetTabs,
     handleNewQueryTab,
     updateQueryTab,
     updateTableTab,
