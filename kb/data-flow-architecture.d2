@@ -1,0 +1,270 @@
+# Datagres Data Flow and State Management Architecture
+
+direction: down
+
+title: "Datagres Data Flow & State Management" {
+  shape: text
+  style.font-size: 24
+  style.bold: true
+}
+
+# Main Process Layer
+main_process: {
+  label: "Main Process (Node.js)"
+  style.fill: "#2e3440"
+  style.stroke: "#4c566a"
+  style.font-color: "#eceff4"
+  
+  ipc_handlers: "IPC Handlers" {
+    style.fill: "#3b4252"
+    style.font-color: "#eceff4"
+    
+    connect: "connectDatabase"
+    fetch: "fetchTableData"
+    schema: "fetchTableSchema"
+    update: "updateTableData"
+    sql: "executeSQL"
+    save_conn: "saveConnection"
+    load_conn: "loadConnection"
+  }
+  
+  services: "Services" {
+    style.fill: "#3b4252"
+    style.font-color: "#eceff4"
+    
+    db_service: "databaseService.js" {
+      postgres: "PostgreSQL Client"
+    }
+    conn_store: "connectionStore.js" {
+      electron_store: "electron-store"
+      keytar: "OS Keychain"
+    }
+  }
+}
+
+# Preload Layer
+preload: {
+  label: "Preload Script"
+  style.fill: "#434c5e"
+  style.stroke: "#4c566a"
+  style.font-color: "#eceff4"
+  
+  api: "window.electronAPI" {
+    style.fill: "#4c566a"
+    style.font-color: "#eceff4"
+    
+    expose: "contextBridge.exposeInMainWorld()"
+  }
+}
+
+# Renderer Process Layer
+renderer: {
+  label: "Renderer Process (React)"
+  style.fill: "#4c566a"
+  style.stroke: "#5e81ac"
+  style.font-color: "#eceff4"
+  
+  # Redux State Management
+  redux: "Redux Store" {
+    style.fill: "#5e81ac"
+    style.stroke: "#81a1c1"
+    style.font-color: "#eceff4"
+    
+    slices: "State Slices" {
+      style.fill: "#81a1c1"
+      style.font-color: "#2e3440"
+      
+      connection: "connectionSlice" {
+        tooltip: "Active connection, status, saved connections"
+      }
+      tabs: "tabsSlice" {
+        tooltip: "Tabs per connection, active tab, recent tables"
+      }
+      ui: "uiSlice" {
+        tooltip: "Current view, navigation history, save dialog"
+      }
+      settings: "settingsSlice" {
+        tooltip: "Theme, preferences"
+      }
+    }
+    
+    middleware: "Middleware" {
+      style.fill: "#81a1c1"
+      style.font-color: "#2e3440"
+      
+      persistence: "Persistence Middleware" {
+        tooltip: "Saves to localStorage"
+      }
+    }
+  }
+  
+  # TanStack Query
+  tanstack: "TanStack Query" {
+    style.fill: "#88c0d0"
+    style.stroke: "#8fbcbb"
+    style.font-color: "#2e3440"
+    
+    cache: "Query Cache" {
+      style.fill: "#8fbcbb"
+      style.font-color: "#2e3440"
+      
+      table_data: "Table Data"
+      schema_data: "Schema Data"
+      sql_results: "SQL Results"
+    }
+    
+    hooks: "Query Hooks" {
+      style.fill: "#8fbcbb"
+      style.font-color: "#2e3440"
+      
+      infinite: "useInfiniteQuery"
+      query: "useQuery"
+      mutation: "useMutation"
+    }
+  }
+  
+  # Custom Hooks Layer
+  hooks: "Custom Hooks" {
+    style.fill: "#a3be8c"
+    style.stroke: "#a3be8c"
+    style.font-color: "#2e3440"
+    
+    connection_hook: "useConnectionRedux"
+    tabs_hook: "useTabsRedux"
+    ui_hook: "useUI"
+    table_data_hook: "useInfiniteTableData"
+  }
+  
+  # Components
+  components: "React Components" {
+    style.fill: "#b48ead"
+    style.stroke: "#b48ead"
+    style.font-color: "#2e3440"
+    
+    app: "App.tsx"
+    explorer: "ExplorerView"
+    table_view: "TableView"
+    sql_view: "SQLQueryView"
+    connection_view: "ConnectionView"
+  }
+}
+
+# External Systems
+external: {
+  label: "External Systems"
+  style.fill: "#bf616a"
+  style.stroke: "#d08770"
+  style.font-color: "#eceff4"
+  
+  postgres: "PostgreSQL Database"
+  localStorage: "Browser localStorage"
+  os_keychain: "OS Keychain"
+}
+
+# Data Flow Connections
+# IPC Communication
+main_process.ipc_handlers -> preload.api: "IPC Invoke/Handle" {
+  style.stroke: "#ebcb8b"
+  style.stroke-width: 3
+}
+
+preload.api -> renderer.hooks.connection_hook: "Async Calls" {
+  style.stroke: "#ebcb8b"
+  style.stroke-width: 3
+}
+
+preload.api -> renderer.tanstack.hooks: "Data Fetching" {
+  style.stroke: "#ebcb8b"
+  style.stroke-width: 3
+}
+
+# Redux Flow
+renderer.components -> renderer.hooks: "Use Hooks" {
+  style.stroke: "#a3be8c"
+  style.stroke-width: 2
+}
+
+renderer.hooks -> renderer.redux.slices: "Dispatch Actions" {
+  style.stroke: "#5e81ac"
+  style.stroke-width: 2
+}
+
+renderer.redux.slices -> renderer.components: "State Updates" {
+  style.stroke: "#5e81ac"
+  style.stroke-width: 2
+  style.stroke-dash: 3
+}
+
+# TanStack Query Flow
+renderer.hooks.table_data_hook -> renderer.tanstack.hooks.infinite: "Uses" {
+  style.stroke: "#88c0d0"
+  style.stroke-width: 2
+}
+
+renderer.tanstack.hooks -> renderer.tanstack.cache: "Cache Management" {
+  style.stroke: "#88c0d0"
+  style.stroke-width: 2
+}
+
+renderer.tanstack.cache -> renderer.components: "Cached Data" {
+  style.stroke: "#88c0d0"
+  style.stroke-width: 2
+  style.stroke-dash: 3
+}
+
+# External Connections
+main_process.services.db_service -> external.postgres: "SQL Queries" {
+  style.stroke: "#bf616a"
+  style.stroke-width: 3
+}
+
+main_process.services.conn_store.electron_store -> external.localStorage: "Store Metadata" {
+  style.stroke: "#d08770"
+  style.stroke-width: 2
+}
+
+main_process.services.conn_store.keytar -> external.os_keychain: "Store Passwords" {
+  style.stroke: "#d08770"
+  style.stroke-width: 2
+}
+
+renderer.redux.middleware.persistence -> external.localStorage: "Persist State" {
+  style.stroke: "#d08770"
+  style.stroke-width: 2
+}
+
+# Legend
+legend: {
+  label: "Legend"
+  style.fill: "#eceff4"
+  style.stroke: "#d8dee9"
+  style.font-color: "#2e3440"
+  near: bottom-right
+  
+  ipc_flow: "━━━ IPC Communication" {
+    style.font-color: "#ebcb8b"
+  }
+  redux_flow: "━━━ Redux State Flow" {
+    style.font-color: "#5e81ac"
+  }
+  query_flow: "━━━ TanStack Query Flow" {
+    style.font-color: "#88c0d0"
+  }
+  external_flow: "━━━ External System Access" {
+    style.font-color: "#bf616a"
+  }
+}
+
+# Key Concepts Box
+concepts: {
+  label: "Key Architecture Concepts"
+  style.fill: "#eceff4"
+  style.stroke: "#d8dee9"
+  style.font-color: "#2e3440"
+  near: bottom-left
+  
+  client_state: "• Client State (UI) → Redux Store"
+  server_state: "• Server State (Data) → TanStack Query"
+  security: "• Security Boundary → Preload Script"
+  persistence: "• Persistence → localStorage + OS Keychain"
+}

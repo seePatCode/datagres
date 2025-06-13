@@ -1,4 +1,5 @@
-import { memo, useRef, useEffect, useState } from 'react'
+import { memo, useState } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
 import { Button } from "@/components/ui/button"
 import { TitleBar } from "@/components/ui/title-bar"
 import { DatabaseSidebar } from "@/components/ui/database-sidebar"
@@ -16,80 +17,128 @@ import {
 } from '@/components/ui/context-menu'
 import { X } from 'lucide-react'
 import { useDoubleShift } from '@/hooks/useDoubleShift'
-import type { TableInfo, Tab } from '@shared/types'
+import type { AppDispatch } from '@/store/store'
+import {
+  selectActiveConnection,
+  selectCurrentDatabase,
+  selectTables,
+  selectSavedConnections,
+  loadAndConnectToSavedConnection,
+  saveConnection,
+} from '@/store/slices/connectionSlice'
+import {
+  selectTabs,
+  selectActiveTabId,
+  selectRecentTables,
+  selectOrAddTableTab,
+  removeTab,
+  setActiveTab,
+  closeAllTabs,
+  closeOtherTabs,
+  addQueryTab,
+  updateTab,
+} from '@/store/slices/tabsSlice'
+import {
+  selectShowSaveDialog,
+  selectPendingConnectionString,
+  selectCanGoBack,
+  selectCanGoForward,
+  hideSaveConnectionDialog,
+  navigateBack,
+  navigateForward,
+  pushNavigationEntry,
+} from '@/store/slices/uiSlice'
 
 const MemoizedTableView = memo(TableView)
 const MemoizedSQLQueryView = memo(SQLQueryView)
 
-interface ExplorerViewProps {
-  currentDatabase: string
-  tables: TableInfo[]
-  recentTables: TableInfo[]
-  connections: Array<{
-    id: string
-    name: string
-    database: string
-  }>
-  currentConnection?: {
-    id: string
-    name: string
-    database: string
-  }
-  tabs: Tab[]
-  activeTabId: string | null
-  connectionString: string
-  showSaveDialog: boolean
-  pendingConnectionString: string
-  onConnectionChange: (connectionId: string) => void
-  onTableSelect: (tableName: string) => void
-  onCloseTab: (tabId: string) => void
-  onCloseAllTabs: () => void
-  onCloseOtherTabs: (tabId: string) => void
-  setShowSaveDialog: (show: boolean) => void
-  onSaveConnection: (name: string) => Promise<void>
-  setActiveTabId: (tabId: string) => void
-  onNavigateBack?: () => void
-  onNavigateForward?: () => void
-  canGoBack?: boolean
-  canGoForward?: boolean
-  onNewQueryTab?: () => void
-  onUpdateQueryTab?: (tabId: string, updates: any) => void
-  onUpdateTableTab?: (tabId: string, updates: any) => void
-}
-
-export function ExplorerView({
-  currentDatabase,
-  tables,
-  recentTables,
-  connections,
-  currentConnection,
-  tabs,
-  activeTabId,
-  connectionString,
-  showSaveDialog,
-  pendingConnectionString,
-  onConnectionChange,
-  onTableSelect,
-  onCloseTab,
-  onCloseAllTabs,
-  onCloseOtherTabs,
-  setShowSaveDialog,
-  onSaveConnection,
-  setActiveTabId,
-  onNavigateBack,
-  onNavigateForward,
-  canGoBack,
-  canGoForward,
-  onNewQueryTab,
-  onUpdateQueryTab,
-  onUpdateTableTab,
-}: ExplorerViewProps) {
+export function ExplorerView() {
+  const dispatch = useDispatch<AppDispatch>()
+  
+  // Redux state
+  const activeConnection = useSelector(selectActiveConnection)
+  const currentDatabase = useSelector(selectCurrentDatabase)
+  const tables = useSelector(selectTables)
+  const savedConnections = useSelector(selectSavedConnections)
+  const connectionString = activeConnection?.connectionString || ''
+  const tabs = useSelector(selectTabs(connectionString))
+  const activeTabId = useSelector(selectActiveTabId(connectionString))
+  const recentTables = useSelector(selectRecentTables(connectionString))
+  const showSaveDialog = useSelector(selectShowSaveDialog)
+  const pendingConnectionString = useSelector(selectPendingConnectionString)
+  const canGoBack = useSelector(selectCanGoBack)
+  const canGoForward = useSelector(selectCanGoForward)
+  
+  // Find current connection from saved connections
+  const currentConnection = activeConnection?.savedConnectionId
+    ? savedConnections.find(c => c.id === activeConnection.savedConnectionId)
+    : undefined
+  
+  // Local state
   const [quickSearchOpen, setQuickSearchOpen] = useState(false)
   
   // Set up double-shift keyboard shortcut
   useDoubleShift({
     onDoubleShift: () => setQuickSearchOpen(true)
   })
+  
+  // Actions
+  const handleConnectionChange = (connectionId: string) => {
+    dispatch(loadAndConnectToSavedConnection(connectionId))
+  }
+  
+  const handleTableSelect = (tableName: string) => {
+    if (connectionString) {
+      dispatch(selectOrAddTableTab({ connectionString, tableName }))
+    }
+  }
+  
+  const handleCloseTab = (tabId: string) => {
+    if (connectionString) {
+      dispatch(removeTab({ connectionString, tabId }))
+    }
+  }
+  
+  const handleCloseAllTabs = () => {
+    if (connectionString) {
+      dispatch(closeAllTabs({ connectionString }))
+    }
+  }
+  
+  const handleCloseOtherTabs = (tabId: string) => {
+    if (connectionString) {
+      dispatch(closeOtherTabs({ connectionString, tabId }))
+    }
+  }
+  
+  const handleSetActiveTabId = (tabId: string) => {
+    if (connectionString) {
+      dispatch(setActiveTab({ connectionString, tabId }))
+      dispatch(pushNavigationEntry({ type: 'tab', tabId }))
+    }
+  }
+  
+  const handleNewQueryTab = () => {
+    if (connectionString) {
+      dispatch(addQueryTab({ connectionString }))
+    }
+  }
+  
+  const handleUpdateTab = (tabId: string, updates: any) => {
+    if (connectionString) {
+      dispatch(updateTab({ connectionString, tabId, updates }))
+    }
+  }
+  
+  const handleSaveConnection = async (name: string) => {
+    const result = await dispatch(saveConnection({ connectionString: pendingConnectionString, name }))
+    if (result.meta.requestStatus === 'fulfilled') {
+      dispatch(hideSaveConnectionDialog())
+    }
+  }
+  
+  const handleNavigateBack = () => dispatch(navigateBack())
+  const handleNavigateForward = () => dispatch(navigateForward())
   
   const getDefaultConnectionName = () => {
     try {
@@ -114,10 +163,10 @@ export function ExplorerView({
             if (activeTab.type === 'table') return `Datagres - ${activeTab.tableName}`
             return `Datagres - ${activeTab.title}`
           })()}
-          onNavigateBack={onNavigateBack}
-          onNavigateForward={onNavigateForward}
-          canGoBack={canGoBack}
-          canGoForward={canGoForward}
+          onNavigateBack={handleNavigateBack}
+          onNavigateForward={handleNavigateForward}
+          canGoBack={!!canGoBack}
+          canGoForward={!!canGoForward}
         />
       </div>
       
@@ -127,17 +176,17 @@ export function ExplorerView({
           {/* Sidebar Panel */}
           <ResizablePanel defaultSize={25} minSize={5} maxSize={95}>
             <DatabaseSidebar
-              connections={connections}
+              connections={savedConnections}
               currentConnection={currentConnection}
               tables={tables}
               recentTables={recentTables}
-              onConnectionChange={onConnectionChange}
-              onTableSelect={onTableSelect}
+              onConnectionChange={handleConnectionChange}
+              onTableSelect={handleTableSelect}
               selectedTable={(() => {
                 const activeTab = tabs.find(t => t.id === activeTabId)
                 return activeTab && activeTab.type === 'table' ? activeTab.tableName : ''
               })()}
-              onNewQuery={onNewQueryTab}
+              onNewQuery={handleNewQueryTab}
             />
           </ResizablePanel>
           
@@ -147,7 +196,7 @@ export function ExplorerView({
           {/* Main content panel */}
           <ResizablePanel defaultSize={75} minSize={5}>
             {tabs.length > 0 ? (
-              <Tabs value={activeTabId || ''} onValueChange={setActiveTabId} className="h-full flex flex-col">
+              <Tabs value={activeTabId || ''} onValueChange={handleSetActiveTabId} className="h-full flex flex-col">
                 <div className="border-b bg-background">
                   <TabsList className="h-auto p-0 bg-transparent rounded-none w-full justify-start">
                     {tabs.map(tab => (
@@ -167,7 +216,7 @@ export function ExplorerView({
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation()
-                                onCloseTab(tab.id)
+                                handleCloseTab(tab.id)
                               }}
                               className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                             >
@@ -176,20 +225,20 @@ export function ExplorerView({
                           </div>
                         </ContextMenuTrigger>
                         <ContextMenuContent>
-                          <ContextMenuItem onClick={() => onCloseTab(tab.id)}>
+                          <ContextMenuItem onClick={() => handleCloseTab(tab.id)}>
                             <span className="flex items-center justify-between w-full">
                               Close
                               <span className="text-xs text-muted-foreground ml-4">⌘W</span>
                             </span>
                           </ContextMenuItem>
-                          <ContextMenuItem onClick={onCloseAllTabs}>
+                          <ContextMenuItem onClick={handleCloseAllTabs}>
                             <span className="flex items-center justify-between w-full">
                               Close All
                               <span className="text-xs text-muted-foreground ml-4">⌘⇧W</span>
                             </span>
                           </ContextMenuItem>
                           <ContextMenuItem 
-                            onClick={() => onCloseOtherTabs(tab.id)}
+                            onClick={() => handleCloseOtherTabs(tab.id)}
                             disabled={tabs.length === 1}
                           >
                             Close Others
@@ -213,14 +262,14 @@ export function ExplorerView({
                         connectionString={connectionString}
                         initialSearchTerm={tab.searchTerm}
                         initialPageSize={(tab as any).pageSize || 100}
-                        onSearchChange={(searchTerm) => onUpdateTableTab?.(tab.id, { searchTerm })}
+                        onSearchChange={(searchTerm) => handleUpdateTab(tab.id, { searchTerm })}
                       />
                     ) : (
                       <MemoizedSQLQueryView
                         key={tab.id}
                         connectionString={connectionString}
                         initialQuery={tab.query}
-                        onQueryChange={(query) => onUpdateQueryTab?.(tab.id, { query })}
+                        onQueryChange={(query) => handleUpdateTab(tab.id, { query })}
                         tables={tables}
                       />
                     )}
@@ -244,8 +293,8 @@ export function ExplorerView({
       {/* Save Connection Dialog */}
       <SaveConnectionDialog
         open={showSaveDialog}
-        onOpenChange={setShowSaveDialog}
-        onSave={onSaveConnection}
+        onOpenChange={() => dispatch(hideSaveConnectionDialog())}
+        onSave={handleSaveConnection}
         defaultName={getDefaultConnectionName()}
       />
       
@@ -254,7 +303,7 @@ export function ExplorerView({
         open={quickSearchOpen}
         onOpenChange={setQuickSearchOpen}
         tables={tables}
-        onSelectTable={onTableSelect}
+        onSelectTable={handleTableSelect}
       />
     </div>
   )

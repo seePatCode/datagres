@@ -1,0 +1,216 @@
+# Datagres State Management Overview
+
+direction: right
+
+title: "State Management Architecture" {
+  shape: text
+  style.font-size: 22
+  style.bold: true
+}
+
+# Client State (Redux)
+client_state: {
+  label: "Client State\n(Redux Toolkit)"
+  style.fill: "#5e81ac"
+  style.stroke: "#81a1c1"
+  style.font-color: "#eceff4"
+  style.font-size: 16
+  
+  connection: "Connection State" {
+    style.fill: "#81a1c1"
+    style.font-color: "#2e3440"
+    
+    items: |md
+      • Active connection
+      • Connection status
+      • Saved connections list
+      • Connection errors
+    |
+  }
+  
+  tabs: "Tab State" {
+    style.fill: "#81a1c1"
+    style.font-color: "#2e3440"
+    
+    items: |md
+      • Open tabs per connection
+      • Active tab ID
+      • Tab content (query/table)
+      • Recent tables
+    |
+  }
+  
+  ui: "UI State" {
+    style.fill: "#81a1c1"
+    style.font-color: "#2e3440"
+    
+    items: |md
+      • Current view (connect/explorer)
+      • Navigation history
+      • Save dialog visibility
+      • UI preferences
+    |
+  }
+  
+  settings: "Settings State" {
+    style.fill: "#81a1c1"
+    style.font-color: "#2e3440"
+    
+    items: |md
+      • Theme preference
+      • Editor settings
+      • App preferences
+    |
+  }
+}
+
+# Server State (TanStack Query)
+server_state: {
+  label: "Server State\n(TanStack Query)"
+  style.fill: "#88c0d0"
+  style.stroke: "#8fbcbb"
+  style.font-color: "#2e3440"
+  style.font-size: 16
+  
+  table_data: "Table Data" {
+    style.fill: "#8fbcbb"
+    style.font-color: "#2e3440"
+    
+    items: |md
+      • Table rows & columns
+      • Infinite scroll pages
+      • Search/filter results
+      • Total row counts
+    |
+  }
+  
+  schema: "Schema Data" {
+    style.fill: "#8fbcbb"
+    style.font-color: "#2e3440"
+    
+    items: |md
+      • Table schemas
+      • Column types
+      • Primary keys
+      • Constraints
+    |
+  }
+  
+  queries: "Query Results" {
+    style.fill: "#8fbcbb"
+    style.font-color: "#2e3440"
+    
+    items: |md
+      • SQL execution results
+      • Query timing
+      • Error messages
+      • Row counts
+    |
+  }
+  
+  mutations: "Data Mutations" {
+    style.fill: "#8fbcbb"
+    style.font-color: "#2e3440"
+    
+    items: |md
+      • Table updates
+      • Save operations
+      • Delete operations
+      • Optimistic updates
+    |
+  }
+}
+
+# Benefits
+benefits: {
+  label: "Architecture Benefits"
+  style.fill: "#a3be8c"
+  style.stroke: "#a3be8c"
+  style.font-color: "#2e3440"
+  style.font-size: 14
+  near: bottom-center
+  
+  separation: "Clear Separation" {
+    style.fill: "#d8dee9"
+    style.font-color: "#2e3440"
+    
+    text: |md
+      • UI state separate from data
+      • Independent cache strategies
+      • Easier testing
+    |
+  }
+  
+  performance: "Performance" {
+    style.fill: "#d8dee9"
+    style.font-color: "#2e3440"
+    
+    text: |md
+      • Redux: Small, UI-only state
+      • TanStack: Smart data caching
+      • No large datasets in Redux
+    |
+  }
+  
+  dx: "Developer Experience" {
+    style.fill: "#d8dee9"
+    style.font-color: "#2e3440"
+    
+    text: |md
+      • Redux: Predictable UI updates
+      • TanStack: Auto loading/error
+      • Type-safe with TypeScript
+    |
+  }
+}
+
+# Persistence
+persistence: {
+  label: "Persistence Strategy"
+  style.fill: "#d08770"
+  style.stroke: "#d08770"
+  style.font-color: "#2e3440"
+  style.font-size: 14
+  near: top-center
+  
+  redux_persist: "Redux → localStorage" {
+    style.fill: "#e5e9f0"
+    style.font-color: "#2e3440"
+    
+    what: |md
+      • Settings
+      • Tab states
+      • UI preferences
+    |
+  }
+  
+  query_cache: "TanStack → Memory" {
+    style.fill: "#e5e9f0"
+    style.font-color: "#2e3440"
+    
+    what: |md
+      • Temporary cache
+      • Auto garbage collection
+      • Fresh on app start
+    |
+  }
+}
+
+# Connections
+client_state -> server_state: "Coordinates via\nConnection String" {
+  style.stroke: "#4c566a"
+  style.stroke-width: 2
+  style.font-size: 12
+}
+
+persistence.redux_persist -> client_state: {
+  style.stroke: "#d08770"
+  style.stroke-width: 2
+  style.stroke-dash: 3
+}
+
+persistence.query_cache -> server_state: {
+  style.stroke: "#d08770"
+  style.stroke-width: 2
+  style.stroke-dash: 3
+}
