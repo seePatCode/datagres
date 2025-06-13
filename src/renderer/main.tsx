@@ -3,11 +3,23 @@ import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Provider } from 'react-redux'
 import { store } from './store/store'
+import { hydrateTabsState } from './store/slices/tabsSlice'
 import { ThemeInitializer } from './components/ThemeInitializer'
 import './index.css'
 import App from './App'
 
 // Renderer startup
+
+// Load persisted tab state on startup
+const persistedTabs = localStorage.getItem('redux-tabs')
+if (persistedTabs) {
+  try {
+    const tabsState = JSON.parse(persistedTabs)
+    store.dispatch(hydrateTabsState(tabsState))
+  } catch (error) {
+    console.error('Failed to hydrate tabs state:', error)
+  }
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {

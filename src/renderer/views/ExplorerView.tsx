@@ -212,6 +212,7 @@ export function ExplorerView({
                         tableName={tab.tableName}
                         connectionString={connectionString}
                         initialSearchTerm={tab.searchTerm}
+                        initialPageSize={(tab as any).pageSize || 100}
                         onSearchChange={(searchTerm) => onUpdateTableTab?.(tab.id, { searchTerm })}
                       />
                     ) : (

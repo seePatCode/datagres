@@ -3,6 +3,7 @@ import { setupListeners } from '@reduxjs/toolkit/query'
 import settingsReducer from './slices/settingsSlice'
 import uiReducer from './slices/uiSlice'
 import connectionReducer from './slices/connectionSlice'
+import tabsReducer from './slices/tabsSlice'
 import { persistenceMiddleware, loadPersistedState } from './middleware/persistence'
 
 // Load persisted state
@@ -13,6 +14,7 @@ export const store = configureStore({
     settings: settingsReducer,
     ui: uiReducer,
     connection: connectionReducer,
+    tabs: tabsReducer,
   },
   preloadedState: preloadedState as any,
   middleware: (getDefaultMiddleware) =>
@@ -30,3 +32,8 @@ export type AppDispatch = typeof store.dispatch
 
 // Enable refetchOnFocus/refetchOnReconnect behaviors
 setupListeners(store.dispatch)
+
+// Expose store for debugging and special cases
+if (typeof window !== 'undefined') {
+  (window as any).__REDUX_STORE__ = store
+}

@@ -172,6 +172,8 @@ export interface TableTab {
   type: 'table'
   tableName: string
   searchTerm: string
+  page?: number
+  pageSize?: number
 }
 
 export interface QueryTab {
