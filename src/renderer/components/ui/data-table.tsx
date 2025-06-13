@@ -63,6 +63,8 @@ interface DataTableProps<TData, TValue> {
   onColumnVisibilityChange?: (visibility: VisibilityState) => void
   scrollContainerRef?: React.RefObject<HTMLDivElement>
   infiniteScrollContent?: React.ReactNode
+  onSortingChange?: (sorting: SortingState) => void
+  sorting?: SortingState
 }
 
 // Draggable Table Header Component
@@ -149,8 +151,10 @@ export function DataTable<TData, TValue>({
   onColumnVisibilityChange,
   scrollContainerRef,
   infiniteScrollContent,
+  onSortingChange: externalOnSortingChange,
+  sorting: externalSorting,
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = React.useState<SortingState>([])
+  const [internalSorting, setInternalSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [globalFilter, setGlobalFilter] = React.useState("")
   const [internalColumnVisibility, setInternalColumnVisibility] = React.useState<VisibilityState>({})
@@ -158,6 +162,10 @@ export function DataTable<TData, TValue>({
   const [columnOrder, setColumnOrder] = React.useState<ColumnOrderState>(
     columns.map((column) => column.id as string)
   )
+
+  // Use external sorting if provided, otherwise use internal state
+  const sorting = externalSorting || internalSorting
+  const setSorting = externalOnSortingChange || setInternalSorting
 
   // Use external column visibility if provided, otherwise use internal state
   const columnVisibility = externalColumnVisibility || internalColumnVisibility
@@ -169,8 +177,8 @@ export function DataTable<TData, TValue>({
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
-    // Remove pagination - we'll show all rows for infinite scroll
-    getSortedRowModel: getSortedRowModel(),
+    // Only use client-side sorting if no external sorting handler is provided
+    getSortedRowModel: externalOnSortingChange ? undefined : getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,

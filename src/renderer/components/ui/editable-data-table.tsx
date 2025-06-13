@@ -17,6 +17,8 @@ interface EditableDataTableProps<TData, TValue> {
   editedCells?: Map<string, any> // Map of "rowIndex-columnId" to edited value
   scrollContainerRef?: React.RefObject<HTMLDivElement>
   infiniteScrollContent?: React.ReactNode
+  onSortingChange?: (sorting: Array<{id: string, desc: boolean}>) => void
+  sorting?: Array<{id: string, desc: boolean}>
 }
 
 interface EditableCellProps {
@@ -113,7 +115,9 @@ export function EditableDataTable<TData, TValue>({
   onCellEdit,
   editedCells = new Map(),
   scrollContainerRef,
-  infiniteScrollContent
+  infiniteScrollContent,
+  onSortingChange,
+  sorting
 }: EditableDataTableProps<TData, TValue>) {
   // Create editable columns
   const editableColumns = columns.map((col) => ({
@@ -146,6 +150,8 @@ export function EditableDataTable<TData, TValue>({
       onColumnVisibilityChange={onColumnVisibilityChange}
       scrollContainerRef={scrollContainerRef}
       infiniteScrollContent={infiniteScrollContent}
+      onSortingChange={onSortingChange}
+      sorting={sorting}
     />
   )
 }

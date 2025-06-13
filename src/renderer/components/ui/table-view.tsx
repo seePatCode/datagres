@@ -107,6 +107,8 @@ export function TableView({
     setSearchTerm,
     handleSearchCommit,
     activeSearchTerm,
+    orderBy,
+    setOrderBy,
   } = useInfiniteTableData({
     connectionString,
     tableName,
@@ -405,6 +407,18 @@ export function TableView({
             onCellEdit={handleCellEdit}
             editedCells={editedCells}
             scrollContainerRef={scrollContainerRef}
+            onSortingChange={(sortingState) => {
+              // Convert TanStack sorting state to our orderBy format
+              const newOrderBy = sortingState.map(sort => ({
+                column: sort.id,
+                direction: sort.desc ? 'desc' as const : 'asc' as const
+              }))
+              setOrderBy(newOrderBy)
+            }}
+            sorting={orderBy.map(sort => ({
+              id: sort.column,
+              desc: sort.direction === 'desc'
+            }))}
             infiniteScrollContent={
               hasNextPage && allRows?.length > 0 ? (
                 <div ref={sentinelRef} className="h-20 flex items-center justify-center">
