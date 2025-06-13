@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ConnectionManager } from "@/components/ui/connection-manager-redux"
+import { ConnectionManager } from "@/components/ui/connection-manager"
 import { SaveConnectionDialog } from "@/components/ui/save-connection-dialog"
 import { TitleBar } from "@/components/ui/title-bar"
 

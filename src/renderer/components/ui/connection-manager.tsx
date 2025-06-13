@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
 import { Plus, Database, Trash2, Edit2, Eye, EyeOff, Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,8 +15,13 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import type { SavedConnection } from '@shared/types'
-import { useConnection } from '@/hooks/useConnectionRedux'
-import { selectSavedConnections } from '@/store/slices/connectionSlice'
+import type { AppDispatch } from '@/store/store'
+import { 
+  selectSavedConnections,
+  saveConnection,
+  deleteConnection,
+  updateConnectionName,
+} from '@/store/slices/connectionSlice'
 
 interface ConnectionManagerProps {
   onConnectionSelect: (connectionString: string) => void
@@ -37,12 +42,8 @@ export function ConnectionManager({ onConnectionSelect, onSavedConnectionSelect,
   const [error, setError] = useState<string | null>(null)
 
   // Get data from Redux
+  const dispatch = useDispatch<AppDispatch>()
   const connections = useSelector(selectSavedConnections)
-  const {
-    saveConnection,
-    deleteConnection,
-    updateConnectionName,
-  } = useConnection()
 
   const handleSaveConnection = async () => {
     if (!currentConnectionString || !connectionName.trim()) {
@@ -52,13 +53,16 @@ export function ConnectionManager({ onConnectionSelect, onSavedConnectionSelect,
     setIsLoading(true)
     setError(null)
     
-    const result = await saveConnection(currentConnectionString, connectionName.trim())
+    const result = await dispatch(saveConnection({ 
+      connectionString: currentConnectionString, 
+      name: connectionName.trim() 
+    }))
     
-    if (result.success) {
+    if (result.meta.requestStatus === 'fulfilled') {
       setIsDialogOpen(false)
       setConnectionName('')
     } else {
-      setError(result.error || 'Failed to save connection')
+      setError('Failed to save connection')
     }
     
     setIsLoading(false)
@@ -80,7 +84,7 @@ export function ConnectionManager({ onConnectionSelect, onSavedConnectionSelect,
 
   const handleDeleteConnection = async (connectionId: string) => {
     if (confirm('Are you sure you want to delete this connection? This will also remove any saved passwords.')) {
-      await deleteConnection(connectionId)
+      await dispatch(deleteConnection(connectionId))
     }
   }
 
@@ -102,9 +106,12 @@ export function ConnectionManager({ onConnectionSelect, onSavedConnectionSelect,
     }
     
     setIsLoading(true)
-    const result = await updateConnectionName(editingConnection.id, editingName.trim())
+    const result = await dispatch(updateConnectionName({ 
+      connectionId: editingConnection.id, 
+      newName: editingName.trim() 
+    }))
     
-    if (result.success) {
+    if (result.meta.requestStatus === 'fulfilled') {
       handleCancelEdit()
     }
     setIsLoading(false)
