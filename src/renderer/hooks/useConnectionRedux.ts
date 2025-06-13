@@ -28,7 +28,7 @@ import {
 import type { AppDispatch } from '@/store/store'
 
 interface UseConnectionOptions {
-  onConnectionSuccess?: () => void
+  onConnectionSuccess?: (connectionInfo?: { savedConnectionId?: string }) => void
 }
 
 export function useConnection(options: UseConnectionOptions = {}) {
@@ -71,8 +71,8 @@ export function useConnection(options: UseConnectionOptions = {}) {
           const mostRecentConnection = savedConnections[0]
           
           // Use the existing loadAndConnect thunk which handles savedConnectionId
-          await dispatch(loadAndConnectToSavedConnection(mostRecentConnection.id)).unwrap()
-          options.onConnectionSuccess?.()
+          const result = await dispatch(loadAndConnectToSavedConnection(mostRecentConnection.id)).unwrap()
+          options.onConnectionSuccess?.({ savedConnectionId: result.savedConnectionId })
         } catch (error) {
           // Error is handled in the slice
         }
@@ -89,8 +89,8 @@ export function useConnection(options: UseConnectionOptions = {}) {
   
   const handleConnect = useCallback(async () => {
     try {
-      await dispatch(connectToDatabase({ connectionString })).unwrap()
-      options.onConnectionSuccess?.()
+      const result = await dispatch(connectToDatabase({ connectionString })).unwrap()
+      options.onConnectionSuccess?.({ savedConnectionId: result.savedConnectionId })
     } catch (error) {
       // Error is handled in the slice
     }
@@ -101,8 +101,8 @@ export function useConnection(options: UseConnectionOptions = {}) {
     
     try {
       // This is a fresh connection string, not from a saved connection
-      await dispatch(connectToDatabase({ connectionString: newConnectionString })).unwrap()
-      options.onConnectionSuccess?.()
+      const result = await dispatch(connectToDatabase({ connectionString: newConnectionString })).unwrap()
+      options.onConnectionSuccess?.({ savedConnectionId: result.savedConnectionId })
     } catch (error) {
       // Error is handled in the slice
     }
@@ -110,8 +110,8 @@ export function useConnection(options: UseConnectionOptions = {}) {
   
   const handleConnectionChange = useCallback(async (connectionId: string) => {
     try {
-      await dispatch(loadAndConnectToSavedConnection(connectionId)).unwrap()
-      options.onConnectionSuccess?.()
+      const result = await dispatch(loadAndConnectToSavedConnection(connectionId)).unwrap()
+      options.onConnectionSuccess?.({ savedConnectionId: result.savedConnectionId })
     } catch (error) {
       // Error is handled in the slice
     }
