@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import type { ElectronAPI } from '@shared/types'
 import { ConnectionView } from '@/views/ConnectionView'
@@ -11,6 +11,7 @@ import {
   loadAndConnectToSavedConnection,
   saveConnection,
   resetConnection,
+  loadSavedConnections,
   selectActiveConnection,
   selectSavedConnections,
   selectConnectionStatus,
@@ -44,6 +45,11 @@ declare global {
 
 function App() {
   const dispatch = useDispatch<AppDispatch>()
+  
+  // Load saved connections on app startup
+  useEffect(() => {
+    dispatch(loadSavedConnections())
+  }, [dispatch])
   
   // UI state
   const currentView = useSelector(selectCurrentView)

@@ -138,6 +138,17 @@ export const updateConnectionName = createAsyncThunk(
   }
 )
 
+export const loadSavedConnections = createAsyncThunk(
+  'connection/loadSavedConnections',
+  async () => {
+    const result = await window.electronAPI.getSavedConnections()
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to load saved connections')
+    }
+    return result.connections || []
+  }
+)
+
 // Note: testConnection is removed as it's not in the ElectronAPI interface
 
 export const connectionSlice = createSlice({
@@ -272,6 +283,12 @@ export const connectionSlice = createSlice({
         if (connection) {
           connection.name = action.payload.newName
         }
+      })
+    
+    // Load saved connections
+    builder
+      .addCase(loadSavedConnections.fulfilled, (state, action) => {
+        state.savedConnections = action.payload
       })
   },
 })
