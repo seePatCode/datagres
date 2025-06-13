@@ -407,9 +407,17 @@ export function TableView({
             onCellEdit={handleCellEdit}
             editedCells={editedCells}
             scrollContainerRef={scrollContainerRef}
-            onSortingChange={(sortingState) => {
+            onSortingChange={(updaterOrValue) => {
+              // Handle both updater function and direct value
+              const newSorting = typeof updaterOrValue === 'function' 
+                ? updaterOrValue(orderBy.map(sort => ({
+                    id: sort.column,
+                    desc: sort.direction === 'desc'
+                  })))
+                : updaterOrValue
+              
               // Convert TanStack sorting state to our orderBy format
-              const newOrderBy = sortingState.map(sort => ({
+              const newOrderBy = newSorting.map(sort => ({
                 column: sort.id,
                 direction: sort.desc ? 'desc' as const : 'asc' as const
               }))
