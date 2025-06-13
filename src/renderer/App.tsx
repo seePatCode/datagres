@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import type { ElectronAPI } from '@shared/types'
 import { ConnectionView } from '@/views/ConnectionView'
 import { ExplorerView } from '@/views/ExplorerView'
-import { useConnection } from '@/hooks/useConnection'
+import { useConnection } from '@/hooks/useConnectionRedux'
 import { useTabs } from '@/hooks/useTabs'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useMenuActions } from '@/hooks/useMenuActions'
@@ -49,6 +49,7 @@ function App() {
   // Use custom hooks
 
   const {
+    activeConnection,
     connectionString,
     setConnectionString,
     currentDatabase,
@@ -63,19 +64,16 @@ function App() {
     handleConnectionChange: connectionHandleConnectionChange,
     resetConnection,
     refetchConnections,
+    saveConnection,
   } = useConnection({
     onConnectionSuccess: () => {
       setView('explorer')
       
-      // If this is a new connection (not from auto-connect or switching), show save dialog
-      if (!isAutoConnecting && !isSwitchingConnection) {
+      // Show save dialog only if this connection isn't already saved
+      if (!activeConnection?.savedConnectionId) {
         showSaveConnection(connectionString)
       }
     },
-    onSwitchingConnectionStart: () => {
-      // Don't reset tabs here - useTabs will automatically load the correct tabs
-      // for the new connection string from localStorage
-    }
   })
 
   const {
@@ -104,17 +102,9 @@ function App() {
   }
 
   const handleSaveConnection = async (name: string) => {
-    try {
-      const result = await window.electronAPI.saveConnection(pendingConnectionString, name)
-      if (result.success) {
-        hideSaveConnection()
-        // Refresh the connections list
-        refetchConnections()
-      } else {
-        // Handle error silently or with user notification
-      }
-    } catch (error) {
-      // Handle error silently or with user notification
+    const result = await saveConnection(pendingConnectionString, name)
+    if (result.success) {
+      hideSaveConnection()
     }
   }
 
@@ -160,7 +150,7 @@ function App() {
         tables={tables}
         recentTables={recentTables}
         connections={connections}
-        currentConnection={currentConnection}
+        currentConnection={currentConnection || undefined}
         tabs={tabs}
         activeTabId={activeTabId}
         connectionString={connectionString}
@@ -198,6 +188,7 @@ function App() {
       }}
       onConnect={handleConnect}
       onConnectionSelect={handleConnectionSelect}
+      onSavedConnectionSelect={handleConnectionChange}
       showSaveDialog={showSaveDialog}
       setShowSaveDialog={hideSaveConnection}
       onSaveConnection={handleSaveConnection}

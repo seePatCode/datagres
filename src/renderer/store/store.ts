@@ -2,6 +2,7 @@ import { configureStore } from '@reduxjs/toolkit'
 import { setupListeners } from '@reduxjs/toolkit/query'
 import settingsReducer from './slices/settingsSlice'
 import uiReducer from './slices/uiSlice'
+import connectionReducer from './slices/connectionSlice'
 import { persistenceMiddleware, loadPersistedState } from './middleware/persistence'
 
 // Load persisted state
@@ -11,8 +12,9 @@ export const store = configureStore({
   reducer: {
     settings: settingsReducer,
     ui: uiReducer,
+    connection: connectionReducer,
   },
-  preloadedState,
+  preloadedState: preloadedState as any,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {

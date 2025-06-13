@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ConnectionManager } from "@/components/ui/connection-manager"
+import { ConnectionManager } from "@/components/ui/connection-manager-redux"
 import { SaveConnectionDialog } from "@/components/ui/save-connection-dialog"
 import { TitleBar } from "@/components/ui/title-bar"
 
@@ -18,6 +18,7 @@ interface ConnectionViewProps {
   }
   onConnect: () => void
   onConnectionSelect: (connectionString: string) => void
+  onSavedConnectionSelect?: (connectionId: string) => void
   showSaveDialog: boolean
   setShowSaveDialog: (show: boolean) => void
   onSaveConnection: (name: string) => Promise<void>
@@ -34,6 +35,7 @@ export function ConnectionView({
   connectionMutation,
   onConnect,
   onConnectionSelect,
+  onSavedConnectionSelect,
   showSaveDialog,
   setShowSaveDialog,
   onSaveConnection,
@@ -135,6 +137,7 @@ export function ConnectionView({
           <div className="mt-6 w-full max-w-md">
             <ConnectionManager 
               onConnectionSelect={onConnectionSelect}
+              onSavedConnectionSelect={onSavedConnectionSelect}
               currentConnectionString={connectionMutation.isSuccess ? connectionString : undefined}
             />
           </div>
