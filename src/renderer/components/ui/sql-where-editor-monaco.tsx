@@ -69,6 +69,11 @@ export function SQLWhereEditor({
         onCommit()
       }
     })
+    
+    // Also handle Ctrl/Cmd+Enter as a fallback
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+      onCommit()
+    })
 
     editor.focus()
     setIsEditorReady(true)
@@ -228,7 +233,7 @@ export function SQLWhereEditor({
         {!isEditorReady && (
           <div className="absolute inset-0 flex items-center">
             <div className="w-full h-6 bg-[#09090b] text-[#fafafa] text-sm px-2 flex items-center">
-              <span className="text-muted-foreground">{value || 'WHERE...'}</span>
+              <span className="text-muted-foreground">{value || 'Enter WHERE clause (press Enter to search)'}</span>
             </div>
           </div>
         )}
