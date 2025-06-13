@@ -207,15 +207,6 @@ export function ConnectionManager({ onConnectionSelect, onSavedConnectionSelect,
                   </div>
                   <div className="text-sm text-muted-foreground truncate">
                     {connection.username}@{connection.host}:{connection.port}/{connection.database}
-                    {connection.hasPassword && (
-                      <span className="ml-2 text-xs px-1.5 py-0.5 rounded-md bg-black/20 border" style={{
-                        borderColor: 'hsl(var(--accent-cyan))',
-                        color: 'hsl(var(--accent-cyan))',
-                        boxShadow: '0 0 4px hsla(var(--accent-cyan), 0.3)'
-                      }}>
-                        🔒 Saved
-                      </span>
-                    )}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     Last used: {new Date(connection.lastUsed).toLocaleDateString()}
