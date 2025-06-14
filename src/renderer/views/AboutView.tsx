@@ -80,7 +80,7 @@ export function AboutView() {
                 <div>
                   <h3 className="font-medium">Keyboard-Driven</h3>
                   <p className="text-sm text-muted-foreground">
-                    Cmd+K navigation, Shift+Shift for quick search
+                    Shift+Shift for quick search, minimal mouse usage
                   </p>
                 </div>
               </div>
