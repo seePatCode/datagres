@@ -35,9 +35,7 @@ jobs:
           sudo apt-get install -y libgtk-3-0 libnotify-dev libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libdrm2 libgbm1 libxcb-dri3-0 libxkbcommon0 libgtk-3-0
           
       - name: Install dependencies
-        run: |
-          pnpm install
-          pnpm add -D electron --shamefully-hoist
+        run: pnpm install --shamefully-hoist
         
       # TODO: Fix unit tests for CI environment
       # - name: Run tests
