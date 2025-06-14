@@ -12,11 +12,36 @@
             box-sizing: border-box;
         }
         
+        :root {
+            --background: #0a0a0a;
+            --foreground: #fafafa;
+            --card: #0f0f0f;
+            --card-foreground: #fafafa;
+            --popover: #0f0f0f;
+            --popover-foreground: #fafafa;
+            --primary: #fafafa;
+            --primary-foreground: #0a0a0a;
+            --secondary: #262626;
+            --secondary-foreground: #fafafa;
+            --muted: #262626;
+            --muted-foreground: #a3a3a3;
+            --accent: #262626;
+            --accent-foreground: #fafafa;
+            --destructive: #7f1d1d;
+            --destructive-foreground: #fafafa;
+            --border: #262626;
+            --input: #262626;
+            --ring: #d4d4d4;
+            --radius: 0.5rem;
+        }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             line-height: 1.6;
-            color: #333;
-            background: #f8f9fa;
+            color: var(--foreground);
+            background: var(--background);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
         
         .container {
@@ -26,8 +51,9 @@
         }
         
         header {
-            background: #fff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: rgba(15, 15, 15, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
             padding: 1rem 0;
             position: sticky;
             top: 0;
@@ -48,12 +74,13 @@
         
         .nav-links a {
             text-decoration: none;
-            color: #333;
+            color: var(--muted-foreground);
             font-weight: 500;
+            transition: color 0.2s;
         }
         
         .nav-links a:hover {
-            color: #667eea;
+            color: var(--foreground);
         }
         
         .docs-container {
@@ -65,9 +92,10 @@
         }
         
         .sidebar {
-            background: white;
+            background: var(--card);
+            border: 1px solid var(--border);
             padding: 2rem;
-            border-radius: 8px;
+            border-radius: var(--radius);
             height: fit-content;
             position: sticky;
             top: 80px;
@@ -75,7 +103,7 @@
         
         .sidebar h3 {
             margin-bottom: 1rem;
-            color: #667eea;
+            color: var(--foreground);
         }
         
         .sidebar ul {
@@ -88,44 +116,71 @@
         
         .sidebar a {
             text-decoration: none;
-            color: #666;
+            color: var(--muted-foreground);
             display: block;
             padding: 0.5rem 0;
+            transition: color 0.2s;
         }
         
         .sidebar a:hover {
-            color: #667eea;
+            color: var(--foreground);
         }
         
         .content {
-            background: white;
+            background: var(--card);
+            border: 1px solid var(--border);
             padding: 3rem;
-            border-radius: 8px;
+            border-radius: var(--radius);
         }
         
         .content h1 {
             margin-bottom: 2rem;
-            color: #667eea;
+            color: var(--foreground);
+            font-size: 2.5rem;
         }
         
         .content h2 {
             margin-top: 2rem;
             margin-bottom: 1rem;
-            color: #333;
+            color: var(--foreground);
         }
         
         .content h3 {
             margin-top: 1.5rem;
             margin-bottom: 0.75rem;
-            color: #555;
+            color: var(--foreground);
         }
         
         .content p {
             margin-bottom: 1rem;
+            color: var(--muted-foreground);
+            line-height: 1.7;
+        }
+        
+        .content a {
+            color: var(--foreground);
+            text-decoration: underline;
+            text-underline-offset: 4px;
+            transition: opacity 0.2s;
+        }
+        
+        .content a:hover {
+            opacity: 0.8;
+        }
+        
+        .content ul, .content ol {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+            color: var(--muted-foreground);
+        }
+        
+        .content li {
+            margin-bottom: 0.5rem;
         }
         
         .content code {
-            background: #f4f4f4;
+            background: var(--secondary);
+            color: var(--secondary-foreground);
             padding: 0.2rem 0.4rem;
             border-radius: 3px;
             font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
@@ -133,9 +188,10 @@
         }
         
         .content pre {
-            background: #f4f4f4;
+            background: var(--secondary);
+            border: 1px solid var(--border);
             padding: 1rem;
-            border-radius: 5px;
+            border-radius: var(--radius);
             overflow-x: auto;
             margin-bottom: 1rem;
         }
@@ -149,13 +205,15 @@
             max-width: 100%;
             margin: 2rem 0;
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+            filter: invert(1) opacity(0.8);
         }
         
         .keyboard-shortcuts {
-            background: #f8f9fa;
+            background: var(--secondary);
+            border: 1px solid var(--border);
             padding: 1.5rem;
-            border-radius: 8px;
+            border-radius: var(--radius);
             margin: 1rem 0;
         }
         
@@ -170,23 +228,25 @@
             display: flex;
             justify-content: space-between;
             padding: 0.5rem 0;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid var(--border);
         }
         
         .shortcut-key {
             font-family: monospace;
-            background: white;
+            background: var(--background);
             padding: 0.2rem 0.6rem;
             border-radius: 4px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--border);
             font-size: 0.9em;
+            color: var(--foreground);
         }
         
         footer {
             text-align: center;
             padding: 2rem 0;
-            color: #666;
+            color: var(--muted-foreground);
             margin-top: 4rem;
+            border-top: 1px solid var(--border);
         }
     </style>
 </head>
@@ -195,7 +255,7 @@
         <div class="container">
             <nav>
                 <div style="font-size: 1.5rem; font-weight: bold;">
-                    <a href="index.html" style="text-decoration: none; color: #333;">Datagres</a>
+                    <a href="index.html" style="text-decoration: none; color: var(--foreground);">Datagres</a>
                 </div>
                 <div class="nav-links">
                     <a href="index.html">Home</a>

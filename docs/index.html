@@ -12,11 +12,36 @@
             box-sizing: border-box;
         }
         
+        :root {
+            --background: #0a0a0a;
+            --foreground: #fafafa;
+            --card: #0f0f0f;
+            --card-foreground: #fafafa;
+            --popover: #0f0f0f;
+            --popover-foreground: #fafafa;
+            --primary: #fafafa;
+            --primary-foreground: #0a0a0a;
+            --secondary: #262626;
+            --secondary-foreground: #fafafa;
+            --muted: #262626;
+            --muted-foreground: #a3a3a3;
+            --accent: #262626;
+            --accent-foreground: #fafafa;
+            --destructive: #7f1d1d;
+            --destructive-foreground: #fafafa;
+            --border: #262626;
+            --input: #262626;
+            --ring: #d4d4d4;
+            --radius: 0.5rem;
+        }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             line-height: 1.6;
-            color: #333;
-            background: #f8f9fa;
+            color: var(--foreground);
+            background: var(--background);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
         
         .container {
@@ -26,27 +51,57 @@
         }
         
         header {
-            background: #fff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: rgba(15, 15, 15, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
             padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        
+        nav a {
+            color: var(--muted-foreground);
+            transition: color 0.2s;
+        }
+        
+        nav a:hover {
+            color: var(--foreground);
         }
         
         .hero {
             text-align: center;
-            padding: 4rem 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            padding: 6rem 0;
+            background: radial-gradient(circle at top, rgba(99, 102, 241, 0.1) 0%, transparent 50%);
+            position: relative;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+            filter: blur(100px);
+            pointer-events: none;
         }
         
         .hero h1 {
-            font-size: 3rem;
+            font-size: 3.5rem;
             margin-bottom: 1rem;
+            background: linear-gradient(to right, #fff 0%, #a3a3a3 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            position: relative;
         }
         
         .hero p {
             font-size: 1.25rem;
             margin-bottom: 2rem;
-            opacity: 0.9;
+            color: var(--muted-foreground);
         }
         
         .buttons {
@@ -54,61 +109,135 @@
             gap: 1rem;
             justify-content: center;
             flex-wrap: wrap;
+            position: relative;
         }
         
         .btn {
             display: inline-block;
-            padding: 0.75rem 2rem;
-            background: white;
-            color: #667eea;
+            padding: 0.5rem 1.5rem;
+            background: var(--primary);
+            color: var(--primary-foreground);
             text-decoration: none;
-            border-radius: 5px;
-            font-weight: 600;
-            transition: transform 0.2s;
+            border-radius: var(--radius);
+            font-weight: 500;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            border: 1px solid transparent;
         }
         
         .btn:hover {
-            transform: translateY(-2px);
+            background: var(--foreground);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
         }
         
         .btn-secondary {
             background: transparent;
-            color: white;
-            border: 2px solid white;
+            color: var(--foreground);
+            border: 1px solid var(--border);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--secondary);
+            border-color: var(--secondary);
         }
         
         .features {
             padding: 4rem 0;
-            background: white;
+            border-top: 1px solid var(--border);
         }
         
         .features-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
+            gap: 1.5rem;
             margin-top: 3rem;
         }
         
         .feature {
-            text-align: center;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
             padding: 2rem;
+            transition: all 0.2s;
+        }
+        
+        .feature:hover {
+            border-color: var(--muted-foreground);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
         }
         
         .feature h3 {
-            margin: 1rem 0;
-            color: #667eea;
+            margin: 1rem 0 0.5rem;
+            color: var(--foreground);
+            font-size: 1.125rem;
+        }
+        
+        .feature p {
+            color: var(--muted-foreground);
+            font-size: 0.875rem;
+            line-height: 1.5;
         }
         
         .logo {
             width: 120px;
             height: 120px;
             margin-bottom: 2rem;
+            filter: drop-shadow(0 0 2rem rgba(99, 102, 241, 0.3));
+        }
+        
+        section {
+            border-top: 1px solid var(--border);
+        }
+        
+        section h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        section h3 {
+            font-size: 1.25rem;
+            color: var(--foreground);
+            margin-bottom: 0.5rem;
+        }
+        
+        .step-number {
+            background: var(--secondary);
+            color: var(--secondary-foreground);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1rem;
+            border: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        
+        .section-dark {
+            background: var(--background);
+        }
+        
+        .section-card {
+            background: var(--card);
+        }
+        
+        .code-img {
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
         }
         
         footer {
             text-align: center;
             padding: 2rem 0;
-            color: #666;
+            color: var(--muted-foreground);
+            border-top: 1px solid var(--border);
+            font-size: 0.875rem;
         }
     </style>
 </head>
@@ -171,70 +300,70 @@
         </div>
     </section>
     
-    <section style="padding: 4rem 0; background: #f8f9fa;">
+    <section class="section-card" style="padding: 4rem 0;">
         <div class="container">
-            <h2 style="text-align: center; margin-bottom: 3rem;">Built for Developers</h2>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 3rem; align-items: center;">
+            <h2>Built for Developers</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 3rem; align-items: center; margin-top: 3rem;">
                 <div>
-                    <h3 style="color: #667eea; margin-bottom: 1rem;">Zero Configuration</h3>
-                    <p style="font-size: 1.1rem; line-height: 1.8;">No complex setup or configuration files. Just paste your PostgreSQL connection string and start exploring. Datagres handles SSL, cloud providers, and connection pooling automatically.</p>
+                    <h3>Zero Configuration</h3>
+                    <p style="color: var(--muted-foreground); line-height: 1.8;">No complex setup or configuration files. Just paste your PostgreSQL connection string and start exploring. Datagres handles SSL, cloud providers, and connection pooling automatically.</p>
                     
-                    <h3 style="color: #667eea; margin: 2rem 0 1rem;">Keyboard-Driven Workflow</h3>
-                    <p style="font-size: 1.1rem; line-height: 1.8;">Navigate your entire database without touching the mouse. Quick search with Shift+Shift, jump between tabs with Cmd+1-9, and execute queries with Cmd+Enter.</p>
+                    <h3 style="margin: 2rem 0 0.5rem;">Keyboard-Driven Workflow</h3>
+                    <p style="color: var(--muted-foreground); line-height: 1.8;">Navigate your entire database without touching the mouse. Quick search with Shift+Shift, jump between tabs with Cmd+1-9, and execute queries with Cmd+Enter.</p>
                     
-                    <h3 style="color: #667eea; margin: 2rem 0 1rem;">Enterprise Security</h3>
-                    <p style="font-size: 1.1rem; line-height: 1.8;">Your credentials are never stored in plain text. Passwords go to your OS keychain, connections are encrypted, and the app is code-signed for macOS security.</p>
+                    <h3 style="margin: 2rem 0 0.5rem;">Enterprise Security</h3>
+                    <p style="color: var(--muted-foreground); line-height: 1.8;">Your credentials are never stored in plain text. Passwords go to your OS keychain, connections are encrypted, and the app is code-signed for macOS security.</p>
                 </div>
                 <div style="text-align: center;">
-                    <img src="data-flow-simple.svg" alt="Data Flow" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);">
+                    <img src="data-flow-simple.svg" alt="Data Flow" class="code-img" style="max-width: 100%; height: auto; filter: invert(1) opacity(0.8);">
                 </div>
             </div>
         </div>
     </section>
     
-    <section style="padding: 4rem 0; background: white;">
+    <section class="section-dark" style="padding: 4rem 0;">
         <div class="container">
-            <h2 style="text-align: center; margin-bottom: 3rem;">Getting Started</h2>
-            <div style="max-width: 800px; margin: 0 auto;">
+            <h2>Getting Started</h2>
+            <div style="max-width: 800px; margin: 3rem auto 0;">
                 <div style="display: grid; grid-template-columns: auto 1fr; gap: 2rem; align-items: start;">
-                    <div style="background: #667eea; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">1</div>
+                    <div class="step-number">1</div>
                     <div>
                         <h3>Download Datagres</h3>
-                        <p>Get the latest version for your platform from our releases page. Available for macOS, Windows, and Linux.</p>
+                        <p style="color: var(--muted-foreground);">Get the latest version for your platform from our releases page. Available for macOS, Windows, and Linux.</p>
                     </div>
                     
-                    <div style="background: #667eea; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">2</div>
+                    <div class="step-number">2</div>
                     <div>
                         <h3>Connect to Your Database</h3>
-                        <p>Paste your PostgreSQL connection string. Datagres supports all standard PostgreSQL URLs including SSL connections.</p>
+                        <p style="color: var(--muted-foreground);">Paste your PostgreSQL connection string. Datagres supports all standard PostgreSQL URLs including SSL connections.</p>
                     </div>
                     
-                    <div style="background: #667eea; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">3</div>
+                    <div class="step-number">3</div>
                     <div>
                         <h3>Start Exploring</h3>
-                        <p>Use Shift+Shift to quickly find tables, browse data with infinite scrolling, and write SQL queries with intelligent autocompletion.</p>
+                        <p style="color: var(--muted-foreground);">Use Shift+Shift to quickly find tables, browse data with infinite scrolling, and write SQL queries with intelligent autocompletion.</p>
                     </div>
                 </div>
                 
                 <div style="text-align: center; margin-top: 3rem;">
-                    <a href="documentation.html" class="btn" style="background: #667eea; color: white;">View Documentation</a>
+                    <a href="documentation.html" class="btn">View Documentation</a>
                 </div>
             </div>
         </div>
     </section>
     
-    <section style="padding: 4rem 0; background: #f8f9fa;">
+    <section class="section-card" style="padding: 4rem 0;">
         <div class="container">
-            <h2 style="text-align: center; margin-bottom: 3rem;">Open Source</h2>
-            <div style="text-align: center; max-width: 800px; margin: 0 auto;">
-                <p style="font-size: 1.2rem; line-height: 1.8; margin-bottom: 2rem;">
+            <h2>Open Source</h2>
+            <div style="text-align: center; max-width: 800px; margin: 3rem auto 0;">
+                <p style="font-size: 1.125rem; line-height: 1.8; margin-bottom: 2rem; color: var(--muted-foreground);">
                     Datagres is completely open source and released under the Unlicense. This means you can use it for any purpose, modify it, and even use it in commercial projects with no restrictions.
                 </p>
-                <p style="font-size: 1.1rem; line-height: 1.8;">
+                <p style="line-height: 1.8; color: var(--muted-foreground);">
                     Built with modern technologies like Electron, React, TypeScript, and TanStack Query. Contributions are welcome!
                 </p>
                 <div style="margin-top: 2rem;">
-                    <a href="https://github.com/seepatcode/datagres" class="btn btn-secondary" style="background: #333; color: white; border: none;">
+                    <a href="https://github.com/seepatcode/datagres" class="btn btn-secondary">
                         View on GitHub
                     </a>
                 </div>
