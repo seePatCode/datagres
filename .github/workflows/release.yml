@@ -45,11 +45,14 @@ jobs:
         
       - name: Package app (macOS)
         if: matrix.os == 'macos-latest'
-        timeout-minutes: 20
+        timeout-minutes: 45
         run: |
           # Fix pnpm node_modules for electron-builder
           rm -rf node_modules/.pnpm/.ignored 2>/dev/null || true
-          pnpm run dist:mac
+          # Debug: Check if certificates are available
+          security find-identity -v -p codesigning
+          # Run build with verbose logging
+          DEBUG=electron-builder pnpm run dist:mac
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           CSC_LINK: ${{ secrets.MAC_CERTS }}
@@ -58,6 +61,7 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           NODE_OPTIONS: --max-old-space-size=4096
+          NOTARIZE_TIMEOUT: 1800000
           
       - name: Package app (Windows)
         if: matrix.os == 'windows-latest'
