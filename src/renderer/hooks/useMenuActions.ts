@@ -8,6 +8,7 @@ interface UseMenuActionsOptions {
   onNewConnection: () => void
   onShowConnections: () => void
   onCloseTab: (tabId: string) => void
+  onShowHelp?: () => void
 }
 
 export function useMenuActions({
@@ -15,7 +16,8 @@ export function useMenuActions({
   activeTabId,
   onNewConnection,
   onShowConnections,
-  onCloseTab
+  onCloseTab,
+  onShowHelp
 }: UseMenuActionsOptions) {
   const { setTheme } = useTheme()
   
@@ -44,6 +46,9 @@ export function useMenuActions({
           case 'set-theme-system':
             setTheme('system')
             break
+          case 'show-help':
+            onShowHelp?.()
+            break
         }
       }
 
@@ -52,5 +57,5 @@ export function useMenuActions({
       // Return the cleanup function
       return cleanup
     }
-  }, [currentView, activeTabId, onNewConnection, onShowConnections, onCloseTab, setTheme])
+  }, [currentView, activeTabId, onNewConnection, onShowConnections, onCloseTab, setTheme, onShowHelp])
 }

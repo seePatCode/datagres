@@ -1,8 +1,9 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import type { ElectronAPI } from '@shared/types'
 import { ConnectionView } from '@/views/ConnectionView'
 import { ExplorerView } from '@/views/ExplorerView'
+import { HelpDialog } from '@/components/ui/help-dialog'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useMenuActions } from '@/hooks/useMenuActions'
 import { useTabManagement } from '@/hooks/useTabManagement'
@@ -69,6 +70,7 @@ function App() {
   }
   
   const { closeTab: handleCloseTab } = useTabManagement(connectionString || '')
+  const [showHelp, setShowHelp] = useState(false)
   
   // Use menu actions hook
   useMenuActions({
@@ -76,7 +78,8 @@ function App() {
     activeTabId,
     onNewConnection: handleNewConnection,
     onShowConnections: handleShowConnections,
-    onCloseTab: handleCloseTab
+    onCloseTab: handleCloseTab,
+    onShowHelp: () => setShowHelp(true)
   })
   
   // Use keyboard shortcuts hook
@@ -89,14 +92,16 @@ function App() {
     onGoForward: handleGoForward,
     canGoBack: !!canGoBack,
     canGoForward: !!canGoForward,
+    onShowHelp: () => setShowHelp(true)
   })
   
   // Render appropriate view
-  if (currentView === 'explorer') {
-    return <ExplorerView />
-  }
-  
-  return <ConnectionView />
+  return (
+    <>
+      {currentView === 'explorer' ? <ExplorerView onShowHelp={() => setShowHelp(true)} /> : <ConnectionView />}
+      <HelpDialog open={showHelp} onOpenChange={setShowHelp} />
+    </>
+  )
 }
 
 export default App

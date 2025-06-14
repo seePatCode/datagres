@@ -10,6 +10,7 @@ interface UseKeyboardShortcutsOptions {
   onGoForward?: () => void
   canGoBack?: boolean
   canGoForward?: boolean
+  onShowHelp?: () => void
 }
 
 export function useKeyboardShortcuts({
@@ -21,7 +22,7 @@ export function useKeyboardShortcuts({
   onGoForward,
   canGoBack = false,
   canGoForward = false,
-  onExecuteQuery
+  onShowHelp
 }: UseKeyboardShortcutsOptions) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -77,6 +78,13 @@ export function useKeyboardShortcuts({
         const tabIndex = parseInt(e.key) - 1
         if (tabs[tabIndex]) {
           setActiveTabId(tabs[tabIndex].id)
+        }
+      }
+      // Cmd/Ctrl + / to show help
+      else if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+        e.preventDefault()
+        if (onShowHelp) {
+          onShowHelp()
         }
       }
     }

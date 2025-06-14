@@ -52,7 +52,11 @@ import {
 const MemoizedTableView = memo(TableView)
 const MemoizedSQLQueryView = memo(SQLQueryView)
 
-export function ExplorerView() {
+interface ExplorerViewProps {
+  onShowHelp?: () => void
+}
+
+export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
   const dispatch = useDispatch<AppDispatch>()
   
   // Redux state
@@ -158,6 +162,7 @@ export function ExplorerView() {
           onNavigateForward={handleNavigateForward}
           canGoBack={!!canGoBack}
           canGoForward={!!canGoForward}
+          onShowHelp={onShowHelp}
         />
       </div>
       

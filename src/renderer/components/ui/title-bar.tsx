@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Minus, Square, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Minus, Square, X, ChevronLeft, ChevronRight, HelpCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -9,6 +9,7 @@ interface TitleBarProps {
   onNavigateForward?: () => void
   canGoBack?: boolean
   canGoForward?: boolean
+  onShowHelp?: () => void
 }
 
 export function TitleBar({ 
@@ -16,7 +17,8 @@ export function TitleBar({
   onNavigateBack,
   onNavigateForward,
   canGoBack = false,
-  canGoForward = false
+  canGoForward = false,
+  onShowHelp
 }: TitleBarProps) {
   const [isMacOS, setIsMacOS] = useState(false)
 
@@ -93,8 +95,19 @@ export function TitleBar({
           {title}
         </div>
         
-        {/* Right side - Balance the layout */}
-        <div className="w-[120px]" />
+        {/* Right side - Help button */}
+        <div className="flex items-center pr-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 rounded-sm"
+            onClick={onShowHelp}
+            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+            title="Keyboard shortcuts (⌘/)"
+          >
+            <HelpCircle className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     )
   }
@@ -144,9 +157,20 @@ export function TitleBar({
         </div>
       </div>
 
-      {/* Right side - Window controls */}
-      <div className="flex">
+      {/* Right side - Help button and window controls */}
+      <div className="flex items-center">
         <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 w-6 p-0 mr-2 rounded-sm"
+          onClick={onShowHelp}
+          style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+          title="Keyboard shortcuts (Ctrl+/)"
+        >
+          <HelpCircle className="h-4 w-4" />
+        </Button>
+        <div className="flex">
+          <Button
           variant="ghost"
           size="sm"
           className="h-8 w-12 rounded-none hover:bg-muted"
@@ -173,6 +197,7 @@ export function TitleBar({
         >
           <X className="h-4 w-4" />
         </Button>
+        </div>
       </div>
     </div>
   )

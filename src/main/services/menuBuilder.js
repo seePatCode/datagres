@@ -137,6 +137,14 @@ function createApplicationMenu(mainWindow, currentTheme = 'dark') {
       label: 'Help',
       submenu: [
         {
+          label: 'Keyboard Shortcuts',
+          accelerator: 'CmdOrCtrl+/',
+          click: () => {
+            mainWindow.webContents.send('menu-action', 'show-help')
+          }
+        },
+        { type: 'separator' },
+        {
           label: 'About Datagres',
           click: () => {
             // Could open an about dialog or webpage
