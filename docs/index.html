@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datagres - Lightning-Fast PostgreSQL Explorer</title>
+    <meta name="description" content="The world's fastest database exploration tool. Connect to PostgreSQL and browse data in under 15 seconds.">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8f9fa;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        header {
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 1rem 0;
+        }
+        
+        .hero {
+            text-align: center;
+            padding: 4rem 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .hero p {
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 2rem;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+        
+        .features {
+            padding: 4rem 0;
+            background: white;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .feature {
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .feature h3 {
+            margin: 1rem 0;
+            color: #667eea;
+        }
+        
+        .logo {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 2rem;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 1.5rem; font-weight: bold;">Datagres</div>
+                <div>
+                    <a href="https://github.com/seepatcode/datagres" style="text-decoration: none; color: #333;">GitHub</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+    
+    <section class="hero">
+        <div class="container">
+            <img src="https://raw.githubusercontent.com/seepatcode/datagres/main/build/icon.png" alt="Datagres Logo" class="logo">
+            <h1>Datagres</h1>
+            <p>The Lightning-Fast PostgreSQL Explorer</p>
+            <p>Connect to your database and start browsing data in under 15 seconds</p>
+            <div class="buttons">
+                <a href="https://github.com/seepatcode/datagres/releases" class="btn">Download</a>
+                <a href="https://github.com/seepatcode/datagres" class="btn btn-secondary">View on GitHub</a>
+            </div>
+        </div>
+    </section>
+    
+    <section class="features">
+        <div class="container">
+            <h2 style="text-align: center; margin-bottom: 2rem;">Features</h2>
+            <div class="features-grid">
+                <div class="feature">
+                    <h3>⚡ Lightning Fast</h3>
+                    <p>Connection to data view in under 15 seconds. No configuration needed.</p>
+                </div>
+                <div class="feature">
+                    <h3>⌨️ Keyboard-First</h3>
+                    <p>Navigate with Shift+Shift for quick table search. Built for efficiency.</p>
+                </div>
+                <div class="feature">
+                    <h3>🔒 Secure</h3>
+                    <p>Passwords stored in OS keychain. Encrypted connections. Your data is safe.</p>
+                </div>
+                <div class="feature">
+                    <h3>📜 Infinite Scroll</h3>
+                    <p>Browse millions of rows seamlessly with virtual scrolling.</p>
+                </div>
+                <div class="feature">
+                    <h3>🎨 Beautiful UI</h3>
+                    <p>Modern interface built with Tailwind CSS and shadcn/ui components.</p>
+                </div>
+                <div class="feature">
+                    <h3>🖥️ Cross-Platform</h3>
+                    <p>Available for macOS, Windows, and Linux. Works everywhere.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <footer>
+        <div class="container">
+            <p>Datagres is open source and released under the Unlicense</p>
+            <p>Made with ❤️ for the database community</p>
+        </div>
+    </footer>
+</body>
+</html>

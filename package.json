@@ -54,6 +54,12 @@
     },
     "linux": {
       "target": "AppImage"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "seepatcode",
+      "repo": "datagres",
+      "releaseType": "release"
     }
   },
   "devDependencies": {

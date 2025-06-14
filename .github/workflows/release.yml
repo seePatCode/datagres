@@ -45,25 +45,23 @@ jobs:
         
       - name: Package app (macOS)
         if: matrix.os == 'macos-latest'
-        run: |
-          export ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES=true
-          pnpm exec electron-builder --mac --config.publish=null
+        run: pnpm run dist:mac
         env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
           
       - name: Package app (Windows)
         if: matrix.os == 'windows-latest'
-        run: |
-          set ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES=true
-          pnpm exec electron-builder --win --config.publish=null
+        run: pnpm run dist:win
         env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
           
       - name: Package app (Linux)
         if: matrix.os == 'ubuntu-latest'
-        run: |
-          export ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES=true
-          pnpm exec electron-builder --linux --config.publish=null
+        run: pnpm run dist:linux
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
