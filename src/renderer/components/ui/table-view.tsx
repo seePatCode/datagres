@@ -9,6 +9,7 @@ import { TableToolbar } from '@/components/ui/table-toolbar'
 import { TableStatusBar } from '@/components/ui/table-status-bar'
 import { useInfiniteTableData } from '@/hooks/useInfiniteTableData'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
+import { DEFAULT_PAGE_SIZE, DEFAULT_COLUMN_WIDTH, MIN_COLUMN_WIDTH, MAX_COLUMN_WIDTH, INFINITE_SCROLL_THRESHOLD } from '@/constants'
 
 interface TableViewProps {
   tableName: string
@@ -46,9 +47,9 @@ const createColumns = (columnNames: string[]): ColumnDef<any>[] => {
         </div>
       )
     },
-    size: 120, // Default column width
-    minSize: 60,
-    maxSize: 180, // Smaller max width for more compact display
+    size: DEFAULT_COLUMN_WIDTH,
+    minSize: MIN_COLUMN_WIDTH,
+    maxSize: MAX_COLUMN_WIDTH,
   }))
 }
 
@@ -59,7 +60,7 @@ export function TableView({
   hasUnsavedChanges = false,
   className,
   initialSearchTerm = '',
-  initialPageSize = 100,
+  initialPageSize = DEFAULT_PAGE_SIZE,
   onSearchChange,
 }: TableViewProps) {
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({})
@@ -113,7 +114,7 @@ export function TableView({
     onLoadMore: fetchNextPage,
     hasMore: hasNextPage,
     isLoading: isLoadingMore,
-    threshold: 200, // Load more when 200px from bottom
+    threshold: INFINITE_SCROLL_THRESHOLD,
     rootRef: scrollContainerRef
   })
   

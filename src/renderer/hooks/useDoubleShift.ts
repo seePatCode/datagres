@@ -1,11 +1,12 @@
 import { useEffect, useRef } from 'react'
+import { DOUBLE_SHIFT_TIMEOUT } from '@/constants'
 
 interface UseDoubleShiftOptions {
   onDoubleShift: () => void
   timeout?: number // Time between shifts in milliseconds
 }
 
-export function useDoubleShift({ onDoubleShift, timeout = 300 }: UseDoubleShiftOptions) {
+export function useDoubleShift({ onDoubleShift, timeout = DOUBLE_SHIFT_TIMEOUT }: UseDoubleShiftOptions) {
   const lastShiftTime = useRef<number>(0)
   const shiftCount = useRef<number>(0)
 

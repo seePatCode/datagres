@@ -5,6 +5,7 @@ import { ConnectionView } from '@/views/ConnectionView'
 import { ExplorerView } from '@/views/ExplorerView'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useMenuActions } from '@/hooks/useMenuActions'
+import { useTabManagement } from '@/hooks/useTabManagement'
 import type { AppDispatch } from '@/store/store'
 import {
   loadSavedConnections,
@@ -15,7 +16,6 @@ import {
   selectTabs,
   selectActiveTabId,
   setActiveTab,
-  removeTab,
 } from '@/store/slices/tabsSlice'
 import {
   setCurrentView,
@@ -68,11 +68,7 @@ function App() {
     dispatch(pushNavigationEntry({ type: 'view', viewName: 'connect' }))
   }
   
-  const handleCloseTab = (tabId: string) => {
-    if (connectionString) {
-      dispatch(removeTab({ connectionString, tabId }))
-    }
-  }
+  const { closeTab: handleCloseTab } = useTabManagement(connectionString || '')
   
   // Use menu actions hook
   useMenuActions({

@@ -17,7 +17,9 @@ import {
 } from '@/components/ui/context-menu'
 import { X } from 'lucide-react'
 import { useDoubleShift } from '@/hooks/useDoubleShift'
+import { useTabManagement } from '@/hooks/useTabManagement'
 import type { AppDispatch } from '@/store/store'
+import { DEFAULT_PAGE_SIZE } from '@/constants'
 import {
   selectActiveConnection,
   selectCurrentDatabase,
@@ -31,12 +33,10 @@ import {
   selectActiveTabId,
   selectRecentTables,
   selectOrAddTableTab,
-  removeTab,
   setActiveTab,
   closeAllTabs,
   closeOtherTabs,
   addQueryTab,
-  updateTab,
 } from '@/store/slices/tabsSlice'
 import {
   selectShowSaveDialog,
@@ -93,11 +93,7 @@ export function ExplorerView() {
     }
   }
   
-  const handleCloseTab = (tabId: string) => {
-    if (connectionString) {
-      dispatch(removeTab({ connectionString, tabId }))
-    }
-  }
+  const { closeTab: handleCloseTab, updateTab: handleUpdateTab } = useTabManagement(connectionString || '')
   
   const handleCloseAllTabs = () => {
     if (connectionString) {
@@ -124,11 +120,6 @@ export function ExplorerView() {
     }
   }
   
-  const handleUpdateTab = (tabId: string, updates: any) => {
-    if (connectionString) {
-      dispatch(updateTab({ connectionString, tabId, updates }))
-    }
-  }
   
   const handleSaveConnection = async (name: string) => {
     const result = await dispatch(saveConnection({ connectionString: pendingConnectionString, name }))
@@ -261,7 +252,7 @@ export function ExplorerView() {
                         tableName={tab.tableName}
                         connectionString={connectionString}
                         initialSearchTerm={tab.searchTerm}
-                        initialPageSize={(tab as any).pageSize || 100}
+                        initialPageSize={(tab as any).pageSize || DEFAULT_PAGE_SIZE}
                         onSearchChange={(searchTerm) => handleUpdateTab(tab.id, { searchTerm })}
                       />
                     ) : (

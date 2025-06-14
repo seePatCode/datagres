@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
+import { INFINITE_SCROLL_THRESHOLD } from '@/constants'
 
 interface UseInfiniteScrollOptions {
   onLoadMore: () => void
@@ -12,7 +13,7 @@ export function useInfiniteScroll({
   onLoadMore,
   hasMore,
   isLoading,
-  threshold = 200,
+  threshold = INFINITE_SCROLL_THRESHOLD,
   rootRef
 }: UseInfiniteScrollOptions) {
   const sentinelRef = useRef<HTMLDivElement | null>(null)
