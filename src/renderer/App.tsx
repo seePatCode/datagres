@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import type { ElectronAPI } from '@shared/types'
 import { ConnectionView } from '@/views/ConnectionView'
 import { ExplorerView } from '@/views/ExplorerView'
+import { AboutView } from '@/views/AboutView'
 import { HelpDialog } from '@/components/ui/help-dialog'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useMenuActions } from '@/hooks/useMenuActions'
@@ -110,7 +111,13 @@ function App() {
   // Render appropriate view
   return (
     <>
-      {currentView === 'explorer' ? <ExplorerView onShowHelp={() => setShowHelp(true)} /> : <ConnectionView />}
+      {currentView === 'explorer' ? (
+        <ExplorerView onShowHelp={() => setShowHelp(true)} />
+      ) : currentView === 'about' ? (
+        <AboutView />
+      ) : (
+        <ConnectionView />
+      )}
       <HelpDialog open={showHelp} onOpenChange={setShowHelp} />
     </>
   )

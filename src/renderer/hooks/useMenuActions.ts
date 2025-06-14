@@ -1,6 +1,9 @@
 import { useEffect } from 'react'
+import { useDispatch } from 'react-redux'
 import { useTheme } from './useSettings'
+import { setCurrentView } from '@/store/slices/uiSlice'
 import type { MenuAction, AppView } from '@shared/types'
+import type { AppDispatch } from '@/store/store'
 
 interface UseMenuActionsOptions {
   currentView: AppView
@@ -19,6 +22,7 @@ export function useMenuActions({
   onCloseTab,
   onShowHelp
 }: UseMenuActionsOptions) {
+  const dispatch = useDispatch<AppDispatch>()
   const { setTheme } = useTheme()
   
   useEffect(() => {
@@ -49,6 +53,9 @@ export function useMenuActions({
           case 'show-help':
             onShowHelp?.()
             break
+          case 'show-about':
+            dispatch(setCurrentView('about'))
+            break
         }
       }
 
@@ -57,5 +64,5 @@ export function useMenuActions({
       // Return the cleanup function
       return cleanup
     }
-  }, [currentView, activeTabId, onNewConnection, onShowConnections, onCloseTab, setTheme, onShowHelp])
+  }, [currentView, activeTabId, onNewConnection, onShowConnections, onCloseTab, setTheme, onShowHelp, dispatch])
 }

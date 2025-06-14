@@ -138,19 +138,6 @@ export function TableView({
     setOptimisticData(null)
   }, [activeSearchTerm])
   
-  // Handle Cmd+S for saving changes
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 's' && editedCells.size > 0) {
-        e.preventDefault()
-        handleSaveChanges()
-      }
-    }
-    
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [editedCells.size, handleSaveChanges])
-  
   // Wrap the setter to notify parent
   const handleSearchChange = useCallback((newSearchTerm: string) => {
     setSearchTerm(newSearchTerm)
@@ -161,27 +148,7 @@ export function TableView({
   const columns = data ? createColumns(data.columns) : []
 
 
-  const handleCellEdit = (rowIndex: number, columnId: string, value: any) => {
-    const cellKey = `${rowIndex}-${columnId}`
-    const newEditedCells = new Map(editedCells)
-    
-    // Get original value to compare
-    // Column ID is the column name, we need to find the index
-    const columnIndex = data?.columns.findIndex((col: string) => col === columnId) ?? -1
-    const originalValue = columnIndex >= 0 ? data?.rows[rowIndex]?.[columnIndex] : undefined
-    
-    if (value === originalValue) {
-      // If value is same as original, remove from edited cells
-      newEditedCells.delete(cellKey)
-    } else {
-      // Add to edited cells
-      newEditedCells.set(cellKey, value)
-    }
-    
-    setEditedCells(newEditedCells)
-  }
-
-  const handleSaveChanges = async () => {
+  const handleSaveChanges = useCallback(async () => {
     if (!data || !schemaData || editedCells.size === 0) return
     
     setIsSaving(true)
@@ -273,6 +240,39 @@ export function TableView({
     } finally {
       setIsSaving(false)
     }
+  }, [connectionString, tableName, data, schemaData, editedCells, activeSearchTerm, refetch])
+  
+  // Handle Cmd+S for saving changes
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's' && editedCells.size > 0) {
+        e.preventDefault()
+        handleSaveChanges()
+      }
+    }
+    
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [editedCells.size, handleSaveChanges])
+
+  const handleCellEdit = (rowIndex: number, columnId: string, value: any) => {
+    const cellKey = `${rowIndex}-${columnId}`
+    const newEditedCells = new Map(editedCells)
+    
+    // Get original value to compare
+    // Column ID is the column name, we need to find the index
+    const columnIndex = data?.columns.findIndex((col: string) => col === columnId) ?? -1
+    const originalValue = columnIndex >= 0 ? data?.rows[rowIndex]?.[columnIndex] : undefined
+    
+    if (value === originalValue) {
+      // If value is same as original, remove from edited cells
+      newEditedCells.delete(cellKey)
+    } else {
+      // Add to edited cells
+      newEditedCells.set(cellKey, value)
+    }
+    
+    setEditedCells(newEditedCells)
   }
 
   const hasEdits = editedCells.size > 0

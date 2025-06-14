@@ -147,8 +147,7 @@ function createApplicationMenu(mainWindow, currentTheme = 'dark') {
         {
           label: 'About Datagres',
           click: () => {
-            // Could open an about dialog or webpage
-            console.log('About Datagres')
+            mainWindow.webContents.send('menu-action', 'show-about')
           }
         }
       ]

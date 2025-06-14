@@ -162,9 +162,10 @@ export type MenuAction =
   | 'set-theme-dark'
   | 'set-theme-light'
   | 'set-theme-system'
+  | 'show-about'
 
 // View states
-export type AppView = 'connect' | 'explorer'
+export type AppView = 'connect' | 'explorer' | 'about'
 
 // Tab state
 export interface TableTab {
