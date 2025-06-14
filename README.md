@@ -37,9 +37,9 @@
 - **⚡ Lightning Fast** - Connection to data view in under 15 seconds
 - **⌨️ Keyboard-First** - Navigate efficiently without touching the mouse
   - `Shift+Shift` - Quick table search (like Spotlight)
-  - `↑↓` - Navigate through tables and results
-  - `Cmd+E` - Open SQL editor
-  - `Cmd+Enter` - Execute query
+  - `Cmd+N` - New connection
+  - `Cmd+Tab` - Cycle through tabs
+  - `Cmd+Enter` - Execute search
 - **🔒 Secure** - Passwords stored in OS keychain, connections encrypted
 - **📜 Infinite Scroll** - Browse millions of rows seamlessly
 - **🎨 Beautiful UI** - Modern interface built with Tailwind CSS and shadcn/ui
@@ -80,6 +80,23 @@ pnpm run dist
    postgresql://user:password@localhost:5432/mydb
    ```
 3. **Start exploring!** Use `Shift+Shift` to quickly search tables
+
+## ⌨️ Keyboard Shortcuts
+
+### Essential
+- `Shift+Shift` - Quick table search
+- `Cmd+N` - New connection
+- `Cmd+/` - Show all shortcuts
+
+### Navigation
+- `Cmd+Tab` / `Cmd+Shift+Tab` - Cycle through tabs
+- `Cmd+[` / `Cmd+]` - Navigate back/forward
+- `Cmd+1-9` - Jump to specific tab
+
+### Table View
+- `Cmd+Enter` - Execute search
+- `Enter` / `Esc` - Edit/cancel cell edit
+- Click headers to sort columns
 
 ## 🏗️ Architecture
 
