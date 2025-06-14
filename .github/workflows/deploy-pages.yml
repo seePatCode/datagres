@@ -27,9 +27,13 @@ jobs:
       - name: Build site
         run: |
           mkdir -p _site
+          # Copy docs content to root of _site
+          cp -r docs/* _site/
+          # Copy additional files
           cp README.md _site/
-          cp -r docs _site/
-          # Add more build steps here if needed
+          cp -r build/icon.png _site/
+          # Copy architecture diagrams
+          cp -r kb/*.png _site/ 2>/dev/null || true
           
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

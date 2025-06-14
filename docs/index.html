@@ -117,8 +117,10 @@
         <div class="container">
             <nav style="display: flex; justify-content: space-between; align-items: center;">
                 <div style="font-size: 1.5rem; font-weight: bold;">Datagres</div>
-                <div>
-                    <a href="https://github.com/seepatcode/datagres" style="text-decoration: none; color: #333;">GitHub</a>
+                <div style="display: flex; gap: 2rem; align-items: center;">
+                    <a href="documentation.html" style="text-decoration: none; color: #333; font-weight: 500;">Documentation</a>
+                    <a href="https://github.com/seepatcode/datagres/releases" style="text-decoration: none; color: #333; font-weight: 500;">Download</a>
+                    <a href="https://github.com/seepatcode/datagres" style="text-decoration: none; color: #333; font-weight: 500;">GitHub</a>
                 </div>
             </nav>
         </div>
@@ -126,7 +128,7 @@
     
     <section class="hero">
         <div class="container">
-            <img src="https://raw.githubusercontent.com/seepatcode/datagres/main/build/icon.png" alt="Datagres Logo" class="logo">
+            <img src="icon.png" alt="Datagres Logo" class="logo">
             <h1>Datagres</h1>
             <p>The Lightning-Fast PostgreSQL Explorer</p>
             <p>Connect to your database and start browsing data in under 15 seconds</p>
@@ -164,6 +166,77 @@
                 <div class="feature">
                     <h3>🖥️ Cross-Platform</h3>
                     <p>Available for macOS, Windows, and Linux. Works everywhere.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section style="padding: 4rem 0; background: #f8f9fa;">
+        <div class="container">
+            <h2 style="text-align: center; margin-bottom: 3rem;">Built for Developers</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 3rem; align-items: center;">
+                <div>
+                    <h3 style="color: #667eea; margin-bottom: 1rem;">Zero Configuration</h3>
+                    <p style="font-size: 1.1rem; line-height: 1.8;">No complex setup or configuration files. Just paste your PostgreSQL connection string and start exploring. Datagres handles SSL, cloud providers, and connection pooling automatically.</p>
+                    
+                    <h3 style="color: #667eea; margin: 2rem 0 1rem;">Keyboard-Driven Workflow</h3>
+                    <p style="font-size: 1.1rem; line-height: 1.8;">Navigate your entire database without touching the mouse. Quick search with Shift+Shift, jump between tabs with Cmd+1-9, and execute queries with Cmd+Enter.</p>
+                    
+                    <h3 style="color: #667eea; margin: 2rem 0 1rem;">Enterprise Security</h3>
+                    <p style="font-size: 1.1rem; line-height: 1.8;">Your credentials are never stored in plain text. Passwords go to your OS keychain, connections are encrypted, and the app is code-signed for macOS security.</p>
+                </div>
+                <div style="text-align: center;">
+                    <img src="data-flow-simple.svg" alt="Data Flow" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);">
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section style="padding: 4rem 0; background: white;">
+        <div class="container">
+            <h2 style="text-align: center; margin-bottom: 3rem;">Getting Started</h2>
+            <div style="max-width: 800px; margin: 0 auto;">
+                <div style="display: grid; grid-template-columns: auto 1fr; gap: 2rem; align-items: start;">
+                    <div style="background: #667eea; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">1</div>
+                    <div>
+                        <h3>Download Datagres</h3>
+                        <p>Get the latest version for your platform from our releases page. Available for macOS, Windows, and Linux.</p>
+                    </div>
+                    
+                    <div style="background: #667eea; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">2</div>
+                    <div>
+                        <h3>Connect to Your Database</h3>
+                        <p>Paste your PostgreSQL connection string. Datagres supports all standard PostgreSQL URLs including SSL connections.</p>
+                    </div>
+                    
+                    <div style="background: #667eea; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">3</div>
+                    <div>
+                        <h3>Start Exploring</h3>
+                        <p>Use Shift+Shift to quickly find tables, browse data with infinite scrolling, and write SQL queries with intelligent autocompletion.</p>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 3rem;">
+                    <a href="documentation.html" class="btn" style="background: #667eea; color: white;">View Documentation</a>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section style="padding: 4rem 0; background: #f8f9fa;">
+        <div class="container">
+            <h2 style="text-align: center; margin-bottom: 3rem;">Open Source</h2>
+            <div style="text-align: center; max-width: 800px; margin: 0 auto;">
+                <p style="font-size: 1.2rem; line-height: 1.8; margin-bottom: 2rem;">
+                    Datagres is completely open source and released under the Unlicense. This means you can use it for any purpose, modify it, and even use it in commercial projects with no restrictions.
+                </p>
+                <p style="font-size: 1.1rem; line-height: 1.8;">
+                    Built with modern technologies like Electron, React, TypeScript, and TanStack Query. Contributions are welcome!
+                </p>
+                <div style="margin-top: 2rem;">
+                    <a href="https://github.com/seepatcode/datagres" class="btn btn-secondary" style="background: #333; color: white; border: none;">
+                        View on GitHub
+                    </a>
                 </div>
             </div>
         </div>
