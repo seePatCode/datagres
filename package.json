@@ -36,12 +36,20 @@
       "node_modules/electron-store/**/*",
       "node_modules/keytar/**/*"
     ],
+    "npmRebuild": false,
+    "nodeGypRebuild": false,
+    "buildDependenciesFromSource": false,
+    "compression": "store",
     "mac": {
       "category": "public.app-category.developer-tools",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
+      "notarize": true,
+      "signIgnore": [
+        "node_modules/keytar/build/Release/keytar.node"
+      ],
       "target": [
         {
           "target": "dmg",
