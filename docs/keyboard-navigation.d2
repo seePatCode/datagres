@@ -1,0 +1,96 @@
+# Datagres Keyboard Navigation
+
+title: Keyboard-First Navigation Flow
+
+start: App Launch {
+  shape: circle
+  style.fill: "#4CAF50"
+}
+
+connection: Connection View {
+  paste: "Paste Connection String"
+  enter: "Press Enter"
+  style.fill: "#2196F3"
+}
+
+explorer: Explorer View {
+  search: "Shift+Shift: Quick Search"
+  navigate: "↑↓: Navigate Tables"
+  enter: "Enter: Open Table"
+  style.fill: "#FF9800"
+}
+
+table: Table View {
+  scroll: "Mouse/Trackpad: Scroll"
+  sort: "Click Headers: Sort"
+  filter: "Type: Filter"
+  sql: "Cmd+E: SQL Editor"
+  style.fill: "#9C27B0"
+}
+
+sql_editor: SQL Editor {
+  write: "Type SQL Query"
+  complete: "Ctrl+Space: Autocomplete"
+  execute: "Cmd+Enter: Execute"
+  close: "Esc: Close"
+  style.fill: "#F44336"
+}
+
+# Navigation Flow
+start -> connection: "Launch"
+connection -> explorer: "Connect"
+explorer -> table: "Select Table"
+table -> sql_editor: "Open Editor"
+sql_editor -> table: "View Results"
+
+# Quick Actions
+quick_search: "Shift+Shift" {
+  shape: hexagon
+  style.fill: "#00BCD4"
+}
+
+explorer -> quick_search: "Anywhere"
+quick_search -> table: "Select Result"
+
+# Keyboard Shortcuts Panel
+shortcuts: Keyboard Shortcuts {
+  grid-columns: 2
+  
+  navigation: Navigation {
+    shift_shift: "Shift+Shift: Quick table search"
+    arrows: "↑↓: Navigate lists"
+    enter: "Enter: Select/Open"
+    esc: "Esc: Close/Cancel"
+  }
+  
+  editor: SQL Editor {
+    cmd_e: "Cmd+E: Open SQL editor"
+    ctrl_space: "Ctrl+Space: Autocomplete"
+    cmd_enter: "Cmd+Enter: Execute query"
+    cmd_s: "Cmd+S: Save query"
+  }
+  
+  style.fill: "#E0E0E0"
+  style.stroke: "#757575"
+}
+
+# Legend
+legend: {
+  grid-columns: 1
+  
+  primary: "Primary Flow" {
+    style.fill: "#333"
+    style.stroke: "#000"
+  }
+  
+  quick: "Quick Action" {
+    style.fill: "#00BCD4"
+    style.stroke: "#0097A7"
+  }
+}
+
+# Annotations
+connection.tooltip: "Paste any PostgreSQL connection string and press Enter"
+explorer.tooltip: "Use Shift+Shift from anywhere to quickly search tables"
+table.tooltip: "Infinite scroll through millions of rows"
+sql_editor.tooltip: "Full SQL support with intelligent autocomplete"

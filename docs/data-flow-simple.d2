@@ -1,0 +1,60 @@
+# Datagres Data Flow
+
+direction: right
+
+# User Interface Layer
+user: User {
+  shape: person
+  style.fill: "#E1E8ED"
+}
+
+ui: UI Components {
+  views: "ConnectionView\nExplorerView\nTableView"
+  style.fill: "#61DAFB"
+}
+
+# Frontend Layer
+frontend: Frontend {
+  react: "React Hooks\n& Redux Store"
+  tanstack: "TanStack Query\n& Table"
+  style.fill: "#764ABC"
+}
+
+# Bridge Layer
+api: Window API {
+  shape: hexagon
+  style.fill: "#FF6B6B"
+}
+
+# Backend Layer
+backend: Main Process {
+  ipc: "IPC Handlers"
+  services: "Services"
+  style.fill: "#47848F"
+}
+
+security: Security {
+  keytar: "OS Keychain"
+  store: "electron-store"
+  style.fill: "#FFD700"
+}
+
+# External Systems
+postgres: PostgreSQL {
+  shape: cylinder
+  style.fill: "#336791"
+}
+
+# Connections
+user -> ui: "Interact"
+ui -> frontend: "Actions"
+frontend -> api: "API Calls"
+api -> backend: "IPC"
+backend -> security: "Credentials"
+backend -> postgres: "SQL"
+
+# Styling
+ui.style.stroke: "#000"
+frontend.style.stroke: "#000"
+backend.style.stroke: "#000"
+security.style.stroke: "#000"
