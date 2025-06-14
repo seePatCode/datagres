@@ -45,6 +45,7 @@ jobs:
         
       - name: Package app (macOS)
         if: matrix.os == 'macos-latest'
+        timeout-minutes: 20
         run: pnpm run dist:mac
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -53,6 +54,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          DEBUG: electron-builder
           
       - name: Package app (Windows)
         if: matrix.os == 'windows-latest'
