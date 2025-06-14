@@ -7,9 +7,9 @@
   <p><strong>The Lightning-Fast PostgreSQL Explorer</strong></p>
   
   <p>
-    <a href="#-why-datagres">Why Datagres?</a> •
+    <a href="https://seepatcode.github.io/datagres/">Website</a> •
+    <a href="https://seepatcode.github.io/datagres/documentation.html">Documentation</a> •
     <a href="#-installation">Installation</a> •
-    <a href="#-quick-start">Quick Start</a> •
     <a href="#-features">Features</a> •
     <a href="#-architecture">Architecture</a>
   </p>

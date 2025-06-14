@@ -304,20 +304,57 @@
     
     <section class="section-card" style="padding: 4rem 0;">
         <div class="container">
-            <h2>Built for Developers</h2>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 3rem; align-items: center; margin-top: 3rem;">
-                <div>
-                    <h3>Zero Configuration</h3>
-                    <p style="color: var(--muted-foreground); line-height: 1.8;">No complex setup or configuration files. Just paste your PostgreSQL connection string and start exploring. Datagres handles SSL, cloud providers, and connection pooling automatically.</p>
+            <h2>Why Developers Love Datagres</h2>
+            <div style="display: grid; grid-template-columns: 1fr; gap: 4rem; margin-top: 3rem;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem;">
+                    <div class="feature" style="text-align: left; background: var(--background); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem;">
+                        <div style="font-size: 2.5rem; margin-bottom: 1rem;">⚡</div>
+                        <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem;">Instant Connection</h3>
+                        <p style="color: var(--muted-foreground); line-height: 1.6;">Connect in under 2 seconds. No JDBC drivers, no connection pools to configure. Just paste your connection string and go.</p>
+                        <div style="margin-top: 1.5rem; padding: 1rem; background: var(--secondary); border-radius: 4px; font-family: monospace; font-size: 0.875rem;">
+                            postgresql://user:pass@localhost/mydb
+                        </div>
+                    </div>
                     
-                    <h3 style="margin: 2rem 0 0.5rem;">Keyboard-Driven Workflow</h3>
-                    <p style="color: var(--muted-foreground); line-height: 1.8;">Navigate your entire database without touching the mouse. Quick search with Shift+Shift, jump between tabs with Cmd+1-9, and execute queries with Cmd+Enter.</p>
+                    <div class="feature" style="text-align: left; background: var(--background); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem;">
+                        <div style="font-size: 2.5rem; margin-bottom: 1rem;">⌨️</div>
+                        <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem;">Keyboard First</h3>
+                        <p style="color: var(--muted-foreground); line-height: 1.6;">Built for speed. Quick table search (Shift+Shift), tab navigation (Cmd+1-9), and smart SQL completion. Your hands never leave the keyboard.</p>
+                        <div style="margin-top: 1.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <span style="background: var(--secondary); padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">Shift+Shift</span>
+                            <span style="background: var(--secondary); padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">Cmd+N</span>
+                            <span style="background: var(--secondary); padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">Cmd+Enter</span>
+                        </div>
+                    </div>
                     
-                    <h3 style="margin: 2rem 0 0.5rem;">Enterprise Security</h3>
-                    <p style="color: var(--muted-foreground); line-height: 1.8;">Your credentials are never stored in plain text. Passwords go to your OS keychain, connections are encrypted, and the app is code-signed for macOS security.</p>
+                    <div class="feature" style="text-align: left; background: var(--background); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem;">
+                        <div style="font-size: 2.5rem; margin-bottom: 1rem;">🔒</div>
+                        <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem;">Bank-Level Security</h3>
+                        <p style="color: var(--muted-foreground); line-height: 1.6;">Passwords in OS keychain. SSL auto-detection for cloud databases. Code-signed and notarized by Apple. Your data stays yours.</p>
+                        <div style="margin-top: 1.5rem; display: flex; align-items: center; gap: 1rem; color: var(--muted-foreground); font-size: 0.875rem;">
+                            <span style="color: #22c55e;">✓</span> macOS Keychain
+                            <span style="color: #22c55e;">✓</span> SSL/TLS
+                            <span style="color: #22c55e;">✓</span> Notarized
+                        </div>
+                    </div>
                 </div>
-                <div style="text-align: center;">
-                    <img src="data-flow-simple.svg" alt="Data Flow" class="code-img" style="width: 100%; max-width: 600px; height: auto; filter: invert(1) opacity(0.8);">
+                
+                <div style="margin-top: 2rem; padding: 2rem; background: var(--background); border: 1px solid var(--border); border-radius: var(--radius);">
+                    <h3 style="font-size: 1.25rem; margin-bottom: 1rem;">Performance That Scales</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; text-align: center;">
+                        <div>
+                            <div style="font-size: 2.5rem; font-weight: bold; color: var(--foreground);">< 2s</div>
+                            <p style="color: var(--muted-foreground); font-size: 0.875rem;">Connection Time</p>
+                        </div>
+                        <div>
+                            <div style="font-size: 2.5rem; font-weight: bold; color: var(--foreground);">1M+</div>
+                            <p style="color: var(--muted-foreground); font-size: 0.875rem;">Rows Handled</p>
+                        </div>
+                        <div>
+                            <div style="font-size: 2.5rem; font-weight: bold; color: var(--foreground);">60 FPS</div>
+                            <p style="color: var(--muted-foreground); font-size: 0.875rem;">Smooth Scrolling</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
