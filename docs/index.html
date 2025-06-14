@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Datagres - Lightning-Fast PostgreSQL Explorer</title>
     <meta name="description" content="The world's fastest database exploration tool. Connect to PostgreSQL and browse data in under 15 seconds.">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="icon.png">
     <style>
         * {
             margin: 0;
@@ -61,12 +63,13 @@
         }
         
         nav a {
-            color: var(--muted-foreground);
-            transition: color 0.2s;
+            color: var(--foreground);
+            opacity: 0.7;
+            transition: opacity 0.2s;
         }
         
         nav a:hover {
-            color: var(--foreground);
+            opacity: 1;
         }
         
         .hero {
@@ -315,7 +318,7 @@
                     <p style="color: var(--muted-foreground); line-height: 1.8;">Your credentials are never stored in plain text. Passwords go to your OS keychain, connections are encrypted, and the app is code-signed for macOS security.</p>
                 </div>
                 <div style="text-align: center;">
-                    <img src="data-flow-simple.svg" alt="Data Flow" class="code-img" style="max-width: 100%; height: auto; filter: invert(1) opacity(0.8);">
+                    <img src="data-flow-simple.svg" alt="Data Flow" class="code-img" style="width: 100%; max-width: 600px; height: auto; filter: invert(1) opacity(0.8);">
                 </div>
             </div>
         </div>

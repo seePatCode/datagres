@@ -32,6 +32,7 @@ jobs:
           # Copy additional files
           cp README.md _site/
           cp -r build/icon.png _site/
+          cp -r build/icon.png _site/favicon.png
           # Copy architecture diagrams
           cp -r kb/*.png _site/ 2>/dev/null || true
           

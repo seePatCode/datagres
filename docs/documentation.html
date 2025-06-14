@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Documentation - Datagres</title>
     <meta name="description" content="Documentation for Datagres - The Lightning-Fast PostgreSQL Explorer">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="icon.png">
     <style>
         * {
             margin: 0;
@@ -74,13 +76,14 @@
         
         .nav-links a {
             text-decoration: none;
-            color: var(--muted-foreground);
+            color: var(--foreground);
+            opacity: 0.7;
             font-weight: 500;
-            transition: color 0.2s;
+            transition: opacity 0.2s;
         }
         
         .nav-links a:hover {
-            color: var(--foreground);
+            opacity: 1;
         }
         
         .docs-container {
