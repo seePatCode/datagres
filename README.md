@@ -3,15 +3,34 @@
 <div align="center">
   <img src="build/icon.png" alt="Datagres Logo" width="120" height="120">
   
-  <h3>The world's fastest database exploration tool</h3>
+  <h1>Datagres</h1>
+  <p><strong>The Lightning-Fast PostgreSQL Explorer</strong></p>
   
-  <p>Connect to your PostgreSQL database and start exploring data in under 15 seconds</p>
+  <p>
+    <a href="#-why-datagres">Why Datagres?</a> •
+    <a href="#-installation">Installation</a> •
+    <a href="#-quick-start">Quick Start</a> •
+    <a href="#-features">Features</a> •
+    <a href="#-architecture">Architecture</a>
+  </p>
   
   [![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](http://unlicense.org/)
   [![Built with Electron](https://img.shields.io/badge/built%20with-Electron-47848F.svg)](https://www.electronjs.org/)
   [![React](https://img.shields.io/badge/React-19.1-61DAFB.svg)](https://reactjs.org/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6.svg)](https://www.typescriptlang.org/)
 </div>
+
+---
+
+**Datagres** is a desktop application that makes exploring PostgreSQL databases feel instant. Built for developers who value speed and keyboard efficiency, it gets you from connection string to browsing data in under 15 seconds.
+
+## 🎯 Why Datagres?
+
+- **Zero Config**: Just paste your connection string and go
+- **Keyboard-First**: Navigate entirely with keyboard shortcuts
+- **Secure by Design**: Passwords in OS keychain, encrypted connections
+- **Built for Speed**: Virtual scrolling handles millions of rows smoothly
+- **Developer Friendly**: Monaco editor with SQL autocomplete
 
 ## ✨ Features
 
@@ -29,24 +48,38 @@
 - **☁️ Cloud Ready** - Auto-detects and configures SSL for Heroku, AWS, Azure
 - **🔄 Auto-Reconnect** - Automatically connects to your last used database
 
+## 📦 Installation
+
+### Download Pre-built Binaries
+
+Coming soon! For now, build from source.
+
+### Build from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/seepatcode/datagres.git
+cd datagres
+
+# Install dependencies
+pnpm install
+
+# Run in development mode
+pnpm run dev
+
+# Build for your platform
+pnpm run build
+pnpm run dist
+```
+
 ## 🚀 Quick Start
 
-### Download
-
-Download the latest release for your platform:
-
-- **macOS**: [Datagres.dmg](#) (Coming soon)
-- **Windows**: [Datagres.exe](#) (Coming soon)
-- **Linux**: [Datagres.AppImage](#) (Coming soon)
-
-### Connect to Your Database
-
-1. Launch Datagres
-2. Paste your PostgreSQL connection string:
+1. **Launch Datagres**
+2. **Paste your connection string** and press Enter:
    ```
    postgresql://user:password@localhost:5432/mydb
    ```
-3. Press Enter - you're connected!
+3. **Start exploring!** Use `Shift+Shift` to quickly search tables
 
 ## 🏗️ Architecture
 
@@ -80,33 +113,16 @@ For a comprehensive technical deep-dive, see our [Architecture Documentation](AR
 
 ## 🛠️ Development
 
-### Prerequisites
-
-- Node.js 18+
-- pnpm 8+
-- PostgreSQL (for testing)
-
-### Setup
+**Prerequisites**: Node.js 18+, pnpm 8+, PostgreSQL (for testing)
 
 ```bash
-# Clone the repository
-git clone https://github.com/seepatcode/datagres.git
-cd datagres
-
-# Install dependencies
-pnpm install
-
-# Start development server
-pnpm run dev
-```
-
-### Available Scripts
-
-```bash
-pnpm run dev          # Start development server
+# Development
+pnpm run dev          # Start with hot reload
 pnpm test            # Run E2E tests
 pnpm test:unit       # Run unit tests
-pnpm run build       # Build for production
+
+# Production
+pnpm run build       # Build application
 pnpm run dist        # Package for distribution
 ```
 
