@@ -45,6 +45,16 @@ jobs:
         run: pnpm run build
         
       - name: Package app
-        run: pnpm run dist --publish never
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            set ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES=true
+            pnpm exec electron-builder --win --config.publish=null
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            export ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES=true
+            pnpm exec electron-builder --mac --config.publish=null
+          else
+            export ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES=true
+            pnpm exec electron-builder --linux --config.publish=null
+          fi
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
