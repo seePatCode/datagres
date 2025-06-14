@@ -41,17 +41,10 @@ jobs:
       # - name: Run tests
       #   run: pnpm test:unit
         
-      - name: Build Electron app
-        uses: samuelmeuli/action-electron-builder@v1
-        with:
-          # GitHub token, automatically provided to the action
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          
-          # Don't release, just build
-          release: false
-          
-          # Build command (uses package.json scripts)
-          build_script_name: build
-          
-          # Skip publishing since this is just a test build
-          args: --publish never
+      - name: Build app
+        run: pnpm run build
+        
+      - name: Package app
+        run: pnpm run dist --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

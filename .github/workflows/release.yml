@@ -37,31 +37,26 @@ jobs:
       - name: Install dependencies
         run: pnpm install --shamefully-hoist
         
-      - name: Build Electron app
-        uses: samuelmeuli/action-electron-builder@v1
-        with:
-          # GitHub token, automatically provided to the action
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          
-          # If the commit is tagged with a version (e.g. "v1.0.0"),
-          # release the app after building
-          release: ${{ startsWith(github.ref, 'refs/tags/v') }}
-          
-          # Build command (uses package.json scripts)
-          build_script_name: build
-          
-          # Upload artifacts to GitHub Actions
-          args: --publish always
-          
-          # macOS code signing (optional)
-          mac_certs: ${{ secrets.MAC_CERTS }}
-          mac_certs_password: ${{ secrets.MAC_CERTS_PASSWORD }}
-          
-          # Windows code signing (optional)
-          windows_certs: ${{ secrets.WINDOWS_CERTS }}
-          windows_certs_password: ${{ secrets.WINDOWS_CERTS_PASSWORD }}
+      - name: Build app
+        run: pnpm run build
+        
+      - name: Package and publish
+        run: pnpm run dist
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # macOS code signing (optional)
+          CSC_LINK: ${{ secrets.MAC_CERTS }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTS_PASSWORD }}
+          # Windows code signing (optional)
+          WIN_CSC_LINK: ${{ secrets.WINDOWS_CERTS }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERTS_PASSWORD }}
           # macOS notarization (optional)
           APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_ID_PASS }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-artifacts
+          path: dist/*
