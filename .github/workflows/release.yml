@@ -6,6 +6,9 @@ on:
       - 'v*'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   release:
     runs-on: ${{ matrix.os }}
@@ -40,25 +43,21 @@ jobs:
       - name: Build app
         run: pnpm run build
         
-      - name: Package and publish (macOS)
+      - name: Package app (macOS)
         if: matrix.os == 'macos-latest'
-        run: pnpm run dist:mac -- --publish always
+        run: pnpm run dist:mac -- --publish never
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
           
-      - name: Package and publish (Windows)
+      - name: Package app (Windows)
         if: matrix.os == 'windows-latest'
-        run: pnpm run dist:win -- --publish always
+        run: pnpm run dist:win -- --publish never
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
           
-      - name: Package and publish (Linux)
+      - name: Package app (Linux)
         if: matrix.os == 'ubuntu-latest'
-        run: pnpm run dist:linux -- --publish always
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm run dist:linux -- --publish never
           
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
