@@ -45,6 +45,12 @@ export function SQLWhereEditor({
   const editorRef = useRef<any>(null)
   const monacoRef = useRef<any>(null)
   const [isEditorReady, setIsEditorReady] = useState(false)
+  const onCommitRef = useRef(onCommit)
+  
+  // Keep the ref up to date
+  useEffect(() => {
+    onCommitRef.current = onCommit
+  }, [onCommit])
 
   // Initialize theme before any editor mounts
   useEffect(() => {
@@ -62,17 +68,25 @@ export function SQLWhereEditor({
       setupCompletions(monaco, schema)
     }
 
-    // Handle Enter key
-    editor.addCommand(monaco.KeyCode.Enter, () => {
-      const suggestController = editor.getContribution('editor.contrib.suggestController') as any
-      if (!suggestController?.model?.state) {
-        onCommit()
+    // Handle Enter key - use addAction for better reliability
+    editor.addAction({
+      id: 'search-on-enter',
+      label: 'Search',
+      keybindings: [monaco.KeyCode.Enter],
+      precondition: '!suggestWidgetVisible',
+      run: () => {
+        onCommitRef.current()
       }
     })
     
     // Also handle Ctrl/Cmd+Enter as a fallback
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-      onCommit()
+    editor.addAction({
+      id: 'search-on-cmd-enter',
+      label: 'Search (Force)',
+      keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+      run: () => {
+        onCommitRef.current()
+      }
     })
 
     editor.focus()
@@ -228,7 +242,13 @@ export function SQLWhereEditor({
 
   return (
     <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-background">
-      <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+      <button
+        className="h-4 w-4 text-muted-foreground flex-shrink-0 hover:text-foreground transition-colors cursor-pointer"
+        onClick={() => onCommitRef.current()}
+        title="Search (or press Enter)"
+      >
+        <Search className="h-4 w-4" />
+      </button>
       <div className="flex-1 -my-1.5 -mr-3 relative">
         {!isEditorReady && (
           <div className="absolute inset-0 flex items-center">
