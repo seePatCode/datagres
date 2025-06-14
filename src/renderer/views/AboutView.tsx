@@ -142,7 +142,7 @@ export function AboutView() {
 
           {/* Version */}
           <div className="text-center text-sm text-muted-foreground pt-4 border-t">
-            <p>Version {process.env.npm_package_version || '1.0.0'}</p>
+            <p>Version 1.0.0</p>
             <p className="mt-1">Made with ❤️ by someone who just wanted fewer clicks</p>
           </div>
         </div>
