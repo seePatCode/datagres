@@ -52,23 +52,6 @@ Download the latest release for your platform:
    ```
 3. Press Enter - you're connected!
 
-## 🖼️ Screenshots
-
-<!-- TODO: Add actual screenshots here -->
-<details>
-<summary>View Screenshots</summary>
-
-### Connection Screen
-*Screenshot of connection interface*
-
-### Data Explorer
-*Screenshot of table data view*
-
-### SQL Editor
-*Screenshot of SQL editor with completions*
-
-</details>
-
 ## 🏗️ Architecture
 
 Datagres follows Electron's three-process architecture for security and performance:
@@ -166,20 +149,6 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 Found a bug or have a feature request? Please [open an issue](https://github.com/seepatcode/datagres/issues).
 
-## 🗺️ Roadmap
-
-- [x] PostgreSQL support
-- [x] Connection management
-- [x] Data browsing with virtual scroll
-- [x] SQL editor
-- [ ] Data editing capabilities
-- [ ] MySQL support
-- [ ] SQLite support
-- [ ] MongoDB support
-- [ ] Query history
-- [ ] Export functionality
-- [ ] Schema visualization
-
 ## 📊 Performance
 
 Datagres is built for speed:
@@ -206,12 +175,6 @@ Datagres is built for speed:
 ## 📜 License
 
 This project is released under the [Unlicense](LICENSE) and is in the public domain.
-
-## 🙏 Acknowledgments
-
-- Built with inspiration from DataGrip, TablePlus, and Postico
-- Icons and logo designed with database exploration in mind
-- Special thanks to all contributors
 
 ---
 
