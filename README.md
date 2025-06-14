@@ -52,7 +52,9 @@
 
 ### Download Pre-built Binaries
 
-Coming soon! For now, build from source.
+Releases coming soon via GitHub Actions! Check the [releases page](https://github.com/seepatcode/datagres/releases).
+
+For now, build from source:
 
 ### Build from Source
 
