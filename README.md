@@ -38,7 +38,7 @@
 - **⌨️ Keyboard-First** - Navigate efficiently without touching the mouse
   - `Shift+Shift` - Quick table search (like Spotlight)
   - `Cmd+N` - New connection
-  - `Cmd+Tab` - Cycle through tabs
+  - `Cmd+1-9` - Jump to any tab
   - `Cmd+Enter` - Execute search
 - **🔒 Secure** - Passwords stored in OS keychain, connections encrypted
 - **📜 Infinite Scroll** - Browse millions of rows seamlessly
@@ -89,9 +89,10 @@ pnpm run dist
 - `Cmd+/` - Show all shortcuts
 
 ### Navigation
-- `Cmd+Tab` / `Cmd+Shift+Tab` - Cycle through tabs
+- `Cmd+1-9` - Jump to specific tab (1-9)
 - `Cmd+[` / `Cmd+]` - Navigate back/forward
-- `Cmd+1-9` - Jump to specific tab
+- `Cmd+W` - Close current tab
+- `Ctrl+Tab` - Cycle tabs (Windows/Linux only)
 
 ### Table View
 - `Cmd+Enter` - Execute search
