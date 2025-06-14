@@ -36,7 +36,6 @@
       "node_modules/electron-store/**/*",
       "node_modules/keytar/**/*"
     ],
-    "includeSubNodeModules": false,
     "mac": {
       "category": "public.app-category.developer-tools",
       "hardenedRuntime": true,
