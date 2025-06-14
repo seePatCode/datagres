@@ -52,9 +52,15 @@
 
 ### Download Pre-built Binaries
 
-Releases coming soon via GitHub Actions! Check the [releases page](https://github.com/seepatcode/datagres/releases).
+Download the latest release from the [releases page](https://github.com/seepatcode/datagres/releases).
 
-For now, build from source:
+#### macOS Users
+Since Datagres isn't code-signed yet, you'll see a security warning. To open:
+1. **Right-click** on Datagres and select **Open**
+2. Click **Open** in the security dialog
+3. This only needs to be done once
+
+Alternatively, build from source:
 
 ### Build from Source
 
