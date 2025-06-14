@@ -48,7 +48,13 @@ jobs:
         run: pnpm run dist:mac
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          CSC_IDENTITY_AUTO_DISCOVERY: false
+          CSC_LINK: ${{ secrets.MAC_CERTS }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTS_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_ID_PASS }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # Remove this line to enable signing
+          # CSC_IDENTITY_AUTO_DISCOVERY: false
           
       - name: Package app (Windows)
         if: matrix.os == 'windows-latest'
