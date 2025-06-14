@@ -29,10 +29,6 @@
 - **☁️ Cloud Ready** - Auto-detects and configures SSL for Heroku, AWS, Azure
 - **🔄 Auto-Reconnect** - Automatically connects to your last used database
 
-## ⌨️ Keyboard Navigation
-
-![Keyboard Navigation Flow](docs/keyboard-navigation.svg)
-
 ## 🚀 Quick Start
 
 ### Download
