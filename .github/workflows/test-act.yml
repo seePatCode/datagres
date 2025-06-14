@@ -1,0 +1,31 @@
+name: Test Act
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          
+      - name: Test installation
+        run: |
+          echo "Testing pnpm installation..."
+          pnpm --version
+          echo "Listing files..."
+          ls -la
+          echo "Checking package.json..."
+          cat package.json | head -10
