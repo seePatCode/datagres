@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/card'
-import { ArrowRight, Zap, Keyboard, Lock, Database, Table, Plus, Loader2, CheckCircle } from 'lucide-react'
+import { ArrowRight, Zap, Keyboard, Lock, Database, Table, Plus, Loader2, CheckCircle, MousePointer } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 export default function HomePage() {
@@ -9,7 +9,10 @@ export default function HomePage() {
   const [isConnecting, setIsConnecting] = useState(false)
   const [isConnected, setIsConnected] = useState(false)
   const [selectedTable, setSelectedTable] = useState<string | null>(null)
-  const [showDemo, setShowDemo] = useState(false)
+  const [showDemo, setShowDemo] = useState(true)
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const [showMouse, setShowMouse] = useState(false)
+  const mousePositionRef = useRef({ x: 0, y: 0 })
 
   const tables = [
     { name: 'users', count: 1847 },
@@ -54,15 +57,136 @@ export default function HomePage() {
     ],
   }
 
-  const handleConnect = () => {
-    const connectString = connectionString.trim() || 'postgresql://demo:pass@localhost:5432/sample_db'
-    setConnectionString(connectString)
-    setIsConnecting(true)
-    setTimeout(() => {
+  // Update ref when mouse position changes
+  useEffect(() => {
+    mousePositionRef.current = mousePosition
+  }, [mousePosition])
+
+  // Auto-play demo sequence
+  useEffect(() => {
+    if (!showDemo) return
+
+    const sequence = async () => {
+      // Wait a bit before starting
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Show mouse at input field
+      const inputEl = document.querySelector('input[type="text"]')
+      if (inputEl) {
+        const rect = inputEl.getBoundingClientRect()
+        setMousePosition({ x: rect.left + 20, y: rect.top + rect.height / 2 })
+        setShowMouse(true)
+      }
+
+      // Type connection string
+      const connStr = 'postgresql://user:pass@localhost:5432/sample_db'
+      for (let i = 0; i <= connStr.length; i++) {
+        setConnectionString(connStr.substring(0, i))
+        await new Promise(resolve => setTimeout(resolve, 25))
+      }
+
+      // Move mouse to connect button
+      await new Promise(resolve => setTimeout(resolve, 200))
+      // Find the Connect button by looking for button with "Connect" text
+      const allButtons = document.querySelectorAll('button')
+      let connectBtn = null
+      for (const btn of allButtons) {
+        if (btn.textContent?.includes('Connect') && !btn.textContent?.includes('Connecting')) {
+          connectBtn = btn
+          break
+        }
+      }
+      
+      if (connectBtn) {
+        const rect = connectBtn.getBoundingClientRect()
+        // Animate mouse movement
+        const startX = mousePositionRef.current.x
+        const startY = mousePositionRef.current.y
+        const endX = rect.left + rect.width / 2
+        const endY = rect.top + rect.height / 2
+        const steps = 30
+        for (let i = 0; i <= steps; i++) {
+          const progress = i / steps
+          setMousePosition({
+            x: startX + (endX - startX) * progress,
+            y: startY + (endY - startY) * progress
+          })
+          await new Promise(resolve => setTimeout(resolve, 10))
+        }
+      }
+
+      // Click connect
+      await new Promise(resolve => setTimeout(resolve, 200))
+      setIsConnecting(true)
+      
+      // Simulate connection
+      await new Promise(resolve => setTimeout(resolve, 800))
       setIsConnecting(false)
       setIsConnected(true)
-    }, 1500)
-  }
+
+      // Wait then move to users table
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Animate mouse to users table
+      const usersButton = document.querySelector('[data-table="users"]')
+      if (usersButton) {
+        const rect = usersButton.getBoundingClientRect()
+        const startX = mousePositionRef.current.x
+        const startY = mousePositionRef.current.y
+        const endX = rect.left + rect.width / 2
+        const endY = rect.top + rect.height / 2
+        const steps = 40
+        for (let i = 0; i <= steps; i++) {
+          const progress = i / steps
+          setMousePosition({
+            x: startX + (endX - startX) * progress,
+            y: startY + (endY - startY) * progress
+          })
+          await new Promise(resolve => setTimeout(resolve, 8))
+        }
+      }
+
+      // Click users table
+      await new Promise(resolve => setTimeout(resolve, 200))
+      setSelectedTable('users')
+
+      // Wait then move to orders
+      await new Promise(resolve => setTimeout(resolve, 1200))
+      const ordersButton = document.querySelector('[data-table="orders"]')
+      if (ordersButton) {
+        const rect = ordersButton.getBoundingClientRect()
+        const startX = mousePositionRef.current.x
+        const startY = mousePositionRef.current.y
+        const endX = rect.left + rect.width / 2
+        const endY = rect.top + rect.height / 2
+        const steps = 30
+        for (let i = 0; i <= steps; i++) {
+          const progress = i / steps
+          setMousePosition({
+            x: startX + (endX - startX) * progress,
+            y: startY + (endY - startY) * progress
+          })
+          await new Promise(resolve => setTimeout(resolve, 8))
+        }
+      }
+
+      // Click orders table
+      await new Promise(resolve => setTimeout(resolve, 200))
+      setSelectedTable('orders')
+
+      // Wait then restart
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      setShowMouse(false)
+      setConnectionString('')
+      setIsConnected(false)
+      setSelectedTable(null)
+      
+      // Restart the sequence
+      setTimeout(() => sequence(), 500)
+    }
+
+    sequence()
+  }, [showDemo])
 
   const getTableData = () => {
     if (!selectedTable) return []
@@ -76,6 +200,19 @@ export default function HomePage() {
 
   return (
     <div className="relative">
+      {/* Animated Cursor */}
+      {showMouse && (
+        <div 
+          className="pointer-events-none fixed z-[60] transition-all duration-100 ease-out"
+          style={{ 
+            left: `${mousePosition.x}px`, 
+            top: `${mousePosition.y}px`,
+            transform: 'translate(-50%, -50%)'
+          }}
+        >
+          <MousePointer className="h-6 w-6 rotate-12 fill-white text-black drop-shadow-lg" />
+        </div>
+      )}
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-transparent to-transparent" />
@@ -97,20 +234,12 @@ export default function HomePage() {
                 Download Now <ArrowRight className="h-4 w-4" />
               </Button>
             </a>
-            <Button 
-              size="lg" 
-              variant="outline"
-              onClick={() => setShowDemo(true)}
-            >
-              Try Live Demo
-            </Button>
           </div>
         </div>
       </section>
 
       {/* Interactive Demo Section */}
-      {showDemo && (
-        <section className="container py-12">
+      <section className="container py-12">
           <Card className="mx-auto max-w-6xl overflow-hidden">
             <div className="border-b bg-secondary/30 p-4">
               <div className="flex items-center gap-2">
@@ -122,8 +251,9 @@ export default function HomePage() {
             </div>
             
             {!isConnected ? (
-              <CardContent className="p-8">
-                <div className="mx-auto max-w-xl">
+              <CardContent className="p-0">
+                <div className="flex h-[600px] items-center justify-center p-8">
+                  <div className="w-full max-w-xl">
                   <h2 className="mb-2 text-2xl font-bold">Connect to PostgreSQL</h2>
                   <p className="mb-6 text-muted-foreground">
                     Enter your connection string to get started
@@ -138,7 +268,15 @@ export default function HomePage() {
                         type="text"
                         value={connectionString}
                         onChange={(e) => setConnectionString(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleConnect()}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && connectionString.trim()) {
+                            setIsConnecting(true)
+                            setTimeout(() => {
+                              setIsConnecting(false)
+                              setIsConnected(true)
+                            }, 1000)
+                          }
+                        }}
                         placeholder="postgresql://user:password@localhost:5432/database"
                         className="w-full rounded-md border bg-background px-4 py-2 focus:border-violet-500 focus:outline-none"
                       />
@@ -146,7 +284,11 @@ export default function HomePage() {
                         Try: <button 
                           onClick={() => {
                             setConnectionString('postgresql://demo:pass@localhost:5432/sample_db')
-                            handleConnect()
+                            setIsConnecting(true)
+                            setTimeout(() => {
+                              setIsConnecting(false)
+                              setIsConnected(true)
+                            }, 1000)
                           }}
                           className="text-violet-400 hover:underline"
                         >
@@ -156,7 +298,15 @@ export default function HomePage() {
                     </div>
                     
                     <Button 
-                      onClick={handleConnect}
+                      onClick={() => {
+                        if (connectionString.trim()) {
+                          setIsConnecting(true)
+                          setTimeout(() => {
+                            setIsConnecting(false)
+                            setIsConnected(true)
+                          }, 800)
+                        }
+                      }}
                       disabled={!connectionString.trim() || isConnecting}
                       className="w-full"
                     >
@@ -187,6 +337,7 @@ export default function HomePage() {
                       </button>
                     </div>
                   </div>
+                  </div>
                 </div>
               </CardContent>
             ) : (
@@ -211,6 +362,7 @@ export default function HomePage() {
                       {tables.map((table) => (
                         <button
                           key={table.name}
+                          data-table={table.name}
                           onClick={() => setSelectedTable(table.name)}
                           className={`flex w-full items-center justify-between rounded px-3 py-2 text-sm transition-colors ${
                             selectedTable === table.name
@@ -297,11 +449,10 @@ export default function HomePage() {
             </p>
           </div>
         </section>
-      )}
 
       {/* Features Grid */}
       <section className="container py-24">
-        <h2 className="mb-12 text-center text-4xl font-bold">Why Developers Love Datagres</h2>
+        <h2 className="mb-12 text-center text-4xl font-bold text-foreground">Why Developers Love Datagres</h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <Card className="relative overflow-hidden">
             <div className="absolute right-0 top-0 h-32 w-32 translate-x-8 -translate-y-8 rounded-full bg-violet-500/10" />
@@ -360,18 +511,18 @@ export default function HomePage() {
       {/* Performance Metrics */}
       <section className="bg-secondary/30">
         <div className="container py-24">
-          <h2 className="mb-12 text-center text-4xl font-bold">Performance That Scales</h2>
+          <h2 className="mb-12 text-center text-4xl font-bold text-foreground">Performance That Scales</h2>
           <div className="grid gap-8 text-center md:grid-cols-3">
             <div>
-              <div className="mb-2 text-5xl font-bold">&lt; 2s</div>
+              <div className="mb-2 text-5xl font-bold text-foreground">&lt; 2s</div>
               <p className="text-muted-foreground">Connection Time</p>
             </div>
             <div>
-              <div className="mb-2 text-5xl font-bold">1M+</div>
+              <div className="mb-2 text-5xl font-bold text-foreground">1M+</div>
               <p className="text-muted-foreground">Rows Handled</p>
             </div>
             <div>
-              <div className="mb-2 text-5xl font-bold">60 FPS</div>
+              <div className="mb-2 text-5xl font-bold text-foreground">60 FPS</div>
               <p className="text-muted-foreground">Smooth Scrolling</p>
             </div>
           </div>
@@ -381,7 +532,7 @@ export default function HomePage() {
       {/* CTA Section */}
       <section className="container py-24 text-center">
         <Database className="mx-auto mb-6 h-16 w-16 text-muted-foreground" />
-        <h2 className="mb-4 text-4xl font-bold">Ready to Explore Your Data?</h2>
+        <h2 className="mb-4 text-4xl font-bold text-foreground">Ready to Explore Your Data?</h2>
         <p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground">
           Download Datagres now and experience the fastest way to browse PostgreSQL databases.
         </p>

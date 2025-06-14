@@ -43,11 +43,9 @@ jobs:
         run: |
           cd docs-site
           pnpm run build
-          # Copy additional assets
+          # Copy icon assets
           cp ../build/icon.png ../docs/
           cp ../build/icon.png ../docs/favicon.png
-          cp -r ../kb/*.png ../docs/ 2>/dev/null || true
-          cp -r ../docs/*.svg ../docs/ 2>/dev/null || true
           
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
