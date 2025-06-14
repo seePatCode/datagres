@@ -40,20 +40,25 @@ jobs:
       - name: Build app
         run: pnpm run build
         
-      - name: Package and publish
-        run: pnpm run dist
+      - name: Package and publish (macOS)
+        if: matrix.os == 'macos-latest'
+        run: pnpm run dist:mac -- --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # macOS code signing (optional)
-          CSC_LINK: ${{ secrets.MAC_CERTS }}
-          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTS_PASSWORD }}
-          # Windows code signing (optional)
-          WIN_CSC_LINK: ${{ secrets.WINDOWS_CERTS }}
-          WIN_CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERTS_PASSWORD }}
-          # macOS notarization (optional)
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_ID_PASS }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          
+      - name: Package and publish (Windows)
+        if: matrix.os == 'windows-latest'
+        run: pnpm run dist:win -- --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          
+      - name: Package and publish (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: pnpm run dist:linux -- --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
