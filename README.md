@@ -1,7 +1,7 @@
 # Datagres
 
 <div align="center">
-  <img src="public/logo.png" alt="Datagres Logo" width="120" height="120">
+  <img src="build/icon.png" alt="Datagres Logo" width="120" height="120">
   
   <h3>The world's fastest database exploration tool</h3>
   
