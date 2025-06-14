@@ -98,7 +98,7 @@ export default function HomePage() {
           <h2 className="mb-12 text-center text-4xl font-bold">Performance That Scales</h2>
           <div className="grid gap-8 text-center md:grid-cols-3">
             <div>
-              <div className="mb-2 text-5xl font-bold">< 2s</div>
+              <div className="mb-2 text-5xl font-bold">&lt; 2s</div>
               <p className="text-muted-foreground">Connection Time</p>
             </div>
             <div>

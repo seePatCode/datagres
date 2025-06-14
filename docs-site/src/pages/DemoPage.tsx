@@ -218,7 +218,7 @@ export default function DemoPage() {
                   <div className="space-y-4">
                     <div className="rounded border bg-secondary/30 p-4 font-mono text-sm">
                       SELECT * FROM {selectedTable}<br />
-                      WHERE created_at > '2024-01-01'<br />
+                      WHERE created_at &gt; '2024-01-01'<br />
                       ORDER BY id DESC<br />
                       LIMIT 100;
                     </div>
