@@ -13,7 +13,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm test` - Run Playwright e2e tests
 - `npm test:headed` - Run tests with visible browser (for debugging)
 - `npm run test:unit` - Run unit tests with Vitest
+- `npm run test:unit:ui` - Run unit tests with UI interface
 - `npm run test:unit:coverage` - Run unit tests with coverage report
+
+### Distribution
+- `npm run preview` - Preview built application
+- `npm run dist` - Build and package for all platforms
+- `npm run dist:mac` - Build for macOS
+- `npm run dist:win` - Build for Windows
+- `npm run dist:linux` - Build for Linux
 
 ## Architecture Overview
 
@@ -231,10 +239,12 @@ Before claiming an implementation is complete, verify the following without runn
 - **electron-vite**: Separate builds for main/preload (CommonJS) and renderer (ES modules)
 - **Path Aliases**: 
   - Renderer: `@/` maps to `src/renderer/`
+  - Shared: `@shared/` maps to `src/shared/`
   - Main: `@services` maps to `src/main/services/`, `@utils` maps to `src/main/utils/`
 - **Module Bundling**: Internal modules excluded from externalization and bundled via `inlineDynamicImports`
 - **TypeScript**: Full type checking in renderer, JavaScript in main/preload
 - **ESM Handling**: Dynamic imports for ESM-only packages (e.g., electron-store v10)
+- **Distribution**: Electron Builder configured for cross-platform packaging (App ID: `com.datagres.app`)
 
 ## Important Files
 
@@ -261,6 +271,12 @@ Datagres aims to be "the world's fastest database exploration tool" with a focus
 - **Safe editing**: Preview SQL before execution, transaction safety
 
 The app currently supports PostgreSQL with plans for MySQL, SQLite, and MongoDB support in future versions.
+
+### Project Resources
+- **License**: The Unlicense (public domain)
+- **Knowledge Base**: `kb/` directory contains:
+  - `app_goals.md` - Full Product Requirements Document
+  - `implementation_todos.md` - TDD-based development tracking
 
 ## Common Issues and Solutions
 
