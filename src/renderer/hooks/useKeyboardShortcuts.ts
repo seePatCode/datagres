@@ -5,6 +5,8 @@ interface UseKeyboardShortcutsOptions {
   tabs: Tab[]
   activeTabId: string | null
   onCloseTab: (tabId: string) => void
+  onCloseAllTabs?: () => void
+  onCloseOtherTabs?: (tabId: string) => void
   setActiveTabId: (tabId: string) => void
   onGoBack?: () => void
   onGoForward?: () => void
@@ -17,6 +19,8 @@ export function useKeyboardShortcuts({
   tabs,
   activeTabId,
   onCloseTab,
+  onCloseAllTabs,
+  onCloseOtherTabs,
   setActiveTabId,
   onGoBack,
   onGoForward,
@@ -48,10 +52,24 @@ export function useKeyboardShortcuts({
         return false // Prevent default browser behavior
       }
       // Cmd/Ctrl + W to close current tab
-      else if ((e.metaKey || e.ctrlKey) && e.key === 'w') {
+      else if ((e.metaKey || e.ctrlKey) && e.key === 'w' && !e.shiftKey && !e.altKey) {
         e.preventDefault()
         if (activeTabId) {
           onCloseTab(activeTabId)
+        }
+      }
+      // Cmd/Ctrl + Shift + W to close all tabs
+      else if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'w') {
+        e.preventDefault()
+        if (onCloseAllTabs) {
+          onCloseAllTabs()
+        }
+      }
+      // Cmd/Ctrl + Alt + W to close other tabs
+      else if ((e.metaKey || e.ctrlKey) && e.altKey && e.key === 'w') {
+        e.preventDefault()
+        if (activeTabId && onCloseOtherTabs) {
+          onCloseOtherTabs(activeTabId)
         }
       }
       // Cmd/Ctrl + Tab to cycle forward through tabs
@@ -92,5 +110,5 @@ export function useKeyboardShortcuts({
     // Use capture phase to intercept events before Monaco editor
     window.addEventListener('keydown', handleKeyDown, true)
     return () => window.removeEventListener('keydown', handleKeyDown, true)
-  }, [tabs, activeTabId, onCloseTab, setActiveTabId, onGoBack, onGoForward, canGoBack, canGoForward])
+  }, [tabs, activeTabId, onCloseTab, onCloseAllTabs, onCloseOtherTabs, setActiveTabId, onGoBack, onGoForward, canGoBack, canGoForward, onShowHelp])
 }

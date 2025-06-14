@@ -83,10 +83,8 @@ export function HelpDialog({ open, onOpenChange, trigger }: HelpDialogProps) {
                 Global Shortcuts
               </h3>
               <div className="space-y-1">
-                <ShortcutItem keys={[cmdKey, 'K']} description="Quick table search" icon={<Search className="h-4 w-4" />} />
-                <ShortcutItem keys={['Shift', 'Shift']} description="Quick table search (alternative)" icon={<Search className="h-4 w-4" />} />
-                <ShortcutItem keys={[cmdKey, ',']} description="Open preferences" />
-                <ShortcutItem keys={[cmdKey, 'N']} description="New query tab" icon={<FileText className="h-4 w-4" />} />
+                <ShortcutItem keys={['Shift', 'Shift']} description="Quick table search" icon={<Search className="h-4 w-4" />} />
+                <ShortcutItem keys={[cmdKey, 'N']} description="New connection" icon={<Database className="h-4 w-4" />} />
                 <ShortcutItem keys={[cmdKey, 'R']} description="Refresh current view" />
                 <ShortcutItem keys={[cmdKey, '/']} description="Show keyboard shortcuts (this dialog)" icon={<Keyboard className="h-4 w-4" />} />
               </div>
@@ -122,8 +120,8 @@ export function HelpDialog({ open, onOpenChange, trigger }: HelpDialogProps) {
                 <ShortcutItem keys={[cmdKey, 'W']} description="Close current tab" />
                 <ShortcutItem keys={[cmdKey, 'Shift', 'W']} description="Close all tabs" />
                 <ShortcutItem keys={[cmdKey, 'Alt', 'W']} description="Close other tabs" />
-                <ShortcutItem keys={['Alt', '←']} description="Navigate back" />
-                <ShortcutItem keys={['Alt', '→']} description="Navigate forward" />
+                <ShortcutItem keys={[cmdKey, '[']} description="Navigate back" />
+                <ShortcutItem keys={[cmdKey, ']']} description="Navigate forward" />
               </div>
             </div>
           </TabsContent>

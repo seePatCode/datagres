@@ -17,6 +17,8 @@ import {
   selectTabs,
   selectActiveTabId,
   setActiveTab,
+  closeAllTabs,
+  closeOtherTabs,
 } from '@/store/slices/tabsSlice'
 import {
   setCurrentView,
@@ -87,6 +89,16 @@ function App() {
     tabs,
     activeTabId,
     onCloseTab: handleCloseTab,
+    onCloseAllTabs: () => {
+      if (connectionString) {
+        dispatch(closeAllTabs({ connectionString }))
+      }
+    },
+    onCloseOtherTabs: (tabId) => {
+      if (connectionString) {
+        dispatch(closeOtherTabs({ connectionString, tabId }))
+      }
+    },
     setActiveTabId: (tabId) => dispatch(setActiveTab({ connectionString, tabId })),
     onGoBack: handleGoBack,
     onGoForward: handleGoForward,

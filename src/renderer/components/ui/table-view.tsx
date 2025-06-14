@@ -138,6 +138,19 @@ export function TableView({
     setOptimisticData(null)
   }, [activeSearchTerm])
   
+  // Handle Cmd+S for saving changes
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's' && editedCells.size > 0) {
+        e.preventDefault()
+        handleSaveChanges()
+      }
+    }
+    
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [editedCells.size, handleSaveChanges])
+  
   // Wrap the setter to notify parent
   const handleSearchChange = useCallback((newSearchTerm: string) => {
     setSearchTerm(newSearchTerm)
