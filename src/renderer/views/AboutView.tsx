@@ -47,15 +47,15 @@ export function AboutView() {
             <h2 className="text-xl font-semibold">The Story</h2>
             <div className="text-muted-foreground space-y-3">
               <p>
-                I used to pay $200+ for DataGrip and loved their interface. But when I started a new role, 
-                I couldn't justify the cost, so I switched to DBeaver.
+                I've tried them all — from the premium tools that cost more than my monthly coffee budget 
+                to the free alternatives that make you click through seventeen menus just to see your data.
               </p>
               <p>
-                While I appreciated that DBeaver was free and it served its purpose, it required way too 
-                many clicks just to get to a simple table view.
+                Some were powerful but pricey. Others were free but felt like navigating a labyrinth.
+                All of them left me thinking the same thing.
               </p>
               <p>
-                I thought to myself: <span className="italic">"I bet I could build a better SQL viewer in a 
+                <span className="italic">"I bet I could build a better SQL viewer in a 
                 weekend with the way AI coding is going"</span> — and Datagres was born.
               </p>
             </div>
