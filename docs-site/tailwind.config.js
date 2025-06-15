@@ -19,6 +19,7 @@ module.exports = {
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
+        sidebar: "hsl(var(--sidebar))",
         foreground: "hsl(var(--foreground))",
         primary: {
           DEFAULT: "hsl(var(--primary))",
@@ -48,6 +49,19 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        cyan: {
+          500: 'hsl(var(--accent-cyan))',
+        },
+      },
+      fontSize: {
+        'vs-ui': ['13px', '1.4'],        /* VSCode UI elements */
+        'vs-ui-small': ['12px', '1.3'],  /* VSCode small UI (status bar, breadcrumbs) */
+        'vs-ui-large': ['14px', '1.4'],  /* VSCode large UI (titles) */
+        'vs-editor': ['14px', '1.5'],    /* VSCode editor */
+      },
+      fontFamily: {
+        'system': ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'sans-serif'],
+        'mono': ['SF Mono', 'Monaco', 'Consolas', 'Roboto Mono', 'Courier New', 'monospace'],
       },
       borderRadius: {
         lg: "var(--radius)",
