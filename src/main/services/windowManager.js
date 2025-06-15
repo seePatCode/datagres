@@ -1,13 +1,17 @@
 const { BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
 
+
 /**
  * Creates the main application window
  * @returns {BrowserWindow} The created window instance
  */
 function createMainWindow() {
-  // Preload script path - electron-vite handles this automatically
-  const preloadPath = path.join(__dirname, '../preload/index.js')
+  // Preload script path - in development, use webpack output
+  const isDev = process.env.NODE_ENV === 'development' || process.env.ELECTRON_RENDERER_URL
+  const preloadPath = isDev 
+    ? path.join(__dirname, '../../.webpack/renderer/main_window/preload.js')
+    : path.join(__dirname, '../preload/index.js')
   
   const win = new BrowserWindow({
     width: 1400,
@@ -23,8 +27,9 @@ function createMainWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       preload: preloadPath,
-      // Allow local resources in development
-      webSecurity: process.env.NODE_ENV !== 'development'
+      // Security settings for development
+      webSecurity: !isDev,
+      allowRunningInsecureContent: false
     }
   })
 
@@ -33,11 +38,11 @@ function createMainWindow() {
     win.maximize()
   }
 
-  // HMR for renderer process
-  if (process.env.NODE_ENV === 'development') {
-    win.loadURL(process.env.ELECTRON_RENDERER_URL || 'http://localhost:5173')
+  // Load the app
+  if (isDev) {
+    win.loadURL('http://localhost:9001/main_window')
   } else {
-    win.loadFile(path.join(__dirname, '../../renderer/index.html'))
+    win.loadFile(path.join(__dirname, '../../.webpack/renderer/main_window/index.html'))
   }
   
   // Show window after loading if not in test mode

@@ -2,7 +2,12 @@ const { MakerDMG } = require('@electron-forge/maker-dmg');
 const { MakerSquirrel } = require('@electron-forge/maker-squirrel');
 const { MakerDeb } = require('@electron-forge/maker-deb');
 const { MakerZIP } = require('@electron-forge/maker-zip');
+const { WebpackPlugin } = require('@electron-forge/plugin-webpack');
 const path = require('path');
+
+const mainConfig = require('./webpack.main.config');
+const rendererConfig = require('./webpack.renderer.config');
+const preloadConfig = require('./webpack.preload.config');
 
 module.exports = {
   packagerConfig: {
@@ -27,28 +32,7 @@ module.exports = {
     } : undefined,
     asar: {
       unpack: '**/node_modules/{electron-store,keytar}/**/*'
-    },
-    ignore: [
-      /^\/src/,
-      /^\/\.git/,
-      /^\/\.vscode/,
-      /^\/\.github/,
-      /^\/tests/,
-      /^\/dist/,
-      /^\/\.env/,
-      /^\/\.npmrc/,
-      /^\/\.gitignore/,
-      /^\/\.eslintrc/,
-      /^\/electron\.vite\.config/,
-      /^\/forge\.config/,
-      /^\/tailwind\.config/,
-      /^\/postcss\.config/,
-      /^\/tsconfig/,
-      /^\/vite\.config/,
-      /^\/CLAUDE\.md/,
-      /^\/README\.md/,
-      /^\/LICENSE/
-    ]
+    }
   },
   makers: [
     new MakerDMG({
@@ -94,7 +78,27 @@ module.exports = {
     }),
     new MakerZIP({})
   ],
-  plugins: [],
+  plugins: [
+    new WebpackPlugin({
+      mainConfig,
+      devContentSecurityPolicy: "default-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-eval' 'unsafe-inline' data:; connect-src 'self' ws://localhost:9001 http://localhost:9001",
+      port: 9001,
+      renderer: {
+        config: rendererConfig,
+        entryPoints: [
+          {
+            html: './src/renderer/index.html',
+            js: './src/renderer/main.tsx',
+            name: 'main_window',
+            preload: {
+              js: './src/preload/index.js',
+              config: preloadConfig
+            }
+          }
+        ]
+      }
+    })
+  ],
   publishers: [
     {
       name: '@electron-forge/publisher-github',
@@ -107,13 +111,5 @@ module.exports = {
         draft: true
       }
     }
-  ],
-  hooks: {
-    preMake: async () => {
-      // Ensure the app is built before making distributables
-      const { execSync } = require('child_process');
-      console.log('Building app with electron-vite...');
-      execSync('npm run build', { stdio: 'inherit' });
-    }
-  }
+  ]
 };

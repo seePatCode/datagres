@@ -54,6 +54,7 @@ export function useInfiniteTableData({
   // Fetch table data with infinite query
   const query = useInfiniteQuery({
     queryKey: ['infinite-table-data', tableName, connectionString, searchTerm, filters, orderBy],
+    initialPageParam: 1,
     queryFn: async ({ pageParam = 1 }) => {
       const searchOptions: SearchOptions = {
         searchTerm,

@@ -7,6 +7,7 @@ tests/e2e/screenshots/
 # Build outputs
 dist/
 out/
+.webpack/
 
 # Vite cache
 .vite/
