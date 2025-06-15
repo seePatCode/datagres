@@ -10,8 +10,7 @@
     <a href="https://seepatcode.github.io/datagres/">Website</a> •
     <a href="https://seepatcode.github.io/datagres/documentation.html">Documentation</a> •
     <a href="#-installation">Installation</a> •
-    <a href="#-features">Features</a> •
-    <a href="#-architecture">Architecture</a>
+    <a href="#-features">Features</a>
   </p>
   
   [![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](http://unlicense.org/)
@@ -106,36 +105,6 @@ pnpm run dist
 - `Cmd+Enter` - Execute search
 - `Enter` / `Esc` - Edit/cancel cell edit
 - Click headers to sort columns
-
-## 🏗️ Architecture
-
-Datagres follows Electron's three-process architecture for security and performance:
-
-### High-Level Architecture
-
-![Architecture Overview](docs/architecture.svg)
-
-### Data Flow
-
-![Data Flow](docs/data-flow-simple.svg)
-
-<details>
-<summary>View Additional Architecture Details</summary>
-
-For a comprehensive technical deep-dive, see our [Architecture Documentation](ARCHITECTURE.md) which includes:
-- Detailed process architecture
-- State management patterns
-- Security implementation
-- Performance optimizations
-- Testing strategies
-
-### Component Architecture
-![Component Architecture](kb/data-flow-architecture.png)
-
-### State Management
-![State Management](kb/state-management-overview.png)
-
-</details>
 
 ## 🛠️ Development
 
