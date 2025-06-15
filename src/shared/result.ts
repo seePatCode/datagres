@@ -43,7 +43,7 @@ export function mapResult<T, U, E>(
   fn: (data: T) => U
 ): Result<U, E> {
   if (isOk(result)) {
-    return ok(fn(result.data))
+    return { success: true, data: fn(result.data) }
   }
   return result
 }

@@ -41,6 +41,9 @@ module.exports = {
       '@shared': path.resolve(__dirname, 'src/shared')
     }
   },
+  externals: {
+    'cloudflare:sockets': 'commonjs2 cloudflare:sockets'
+  },
   output: {
     path: path.resolve(__dirname, '.webpack/main'),
     filename: 'index.js'
