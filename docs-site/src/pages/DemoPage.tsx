@@ -1,9 +1,26 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/tabs'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/dialog'
-import { Database, Table, Search, Plus, Settings } from 'lucide-react'
+import { Database, Table, Search, Plus, Settings, RefreshCw, MoreHorizontal, Eye, EyeOff } from 'lucide-react'
+import Editor from '@monaco-editor/react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { 
+  Table as DataTable, 
+  TableHeader, 
+  TableBody, 
+  TableHead, 
+  TableRow, 
+  TableCell,
+} from '@/components/table'
 
 export default function DemoPage() {
   const [selectedTable, setSelectedTable] = useState('users')
@@ -171,19 +188,80 @@ export default function DemoPage() {
 
             <TabsContent value="data" className="flex-1 overflow-hidden p-0">
               <div className="flex h-full flex-col">
+                {/* Table Toolbar with Monaco Editor */}
+                <div className="border-b">
+                  <div className="flex items-center gap-2 p-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">WHERE</span>
+                        <div className="relative flex-1 h-8 border rounded">
+                          <Editor
+                            height="32px"
+                            defaultLanguage="sql"
+                            value={searchQuery}
+                            onChange={(value) => setSearchQuery(value || '')}
+                            options={{
+                              minimap: { enabled: false },
+                              scrollBeyondLastLine: false,
+                              lineNumbers: 'off',
+                              glyphMargin: false,
+                              folding: false,
+                              lineDecorationsWidth: 0,
+                              lineNumbersMinChars: 0,
+                              automaticLayout: true,
+                              wordWrap: 'off',
+                              fontSize: 12,
+                              fontFamily: "'SF Mono', Monaco, Consolas, 'Courier New', monospace",
+                              suggestFontSize: 12,
+                              padding: { top: 4, bottom: 4 },
+                              renderLineHighlight: 'none',
+                              scrollbar: {
+                                vertical: 'hidden',
+                                horizontal: 'hidden',
+                              },
+                              overviewRulerLanes: 0,
+                              hideCursorInOverviewRuler: true,
+                              overviewRulerBorder: false,
+                              contextmenu: false,
+                            }}
+                            theme="vs-dark"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="ghost" className="h-8 px-2">
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="ghost" className="h-8 px-2">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuLabel>Columns</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          {['id', 'name', 'email', 'created_at', 'status'].map((column) => (
+                            <DropdownMenuCheckboxItem
+                              key={column}
+                              checked={true}
+                              onCheckedChange={() => {}}
+                            >
+                              {column}
+                            </DropdownMenuCheckboxItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                </div>
                 <div className="flex items-center justify-between border-b px-4 py-2">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">{selectedTable}</span>
                     <span className="text-xs text-muted-foreground">({mockData.length} rows)</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      placeholder="Filter data..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="h-7 rounded border bg-background px-2 text-sm"
-                    />
                     <Button size="sm" variant="outline" className="h-7 px-2 text-xs">
                       <Plus className="mr-1 h-3.5 w-3.5" />
                       Add Row
@@ -191,43 +269,72 @@ export default function DemoPage() {
                   </div>
                 </div>
                 <div className="flex-1 overflow-auto">
-                  <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-background">
-                      <tr className="border-b">
-                        <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">id</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">name</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">email</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">created_at</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="font-mono text-xs">
+                  <DataTable>
+                    <TableHeader className="sticky top-0 bg-background z-10">
+                      <TableRow>
+                        <TableHead>id</TableHead>
+                        <TableHead>name</TableHead>
+                        <TableHead>email</TableHead>
+                        <TableHead>created_at</TableHead>
+                        <TableHead>status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {mockData
-                        .filter(row => 
-                          !searchQuery || 
-                          Object.values(row).some(v => 
-                            v.toString().toLowerCase().includes(searchQuery.toLowerCase())
-                          )
-                        )
+                        .filter(row => {
+                          if (!searchQuery) return true;
+                          try {
+                            // Simple WHERE clause simulation
+                            if (searchQuery.includes('=')) {
+                              const [field, value] = searchQuery.split('=').map(s => s.trim())
+                              const cleanValue = value.replace(/['";]/g, '')
+                              return row[field as keyof typeof row]?.toString().toLowerCase() === cleanValue.toLowerCase()
+                            }
+                            // Default to text search
+                            return Object.values(row).some(v => 
+                              v.toString().toLowerCase().includes(searchQuery.toLowerCase())
+                            )
+                          } catch {
+                            return true
+                          }
+                        })
                         .map((row) => (
-                          <tr key={row.id} className="border-b hover:bg-muted/30">
-                            <td className="px-4 py-2">{row.id}</td>
-                            <td className="px-4 py-2">{row.name}</td>
-                            <td className="px-4 py-2">{row.email}</td>
-                            <td className="px-4 py-2">{row.created_at}</td>
-                            <td className="px-4 py-2">
-                              <span className={`inline-flex rounded-full px-2 py-0.5 text-xs ${
-                                row.status === 'active' ? 'bg-green-500/20 text-green-600' : 
-                                row.status === 'inactive' ? 'bg-red-500/20 text-red-600' : 
-                                'bg-yellow-500/20 text-yellow-600'
-                              }`}>
-                                {row.status}
-                              </span>
-                            </td>
-                          </tr>
+                          <TableRow key={row.id}>
+                            <TableCell>
+                              <div className="font-mono text-vs-ui truncate py-1 px-2 hover:bg-muted/30 transition-colors">
+                                {row.id}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="font-mono text-vs-ui truncate py-1 px-2 hover:bg-muted/30 transition-colors">
+                                {row.name}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="font-mono text-vs-ui truncate py-1 px-2 hover:bg-muted/30 transition-colors">
+                                {row.email}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="font-mono text-vs-ui truncate py-1 px-2 hover:bg-muted/30 transition-colors">
+                                {row.created_at}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="font-mono text-vs-ui truncate py-1 px-2 hover:bg-muted/30 transition-colors">
+                                <span className={`inline-flex rounded-full px-2 py-0.5 text-xs ${
+                                  row.status === 'active' ? 'bg-green-500/20 text-green-600' : 
+                                  row.status === 'inactive' ? 'bg-red-500/20 text-red-600' : 
+                                  'bg-yellow-500/20 text-yellow-600'
+                                }`}>
+                                  {row.status}
+                                </span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
                         ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </DataTable>
                 </div>
               </div>
             </TabsContent>
@@ -238,48 +345,48 @@ export default function DemoPage() {
                   <h3 className="text-sm font-medium">Table Structure - {selectedTable}</h3>
                 </div>
                 <div className="flex-1 overflow-auto p-4">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="pb-2 text-left text-xs font-medium text-muted-foreground">Column</th>
-                        <th className="pb-2 text-left text-xs font-medium text-muted-foreground">Type</th>
-                        <th className="pb-2 text-left text-xs font-medium text-muted-foreground">Nullable</th>
-                        <th className="pb-2 text-left text-xs font-medium text-muted-foreground">Default</th>
-                      </tr>
-                    </thead>
-                    <tbody className="font-mono text-xs">
-                      <tr className="border-b">
-                        <td className="py-2">id</td>
-                        <td className="py-2 text-cyan-500">integer</td>
-                        <td className="py-2">NO</td>
-                        <td className="py-2 text-muted-foreground">nextval('users_id_seq')</td>
-                      </tr>
-                      <tr className="border-b">
-                        <td className="py-2">name</td>
-                        <td className="py-2 text-cyan-500">varchar(255)</td>
-                        <td className="py-2">NO</td>
-                        <td className="py-2 text-muted-foreground">NULL</td>
-                      </tr>
-                      <tr className="border-b">
-                        <td className="py-2">email</td>
-                        <td className="py-2 text-cyan-500">varchar(255)</td>
-                        <td className="py-2">NO</td>
-                        <td className="py-2 text-muted-foreground">NULL</td>
-                      </tr>
-                      <tr className="border-b">
-                        <td className="py-2">created_at</td>
-                        <td className="py-2 text-cyan-500">timestamp</td>
-                        <td className="py-2">NO</td>
-                        <td className="py-2 text-muted-foreground">CURRENT_TIMESTAMP</td>
-                      </tr>
-                      <tr className="border-b">
-                        <td className="py-2">status</td>
-                        <td className="py-2 text-cyan-500">varchar(50)</td>
-                        <td className="py-2">YES</td>
-                        <td className="py-2 text-muted-foreground">'active'</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <DataTable>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Column</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Nullable</TableHead>
+                        <TableHead>Default</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell className="font-mono">id</TableCell>
+                        <TableCell className="font-mono text-cyan-500">integer</TableCell>
+                        <TableCell className="font-mono">NO</TableCell>
+                        <TableCell className="font-mono text-muted-foreground">nextval('users_id_seq')</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-mono">name</TableCell>
+                        <TableCell className="font-mono text-cyan-500">varchar(255)</TableCell>
+                        <TableCell className="font-mono">NO</TableCell>
+                        <TableCell className="font-mono text-muted-foreground">NULL</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-mono">email</TableCell>
+                        <TableCell className="font-mono text-cyan-500">varchar(255)</TableCell>
+                        <TableCell className="font-mono">NO</TableCell>
+                        <TableCell className="font-mono text-muted-foreground">NULL</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-mono">created_at</TableCell>
+                        <TableCell className="font-mono text-cyan-500">timestamp</TableCell>
+                        <TableCell className="font-mono">NO</TableCell>
+                        <TableCell className="font-mono text-muted-foreground">CURRENT_TIMESTAMP</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-mono">status</TableCell>
+                        <TableCell className="font-mono text-cyan-500">varchar(50)</TableCell>
+                        <TableCell className="font-mono">YES</TableCell>
+                        <TableCell className="font-mono text-muted-foreground">'active'</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </DataTable>
                 </div>
               </div>
             </TabsContent>
