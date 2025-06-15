@@ -2,7 +2,6 @@ const { MakerDMG } = require('@electron-forge/maker-dmg');
 const { MakerSquirrel } = require('@electron-forge/maker-squirrel');
 const { MakerDeb } = require('@electron-forge/maker-deb');
 const { MakerZIP } = require('@electron-forge/maker-zip');
-const { VitePlugin } = require('@electron-forge/plugin-vite');
 const path = require('path');
 
 module.exports = {
@@ -12,6 +11,7 @@ module.exports = {
     icon: path.join(__dirname, 'build', 'icon'),
     appBundleId: 'com.datagres.app',
     appCategoryType: 'public.app-category.developer-tools',
+    dir: path.join(__dirname, 'out'),
     osxSign: process.env.APPLE_IDENTITY ? {
       identity: process.env.APPLE_IDENTITY,
       hardenedRuntime: true,
@@ -95,29 +95,7 @@ module.exports = {
     }),
     new MakerZIP({})
   ],
-  plugins: [
-    new VitePlugin({
-      // Build with electron-vite
-      build: [
-        {
-          entry: 'src/main/index.js',
-          config: 'electron.vite.config.mjs',
-          target: 'main'
-        },
-        {
-          entry: 'src/preload/index.js',
-          config: 'electron.vite.config.mjs',
-          target: 'preload'
-        }
-      ],
-      renderer: [
-        {
-          name: 'main_window',
-          config: 'electron.vite.config.mjs'
-        }
-      ]
-    })
-  ],
+  plugins: [],
   publishers: [
     {
       name: '@electron-forge/publisher-github',

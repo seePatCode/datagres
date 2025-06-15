@@ -17,6 +17,10 @@
     "dev": "electron-vite dev",
     "preview": "electron-vite preview",
     "build": "electron-vite build",
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish",
     "dist": "npm run build && electron-builder",
     "dist:mac": "npm run build && electron-builder --mac",
     "dist:win": "npm run build && electron-builder --win",
@@ -30,6 +34,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "config": {
+    "forge": "./forge.config.js"
+  },
   "build": {
     "appId": "com.datagres.app",
     "productName": "Datagres",
