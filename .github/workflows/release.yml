@@ -41,7 +41,7 @@ jobs:
         run: pnpm install --shamefully-hoist
         
       - name: Import macOS certificates
-        if: matrix.os == 'macos-latest' && env.CSC_LINK
+        if: matrix.os == 'macos-latest' && env.MAC_CERTS
         run: |
           # Create temporary keychain
           security create-keychain -p actions temp.keychain
@@ -51,48 +51,35 @@ jobs:
           echo "${{ secrets.MAC_CERTS }}" | base64 --decode > certificate.p12
           security import certificate.p12 -k temp.keychain -P "${{ secrets.MAC_CERTS_PASSWORD }}" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple: -s -k actions temp.keychain
+          # Get the identity for Electron Forge
+          export APPLE_IDENTITY=$(security find-identity -v -p codesigning temp.keychain | grep -o '"[^"]*"' | head -1 | tr -d '"')
+          echo "APPLE_IDENTITY=$APPLE_IDENTITY" >> $GITHUB_ENV
           # Clean up
           rm certificate.p12
         env:
-          CSC_LINK: ${{ secrets.MAC_CERTS }}
+          MAC_CERTS: ${{ secrets.MAC_CERTS }}
         
-      - name: Build app
-        run: pnpm run build
-        
-      - name: Package app (macOS)
-        if: matrix.os == 'macos-latest'
+      - name: Make app with Electron Forge
         timeout-minutes: 45
-        run: pnpm run dist:mac
+        run: pnpm run make
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          CSC_LINK: ${{ secrets.MAC_CERTS }}
-          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTS_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_IDENTITY: ${{ secrets.APPLE_IDENTITY }}
           NODE_OPTIONS: --max-old-space-size=4096
-          
-      - name: Package app (Windows)
-        if: matrix.os == 'windows-latest'
-        run: pnpm run dist:win
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-          
-      - name: Package app (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: pnpm run dist:linux
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}-artifacts
           path: |
-            dist/*.dmg
-            dist/*.exe
-            dist/*.AppImage
-            dist/*.deb
-            dist/*.blockmap
-            dist/*-mac.zip
+            out/make/**/*.dmg
+            out/make/**/*.exe
+            out/make/**/*.AppImage
+            out/make/**/*.deb
+            out/make/**/*.zip
             
   create-release:
     needs: release
@@ -106,7 +93,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          path: dist
+          path: out/make
           
       - name: List artifacts
         run: |
@@ -117,11 +104,11 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            dist/**/*.dmg
-            dist/**/*.exe
-            dist/**/*.AppImage
-            dist/**/*.deb
-            dist/**/*.zip
+            out/make/**/*.dmg
+            out/make/**/*.exe
+            out/make/**/*.AppImage
+            out/make/**/*.deb
+            out/make/**/*.zip
           draft: false
           prerelease: false
           generate_release_notes: true
