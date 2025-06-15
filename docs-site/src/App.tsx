@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import HomePage from './pages/HomePage'
-import DemoPage from './pages/DemoPage'
 import DocsPage from './pages/DocsPage'
 import { Button } from '@/components/button'
 
@@ -18,9 +17,6 @@ function App() {
               <div className="flex gap-1">
                 <Link to="/">
                   <Button variant="ghost" size="sm" className="h-8 text-sm">Home</Button>
-                </Link>
-                <Link to="/demo">
-                  <Button variant="ghost" size="sm" className="h-8 text-sm">Interactive Demo</Button>
                 </Link>
                 <Link to="/docs">
                   <Button variant="ghost" size="sm" className="h-8 text-sm">Documentation</Button>
@@ -40,7 +36,6 @@ function App() {
         
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/demo" element={<DemoPage />} />
           <Route path="/docs" element={<DocsPage />} />
         </Routes>
       </div>

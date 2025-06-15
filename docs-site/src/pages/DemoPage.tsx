@@ -3,7 +3,7 @@ import { Button } from '@/components/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/tabs'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/dialog'
-import { Database, Table, Search, Plus, Settings, RefreshCw, MoreHorizontal, Eye, EyeOff, Save } from 'lucide-react'
+import { Database, Table, Search, Plus, Settings, RefreshCw, MoreHorizontal, Eye, EyeOff, Save, X } from 'lucide-react'
 import Editor from '@monaco-editor/react'
 import {
   DropdownMenu,

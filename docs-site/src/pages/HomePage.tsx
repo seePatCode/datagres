@@ -1,7 +1,25 @@
 import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/card'
-import { ArrowRight, Zap, Keyboard, Lock, Database, Table, Plus, Loader2, CheckCircle, MousePointer } from 'lucide-react'
+import { ArrowRight, Zap, Keyboard, Lock, Database, Table, Plus, Loader2, CheckCircle, MousePointer, RefreshCw, MoreHorizontal, Eye, EyeOff, Save, X } from 'lucide-react'
+import Editor from '@monaco-editor/react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { 
+  Table as DataTable, 
+  TableHeader, 
+  TableBody, 
+  TableHead, 
+  TableRow, 
+  TableCell,
+} from '@/components/table'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/tabs'
 import { Link } from 'react-router-dom'
 
 export default function HomePage() {
@@ -13,6 +31,11 @@ export default function HomePage() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [showMouse, setShowMouse] = useState(false)
   const mousePositionRef = useRef({ x: 0, y: 0 })
+  const [searchQuery, setSearchQuery] = useState('')
+  const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({})
+  const [editedCells] = useState(new Map())
+  const [isLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState('data')
 
   const tables = [
     { name: 'users', count: 1847 },
@@ -24,11 +47,11 @@ export default function HomePage() {
 
   const mockData = {
     users: [
-      { id: 1, name: 'Alice Johnson', email: 'alice@example.com', role: 'admin', created_at: '2024-01-15 09:30:00' },
-      { id: 2, name: 'Bob Smith', email: 'bob@example.com', role: 'user', created_at: '2024-01-16 14:22:00' },
-      { id: 3, name: 'Carol Williams', email: 'carol@example.com', role: 'user', created_at: '2024-01-17 11:45:00' },
-      { id: 4, name: 'David Brown', email: 'david@example.com', role: 'moderator', created_at: '2024-01-18 16:30:00' },
-      { id: 5, name: 'Emma Davis', email: 'emma@example.com', role: 'user', created_at: '2024-01-19 10:15:00' },
+      { id: 1, name: 'Alice Johnson', email: 'alice@example.com', role: 'admin', created_at: '2024-01-15 09:30:00', status: 'active' },
+      { id: 2, name: 'Bob Smith', email: 'bob@example.com', role: 'user', created_at: '2024-01-16 14:22:00', status: 'active' },
+      { id: 3, name: 'Carol Williams', email: 'carol@example.com', role: 'user', created_at: '2024-01-17 11:45:00', status: 'inactive' },
+      { id: 4, name: 'David Brown', email: 'david@example.com', role: 'moderator', created_at: '2024-01-18 16:30:00', status: 'active' },
+      { id: 5, name: 'Emma Davis', email: 'emma@example.com', role: 'user', created_at: '2024-01-19 10:15:00', status: 'pending' },
     ],
     orders: [
       { id: 1001, user_id: 1, total: 299.99, status: 'completed', created_at: '2024-02-01 10:30:00' },
@@ -384,47 +407,191 @@ export default function HomePage() {
                 </div>
                 
                 {/* Main Content */}
-                <div className="flex-1">
+                <div className="flex-1 flex flex-col overflow-hidden">
                   {selectedTable ? (
                     <>
-                      <div className="border-b p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h2 className="text-lg font-semibold">{selectedTable}</h2>
-                            <p className="text-sm text-muted-foreground">
-                              Showing first 100 rows
-                            </p>
+                      {/* Table Toolbar */}
+                      <div className="flex items-center justify-between border-b bg-background" style={{ overflow: 'visible', zIndex: 100 }}>
+                        <div className="flex-1 m-0.5" style={{ overflow: 'visible' }}>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground whitespace-nowrap px-2">WHERE</span>
+                            <div className="relative flex-1 h-8 border rounded">
+                              <Editor
+                                height="32px"
+                                defaultLanguage="sql"
+                                value={searchQuery}
+                                onChange={(value) => setSearchQuery(value || '')}
+                                options={{
+                                  minimap: { enabled: false },
+                                  scrollBeyondLastLine: false,
+                                  lineNumbers: 'off',
+                                  glyphMargin: false,
+                                  folding: false,
+                                  lineDecorationsWidth: 0,
+                                  lineNumbersMinChars: 0,
+                                  automaticLayout: true,
+                                  wordWrap: 'off',
+                                  fontSize: 12,
+                                  fontFamily: "'SF Mono', Monaco, Consolas, 'Courier New', monospace",
+                                  suggestFontSize: 12,
+                                  padding: { top: 4, bottom: 4 },
+                                  renderLineHighlight: 'none',
+                                  scrollbar: {
+                                    vertical: 'hidden',
+                                    horizontal: 'hidden',
+                                  },
+                                  overviewRulerLanes: 0,
+                                  hideCursorInOverviewRuler: true,
+                                  overviewRulerBorder: false,
+                                  contextmenu: false,
+                                }}
+                                theme="vs-dark"
+                              />
+                            </div>
                           </div>
-                          <Button size="sm" variant="outline">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Row
+                        </div>
+                        <div className="flex items-center gap-2 px-3">
+                          {/* Save button (only shows when there are edits) */}
+                          {editedCells.size > 0 && (
+                            <Button 
+                              size="sm" 
+                              className="gap-1" 
+                              variant="default"
+                            >
+                              <Save className="h-4 w-4" />
+                              Save {editedCells.size} Change{editedCells.size > 1 ? 's' : ''}
+                            </Button>
+                          )}
+                          
+                          {/* Refresh button */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1"
+                            disabled={isLoading}
+                          >
+                            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                            Refresh
                           </Button>
+                          
+                          {/* Column visibility dropdown */}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56">
+                              <DropdownMenuLabel className="flex items-center gap-2">
+                                <Eye className="h-4 w-4" />
+                                Column Visibility
+                              </DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              {getTableColumns().map((columnName) => {
+                                const isVisible = columnVisibility[columnName] !== false
+                                return (
+                                  <DropdownMenuCheckboxItem
+                                    key={columnName}
+                                    checked={isVisible}
+                                    onCheckedChange={(checked) => {
+                                      setColumnVisibility({
+                                        ...columnVisibility,
+                                        [columnName]: checked
+                                      })
+                                    }}
+                                    onSelect={(event) => {
+                                      // Prevent dropdown from closing
+                                      event.preventDefault()
+                                    }}
+                                    className="capitalize"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      {isVisible ? (
+                                        <Eye className="h-3 w-3" />
+                                      ) : (
+                                        <EyeOff className="h-3 w-3" />
+                                      )}
+                                      {columnName}
+                                    </div>
+                                  </DropdownMenuCheckboxItem>
+                                )
+                              })}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </div>
                       
-                      <div className="overflow-auto">
-                        <table className="w-full">
-                          <thead className="sticky top-0 bg-secondary/50">
-                            <tr>
-                              {getTableColumns().map((col) => (
-                                <th key={col} className="border-b px-4 py-2 text-left text-sm font-medium">
-                                  {col}
-                                </th>
+                      <div className="flex-1 overflow-auto">
+                        <DataTable>
+                          <TableHeader className="sticky top-0 bg-background z-10">
+                            <TableRow>
+                              {getTableColumns().filter(col => columnVisibility[col] !== false).map((col) => (
+                                <TableHead key={col}>{col}</TableHead>
                               ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {getTableData().map((row, idx) => (
-                              <tr key={idx} className="border-b hover:bg-secondary/20">
-                                {Object.values(row).map((value, i) => (
-                                  <td key={i} className="px-4 py-2 text-sm">
-                                    {String(value)}
-                                  </td>
-                                ))}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {getTableData()
+                              .filter(row => {
+                                if (!searchQuery) return true;
+                                try {
+                                  if (searchQuery.includes('=')) {
+                                    const [field, value] = searchQuery.split('=').map(s => s.trim())
+                                    const cleanValue = value.replace(/['";]/g, '')
+                                    return row[field as keyof typeof row]?.toString().toLowerCase() === cleanValue.toLowerCase()
+                                  }
+                                  return Object.values(row).some(v => 
+                                    v.toString().toLowerCase().includes(searchQuery.toLowerCase())
+                                  )
+                                } catch {
+                                  return true
+                                }
+                              })
+                              .map((row, idx) => (
+                                <TableRow key={idx}>
+                                  {Object.entries(row).filter(([key]) => columnVisibility[key] !== false).map(([key, value]) => (
+                                    <TableCell key={key}>
+                                      <div className="font-mono text-vs-ui truncate py-1 px-2 hover:bg-muted/30 transition-colors">
+                                        {String(value)}
+                                      </div>
+                                    </TableCell>
+                                  ))}
+                                </TableRow>
+                              ))}
+                          </TableBody>
+                        </DataTable>
+                      </div>
+                      
+                      {/* Status Bar */}
+                      <div className="flex items-center justify-between px-3 py-2 border-t bg-muted/20 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-4">
+                          <span>
+                            {getTableData().filter(row => {
+                              if (!searchQuery) return true;
+                              try {
+                                if (searchQuery.includes('=')) {
+                                  const [field, value] = searchQuery.split('=').map(s => s.trim())
+                                  const cleanValue = value.replace(/['";]/g, '')
+                                  return row[field as keyof typeof row]?.toString().toLowerCase() === cleanValue.toLowerCase()
+                                }
+                                return Object.values(row).some(v => 
+                                  v.toString().toLowerCase().includes(searchQuery.toLowerCase())
+                                )
+                              } catch {
+                                return true
+                              }
+                            }).length} of {getTableData().length} rows
+                            {searchQuery && ` WHERE ${searchQuery}`}
+                          </span>
+                          <span>{getTableColumns().filter(col => columnVisibility[col] !== false).length} columns</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          {editedCells.size > 0 && (
+                            <span className="text-orange-600">
+                              {editedCells.size} unsaved change{editedCells.size > 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </>
                   ) : (
