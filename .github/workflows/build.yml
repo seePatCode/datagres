@@ -41,10 +41,7 @@ jobs:
       # - name: Run tests
       #   run: pnpm test:unit
         
-      - name: Build app
-        run: pnpm run build
-        
-      - name: Package app
-        run: pnpm run dist --publish never
+      - name: Build and Package app
+        run: pnpm run package
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
