@@ -3,7 +3,7 @@ import { Button } from '@/components/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/tabs'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/dialog'
-import { Database, Table, Search, Plus, Settings, RefreshCw, MoreHorizontal, Eye, EyeOff } from 'lucide-react'
+import { Database, Table, Search, Plus, Settings, RefreshCw, MoreHorizontal, Eye, EyeOff, Save } from 'lucide-react'
 import Editor from '@monaco-editor/react'
 import {
   DropdownMenu,
@@ -31,6 +31,9 @@ export default function DemoPage() {
     { id: '1', type: 'table', name: 'users', tableName: 'users' }
   ])
   const [activeTabId, setActiveTabId] = useState('1')
+  const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({})
+  const [editedCells] = useState(new Map())
+  const [isLoading] = useState(false)
 
   const tables = ['users', 'orders', 'products', 'customers', 'invoices']
   const mockData = [
@@ -188,13 +191,12 @@ export default function DemoPage() {
 
             <TabsContent value="data" className="flex-1 overflow-hidden p-0">
               <div className="flex h-full flex-col">
-                {/* Table Toolbar with Monaco Editor */}
-                <div className="border-b">
-                  <div className="flex items-center gap-2 p-2">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">WHERE</span>
-                        <div className="relative flex-1 h-8 border rounded">
+                {/* Table Toolbar */}
+                <div className="flex items-center justify-between border-b bg-background" style={{ overflow: 'visible', zIndex: 100 }}>
+                  <div className="flex-1 m-0.5" style={{ overflow: 'visible' }}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground whitespace-nowrap px-2">WHERE</span>
+                      <div className="relative flex-1 h-8 border rounded">
                           <Editor
                             height="32px"
                             defaultLanguage="sql"
@@ -229,43 +231,74 @@ export default function DemoPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button size="sm" variant="ghost" className="h-8 px-2">
-                        <RefreshCw className="h-4 w-4" />
+                  <div className="flex items-center gap-2 px-3">
+                    {/* Save button (only shows when there are edits) */}
+                    {editedCells.size > 0 && (
+                      <Button 
+                        size="sm" 
+                        className="gap-1" 
+                        variant="default"
+                      >
+                        <Save className="h-4 w-4" />
+                        Save {editedCells.size} Change{editedCells.size > 1 ? 's' : ''}
                       </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button size="sm" variant="ghost" className="h-8 px-2">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuLabel>Columns</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          {['id', 'name', 'email', 'created_at', 'status'].map((column) => (
-                            <DropdownMenuCheckboxItem
-                              key={column}
-                              checked={true}
-                              onCheckedChange={() => {}}
-                            >
-                              {column}
-                            </DropdownMenuCheckboxItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between border-b px-4 py-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{selectedTable}</span>
-                    <span className="text-xs text-muted-foreground">({mockData.length} rows)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button size="sm" variant="outline" className="h-7 px-2 text-xs">
-                      <Plus className="mr-1 h-3.5 w-3.5" />
-                      Add Row
+                    )}
+                    
+                    {/* Refresh button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1"
+                      disabled={isLoading}
+                    >
+                      <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                      Refresh
                     </Button>
+                    
+                    {/* Column visibility dropdown */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuLabel className="flex items-center gap-2">
+                          <Eye className="h-4 w-4" />
+                          Column Visibility
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {['id', 'name', 'email', 'created_at', 'status'].map((columnName) => {
+                          const isVisible = columnVisibility[columnName] !== false
+                          return (
+                            <DropdownMenuCheckboxItem
+                              key={columnName}
+                              checked={isVisible}
+                              onCheckedChange={(checked) => {
+                                setColumnVisibility({
+                                  ...columnVisibility,
+                                  [columnName]: checked
+                                })
+                              }}
+                              onSelect={(event) => {
+                                // Prevent dropdown from closing
+                                event.preventDefault()
+                              }}
+                              className="capitalize"
+                            >
+                              <div className="flex items-center gap-2">
+                                {isVisible ? (
+                                  <Eye className="h-3 w-3" />
+                                ) : (
+                                  <EyeOff className="h-3 w-3" />
+                                )}
+                                {columnName}
+                              </div>
+                            </DropdownMenuCheckboxItem>
+                          )
+                        })}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
                 <div className="flex-1 overflow-auto">
@@ -335,6 +368,37 @@ export default function DemoPage() {
                         ))}
                     </TableBody>
                   </DataTable>
+                </div>
+                {/* Status Bar */}
+                <div className="flex items-center justify-between px-3 py-2 border-t bg-muted/20 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-4">
+                    <span>
+                      {mockData.filter(row => {
+                        if (!searchQuery) return true;
+                        try {
+                          if (searchQuery.includes('=')) {
+                            const [field, value] = searchQuery.split('=').map(s => s.trim())
+                            const cleanValue = value.replace(/['";]/g, '')
+                            return row[field as keyof typeof row]?.toString().toLowerCase() === cleanValue.toLowerCase()
+                          }
+                          return Object.values(row).some(v => 
+                            v.toString().toLowerCase().includes(searchQuery.toLowerCase())
+                          )
+                        } catch {
+                          return true
+                        }
+                      }).length} of {mockData.length} rows
+                      {searchQuery && ` WHERE ${searchQuery}`}
+                    </span>
+                    <span>5 columns</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    {editedCells.size > 0 && (
+                      <span className="text-orange-600">
+                        {editedCells.size} unsaved change{editedCells.size > 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </TabsContent>
