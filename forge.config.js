@@ -11,7 +11,6 @@ module.exports = {
     icon: path.join(__dirname, 'build', 'icon'),
     appBundleId: 'com.datagres.app',
     appCategoryType: 'public.app-category.developer-tools',
-    dir: path.join(__dirname, 'out'),
     osxSign: process.env.APPLE_IDENTITY ? {
       identity: process.env.APPLE_IDENTITY,
       hardenedRuntime: true,

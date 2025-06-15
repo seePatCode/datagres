@@ -59,32 +59,40 @@ jobs:
       - name: Build app
         run: pnpm run build
         
-      - name: Package app
+      - name: Package app (macOS)
+        if: matrix.os == 'macos-latest'
         timeout-minutes: 45
-        run: pnpm run make
+        run: pnpm run dist:mac
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # macOS signing
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_ID_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          # Windows signing
-          WINDOWS_CODESIGN_FILE: ${{ secrets.WINDOWS_CODESIGN_FILE }}
-          WINDOWS_CODESIGN_PASSWORD: ${{ secrets.WINDOWS_CODESIGN_PASSWORD }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          CSC_LINK: ${{ secrets.MAC_CERTS }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTS_PASSWORD }}
           NODE_OPTIONS: --max-old-space-size=4096
+          
+      - name: Package app (Windows)
+        if: matrix.os == 'windows-latest'
+        run: pnpm run dist:win
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          
+      - name: Package app (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: pnpm run dist:linux
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}-artifacts
           path: |
-            out/make/**/*.dmg
-            out/make/**/*.exe
-            out/make/**/*.deb
-            out/make/**/*.rpm
-            out/make/**/*.zip
-            out/make/**/*.Setup.exe
-            out/make/**/*.nupkg
+            dist/*.dmg
+            dist/*.exe
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.blockmap
+            dist/*-mac.zip
             
   create-release:
     needs: release
@@ -109,11 +117,11 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            **/*.dmg
-            **/*.exe
-            **/*.deb
-            **/*.zip
-            **/*Setup*.exe
+            dist/**/*.dmg
+            dist/**/*.exe
+            dist/**/*.AppImage
+            dist/**/*.deb
+            dist/**/*.zip
           draft: false
           prerelease: false
           generate_release_notes: true

@@ -61,7 +61,7 @@
       "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
-      "notarize": true,
+      "notarize": false,
       "signIgnore": [
         "node_modules/keytar/build/Release/keytar.node"
       ],
