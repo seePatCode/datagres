@@ -7,7 +7,6 @@ import { TableView } from "@/components/ui/table-view"
 import { SQLQueryView } from "@/components/ui/sql-query-view"
 import { SaveConnectionDialog } from "@/components/ui/save-connection-dialog"
 import { QuickSearch } from "@/components/ui/quick-search"
-import { AiQueryDialog } from "@/components/ui/ai-query-dialog"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { 
@@ -81,25 +80,12 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
   
   // Local state
   const [quickSearchOpen, setQuickSearchOpen] = useState(false)
-  const [aiQueryOpen, setAiQueryOpen] = useState(false)
   
   // Set up double-shift keyboard shortcut
   useDoubleShift({
     onDoubleShift: () => setQuickSearchOpen(true)
   })
   
-  // Set up Cmd+K for AI query
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault()
-        setAiQueryOpen(true)
-      }
-    }
-    
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
   
   // Actions
   const handleConnectionChange = (connectionId: string) => {
@@ -317,15 +303,6 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
         onOpenChange={setQuickSearchOpen}
         tables={tables}
         onSelectTable={handleTableSelect}
-      />
-      
-      {/* AI Query Dialog */}
-      <AiQueryDialog
-        open={aiQueryOpen}
-        onOpenChange={setAiQueryOpen}
-        tables={tables}
-        onCreateQuery={handleNewQueryTab}
-        connectionString={connectionString || ''}
       />
     </div>
   )

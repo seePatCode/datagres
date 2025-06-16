@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { SQLEditor, SQLEditorHandle } from '@/components/ui/sql-editor'
+import { SqlAiPrompt } from '@/components/ui/sql-ai-prompt'
 import { useSqlSettings } from '@/hooks/useSettings'
 import { useDebounce } from '@/hooks/useDebounce'
 import { Play, Loader2, AlertCircle, Clock, Eye } from 'lucide-react'
@@ -55,6 +56,8 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
   const editorRef = useRef<SQLEditorHandle>(null)
   const { livePreview, setLivePreview } = useSqlSettings()
   const [schemas, setSchemas] = useState<TableSchema[]>([])
+  const [showAiPrompt, setShowAiPrompt] = useState(false)
+  const [aiPromptPosition, setAiPromptPosition] = useState<{ top: number; left: number } | undefined>()
   
   // Only debounce when live preview is on
   const debouncedQuery = useDebounce(query, livePreview ? 500 : 0)
@@ -117,6 +120,42 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
       executeMutation.mutate(queryToExecute)
     }
   }
+
+  const handleInsertSql = (sql: string) => {
+    if (editorRef.current) {
+      // Insert SQL at cursor position
+      editorRef.current.insertText(sql)
+      // Focus back to editor
+      editorRef.current.focus()
+    }
+  }
+
+  // Handle Cmd+K for AI prompt
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check if the editor is focused
+      const isEditorFocused = editorRef.current?.isFocused()
+      
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k' && isEditorFocused) {
+        e.preventDefault()
+        e.stopPropagation()
+        
+        // Get cursor position from Monaco editor
+        const cursorPos = editorRef.current?.getCursorPosition()
+        if (cursorPos) {
+          setAiPromptPosition({
+            top: cursorPos.top + 30, // Below cursor
+            left: Math.min(cursorPos.left, window.innerWidth - 400) // Ensure it fits
+          })
+        }
+        
+        setShowAiPrompt(true)
+      }
+    }
+    
+    window.addEventListener('keydown', handleKeyDown, true)
+    return () => window.removeEventListener('keydown', handleKeyDown, true)
+  }, [])
 
   // Auto-execute for live preview
   useEffect(() => {
@@ -254,6 +293,16 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
           </div>
         )}
       </div>
+      
+      {/* AI Prompt */}
+      <SqlAiPrompt
+        isOpen={showAiPrompt}
+        onClose={() => setShowAiPrompt(false)}
+        onInsertSql={handleInsertSql}
+        connectionString={connectionString}
+        tableName={tables[0]?.name}
+        position={aiPromptPosition}
+      />
     </div>
   )
 }

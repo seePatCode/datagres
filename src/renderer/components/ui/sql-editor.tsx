@@ -12,6 +12,9 @@ interface SQLEditorProps {
 export interface SQLEditorHandle {
   getSelectedText: () => string
   focus: () => void
+  insertText: (text: string) => void
+  isFocused: () => boolean
+  getCursorPosition: () => { top: number; left: number } | null
 }
 
 export const SQLEditor = forwardRef<SQLEditorHandle, SQLEditorProps>(
@@ -194,6 +197,41 @@ export const SQLEditor = forwardRef<SQLEditorHandle, SQLEditorProps>(
       },
       focus: () => {
         editorRef.current?.focus()
+      },
+      insertText: (text: string) => {
+        if (!editorRef.current) return
+        const selection = editorRef.current.getSelection()
+        const id = { major: 1, minor: 1 }
+        const op = {
+          identifier: id,
+          range: selection,
+          text: text,
+          forceMoveMarkers: true
+        }
+        editorRef.current.executeEdits("ai-insert", [op])
+      },
+      isFocused: () => {
+        if (!editorRef.current) return false
+        return editorRef.current.hasWidgetFocus()
+      },
+      getCursorPosition: () => {
+        if (!editorRef.current) return null
+        const position = editorRef.current.getPosition()
+        if (!position) return null
+        
+        // Get the editor's DOM node position
+        const editorDom = editorRef.current.getDomNode()
+        if (!editorDom) return null
+        
+        const editorRect = editorDom.getBoundingClientRect()
+        const coords = editorRef.current.getScrolledVisiblePosition(position)
+        
+        if (!coords) return null
+        
+        return {
+          top: editorRect.top + coords.top,
+          left: editorRect.left + coords.left
+        }
       }
     }), [])
 
