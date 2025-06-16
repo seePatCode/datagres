@@ -301,6 +301,7 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
         onInsertSql={handleInsertSql}
         connectionString={connectionString}
         tableName={tables[0]?.name}
+        schemas={schemas}
         position={aiPromptPosition}
       />
     </div>

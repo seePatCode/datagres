@@ -121,6 +121,7 @@ export interface GenerateSQLRequest {
   prompt: string
   tableName: string
   columns: string[]
+  allSchemas?: TableSchema[]  // Full schema context for all tables
 }
 
 export interface GenerateSQLResponse extends APIResponse {

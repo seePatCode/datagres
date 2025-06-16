@@ -37,6 +37,20 @@ async function generateSQL(prompt, tableInfo) {
   // Use pattern matching for now
   const lowerPrompt = prompt.toLowerCase();
   const tableName = tableInfo.tableName;
+  const columns = tableInfo.columns || [];
+  const allSchemas = tableInfo.allSchemas || [];
+  
+  // Build schema context for better understanding
+  let schemaContext = '';
+  if (allSchemas.length > 0) {
+    schemaContext = allSchemas.map(schema => 
+      `Table: ${schema.tableName}\nColumns: ${schema.columns.map(col => 
+        `${col.name} (${col.dataType}${col.nullable ? ', nullable' : ''})`
+      ).join(', ')}`
+    ).join('\n\n');
+    
+    console.log('Schema context provided:', schemaContext);
+  }
   
   // Enhanced patterns for common queries
   const enhancedPatterns = [
@@ -57,6 +71,10 @@ async function generateSQL(prompt, tableInfo) {
     
     // Count patterns
     { regex: /count (.+) by (.+)/i, sql: 'SELECT $2, COUNT(*) FROM $1 GROUP BY $2' },
+    
+    // Join patterns
+    { regex: /(.+) with their (.+)/i, sql: 'SELECT * FROM $1 JOIN $2 ON $1.$2_id = $2.id' },
+    { regex: /(.+) and their (.+)/i, sql: 'SELECT * FROM $1 JOIN $2 ON $1.$2_id = $2.id' },
     
     // Basic patterns (existing)
     ...sqlPatterns
@@ -93,6 +111,47 @@ async function generateSQL(prompt, tableInfo) {
       // Replace table references with current table
       sql = sql.replace(/\$1/g, tableName);
       return { success: true, sql, method: 'pattern' };
+    }
+  }
+  
+  // Column-aware patterns
+  if (columns.length > 0) {
+    // Check for column names in the prompt
+    for (const column of columns) {
+      const columnLower = column.toLowerCase();
+      
+      // Pattern: "users with {column} = {value}"
+      const withPattern = new RegExp(`with\\s+${columnLower}\\s*=\\s*['"]?([^'"\\s]+)['"]?`, 'i');
+      const withMatch = lowerPrompt.match(withPattern);
+      if (withMatch) {
+        return {
+          success: true,
+          sql: `SELECT * FROM ${tableName} WHERE ${column} = '${withMatch[1]}'`,
+          method: 'pattern'
+        };
+      }
+      
+      // Pattern: "where {column} is {value}"
+      const whereIsPattern = new RegExp(`where\\s+${columnLower}\\s+is\\s+['"]?([^'"\\s]+)['"]?`, 'i');
+      const whereIsMatch = lowerPrompt.match(whereIsPattern);
+      if (whereIsMatch) {
+        return {
+          success: true,
+          sql: `SELECT * FROM ${tableName} WHERE ${column} = '${whereIsMatch[1]}'`,
+          method: 'pattern'
+        };
+      }
+      
+      // Pattern: "{column} containing {value}"
+      const containingPattern = new RegExp(`${columnLower}\\s+containing\\s+['"]?([^'"]+)['"]?`, 'i');
+      const containingMatch = lowerPrompt.match(containingPattern);
+      if (containingMatch) {
+        return {
+          success: true,
+          sql: `SELECT * FROM ${tableName} WHERE ${column} ILIKE '%${containingMatch[1]}%'`,
+          method: 'pattern'
+        };
+      }
     }
   }
   

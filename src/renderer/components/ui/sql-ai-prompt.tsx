@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Input } from '@/components/ui/input'
 import { Sparkles, Loader2 } from 'lucide-react'
-import type { GenerateSQLRequest } from '@shared/types'
+import type { GenerateSQLRequest, TableSchema } from '@shared/types'
 
 interface SqlAiPromptProps {
   isOpen: boolean
@@ -10,6 +10,7 @@ interface SqlAiPromptProps {
   onInsertSql: (sql: string) => void
   connectionString: string
   tableName?: string
+  schemas?: TableSchema[]
   position?: { top: number; left: number }
 }
 
@@ -19,6 +20,7 @@ export function SqlAiPrompt({
   onInsertSql, 
   connectionString,
   tableName,
+  schemas = [],
   position 
 }: SqlAiPromptProps) {
   const [prompt, setPrompt] = useState('')
@@ -27,23 +29,36 @@ export function SqlAiPrompt({
   // AI SQL generation mutation
   const generateMutation = useMutation({
     mutationFn: async (userPrompt: string) => {
-      // Get table info if we have a table name
-      let columns: string[] = []
+      // Try to detect which table the user is referring to
+      const lowerPrompt = userPrompt.toLowerCase()
       let targetTable = tableName || 'table'
+      let columns: string[] = []
       
-      if (tableName) {
-        try {
-          const schemaResult = await window.electronAPI.fetchTableSchema(connectionString, tableName)
-          columns = schemaResult.schema?.columns.map(col => col.name) || []
-        } catch {
-          // Continue without schema
+      // Find table mentioned in prompt or use current context
+      if (schemas.length > 0) {
+        for (const schema of schemas) {
+          if (lowerPrompt.includes(schema.tableName.toLowerCase())) {
+            targetTable = schema.tableName
+            columns = schema.columns.map(col => col.name)
+            break
+          }
+        }
+        
+        // If no table found in prompt, use the first table or provided tableName
+        if (columns.length === 0) {
+          const defaultSchema = schemas.find(s => s.tableName === tableName) || schemas[0]
+          if (defaultSchema) {
+            targetTable = defaultSchema.tableName
+            columns = defaultSchema.columns.map(col => col.name)
+          }
         }
       }
       
       const tableInfo: GenerateSQLRequest = {
         prompt: userPrompt,
         tableName: targetTable,
-        columns
+        columns,
+        allSchemas: schemas  // Pass all schemas for context
       }
       
       const result = await window.electronAPI.generateSQL(userPrompt, tableInfo)
