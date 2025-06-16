@@ -53,11 +53,18 @@
 
 Download the latest release from the [releases page](https://github.com/seepatcode/datagres/releases).
 
-#### macOS Users
-Since Datagres isn't code-signed yet, you'll see a security warning. To open:
-1. **Right-click** on Datagres and select **Open**
-2. Click **Open** in the security dialog
-3. This only needs to be done once
+#### macOS Security Notice
+Datagres is currently unsigned while we work on getting an Apple Developer certificate. This means macOS will show a security warning when you first open the app. This is normal for unsigned applications and doesn't indicate any security issues with Datagres itself.
+
+**To open Datagres on macOS:**
+1. Download the `.dmg` file from releases
+2. Open the `.dmg` and drag Datagres to your Applications folder
+3. **Right-click** (or Control-click) on Datagres in Applications
+4. Select **Open** from the context menu
+5. Click **Open** in the security dialog that appears
+6. This only needs to be done once - afterwards you can open Datagres normally
+
+**Why is this necessary?** Apple requires developers to pay for a certificate to sign their apps. We're in the process of obtaining this certificate. Once we have it, future versions will open without any warnings.
 
 Alternatively, build from source:
 
