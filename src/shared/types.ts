@@ -117,6 +117,18 @@ export interface ExecuteSQLResponse extends APIResponse {
   queryTime?: number
 }
 
+export interface GenerateSQLRequest {
+  prompt: string
+  tableName: string
+  columns: string[]
+}
+
+export interface GenerateSQLResponse extends APIResponse {
+  sql?: string
+  method?: 'ai' | 'pattern' | 'fallback' | 'test'
+  message?: string
+}
+
 
 export interface ParsedConnectionInfo {
   host: string
@@ -141,6 +153,9 @@ export interface ElectronAPI {
   loadConnection: (connectionId: string) => Promise<LoadConnectionResponse>
   deleteConnection: (connectionId: string) => Promise<APIResponse>
   updateConnectionName: (connectionId: string, newName: string) => Promise<APIResponse>
+  
+  // AI SQL generation
+  generateSQL: (prompt: string, tableInfo: GenerateSQLRequest) => Promise<GenerateSQLResponse>
   
   // Theme updates
   updateTheme?: (theme: 'dark' | 'light' | 'system') => Promise<APIResponse>

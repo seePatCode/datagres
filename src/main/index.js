@@ -6,6 +6,7 @@ const databaseService = require('./services/databaseService')
 const { createApplicationMenu, updateMenuTheme } = require('./services/menuBuilder')
 const { createMainWindow, setupWindowControlHandlers } = require('./services/windowManager')
 const { testMocks, isTestMode } = require('./services/testMocks')
+const aiService = require('./services/aiService')
 
 // Set app name as early as possible
 app.setName('Datagres')
@@ -120,4 +121,25 @@ ipcMain.handle('update-theme', async (_event, theme) => {
     updateMenuTheme(mainWindow, theme)
   }
   return { success: true }
+})
+
+// Handle AI SQL generation
+ipcMain.handle('generate-sql', async (_event, prompt, tableInfo) => {
+  if (isTestMode()) {
+    return {
+      success: true,
+      sql: `SELECT * FROM ${tableInfo.tableName} WHERE status = 'active'`,
+      method: 'test'
+    }
+  }
+  
+  try {
+    const result = await aiService.generateSQL(prompt, tableInfo)
+    return result
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    }
+  }
 })
