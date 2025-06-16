@@ -164,8 +164,9 @@ export const tabsSlice = createSlice({
     // Add new query tab
     addQueryTab: (state, action: PayloadAction<{
       connectionString: string
+      initialQuery?: string
     }>) => {
-      const { connectionString } = action.payload
+      const { connectionString, initialQuery } = action.payload
       
       // Initialize if needed
       if (!state.tabs[connectionString]) {
@@ -177,8 +178,8 @@ export const tabsSlice = createSlice({
       const newTab: QueryTabInternal = {
         id: `query_${Date.now()}`,
         type: 'query',
-        title: 'New Query',
-        query: '',
+        title: initialQuery ? 'AI Query' : 'New Query',
+        query: initialQuery || '',
         isSaved: false
       }
       

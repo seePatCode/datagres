@@ -1,7 +1,6 @@
 import { RefreshCw, Save, MoreHorizontal, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SQLWhereEditor } from '@/components/ui/sql-where-editor-monaco'
-import { AiSqlInput } from '@/components/ui/ai-sql-input'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,9 +31,6 @@ interface TableToolbarProps {
   columns: string[]
   columnVisibility: Record<string, boolean>
   onColumnVisibilityChange: (visibility: Record<string, boolean>) => void
-  
-  // AI props
-  tableName?: string
 }
 
 export function TableToolbar({
@@ -51,7 +47,6 @@ export function TableToolbar({
   columns,
   columnVisibility,
   onColumnVisibilityChange,
-  tableName,
 }: TableToolbarProps) {
   return (
     <div className="flex items-center justify-between border-b bg-background" style={{ overflow: 'visible', zIndex: 100 }}>
@@ -66,26 +61,6 @@ export function TableToolbar({
       </div>
 
       <div className="flex items-center gap-2 px-3">
-        {/* AI SQL Input */}
-        {tableName && columns.length > 0 && (
-          <AiSqlInput
-            tableName={tableName}
-            columns={columns}
-            onSqlGenerated={(sql) => {
-              // Extract WHERE clause from generated SQL
-              const whereMatch = sql.match(/WHERE\s+(.+?)(?:\s+ORDER\s+BY|\s+LIMIT|$)/i)
-              if (whereMatch) {
-                onSearchChange(whereMatch[1])
-                onSearchCommit()
-              } else if (sql.toLowerCase().includes('select')) {
-                // If it's a simple SELECT *, clear the WHERE clause
-                onSearchChange('')
-                onSearchCommit()
-              }
-            }}
-          />
-        )}
-        
         {/* Save button (if changes) */}
         {hasEdits && (
           <Button 

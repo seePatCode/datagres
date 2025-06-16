@@ -305,7 +305,6 @@ export function TableView({
         columns={data?.columns || []}
         columnVisibility={columnVisibility}
         onColumnVisibilityChange={setColumnVisibility}
-        tableName={tableName}
       />
 
       {/* Data Table */}
