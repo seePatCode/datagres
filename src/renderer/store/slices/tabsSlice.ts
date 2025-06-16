@@ -179,7 +179,7 @@ export const tabsSlice = createSlice({
         id: `query_${Date.now()}`,
         type: 'query',
         title: initialQuery ? 'AI Query' : 'New Query',
-        query: initialQuery || '',
+        query: typeof initialQuery === 'string' ? initialQuery : '',
         isSaved: false
       }
       

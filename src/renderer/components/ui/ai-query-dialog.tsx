@@ -16,7 +16,7 @@ interface AiQueryDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   tables: TableInfo[]
-  onCreateQuery: (query: string, isAi?: boolean) => void
+  onCreateQuery: (query: string) => void
   connectionString: string
 }
 
@@ -65,7 +65,7 @@ export function AiQueryDialog({
     },
     onSuccess: (data) => {
       if (data.sql) {
-        onCreateQuery(data.sql, true)
+        onCreateQuery(data.sql)
         onOpenChange(false)
         setSearch('')
       }
@@ -75,7 +75,7 @@ export function AiQueryDialog({
   // Handle direct SQL input
   const handleDirectSQL = () => {
     if (search.trim()) {
-      onCreateQuery(search, false)
+      onCreateQuery(search)
       onOpenChange(false)
       setSearch('')
     }

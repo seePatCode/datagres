@@ -135,7 +135,9 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
   
   const handleNewQueryTab = (query?: string) => {
     if (connectionString) {
-      dispatch(addQueryTab({ connectionString, initialQuery: query }))
+      // Ensure query is a string (not an event)
+      const queryString = typeof query === 'string' ? query : undefined
+      dispatch(addQueryTab({ connectionString, initialQuery: queryString }))
     }
   }
   

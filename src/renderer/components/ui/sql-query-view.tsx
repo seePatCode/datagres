@@ -51,7 +51,7 @@ const createColumns = (columnNames: string[]): ColumnDef<any>[] => {
 }
 
 export function SQLQueryView({ connectionString, initialQuery = '', onQueryChange, tables = [] }: SQLQueryViewProps) {
-  const [query, setQuery] = useState(initialQuery)
+  const [query, setQuery] = useState(typeof initialQuery === 'string' ? initialQuery : '')
   const editorRef = useRef<SQLEditorHandle>(null)
   const { livePreview, setLivePreview } = useSqlSettings()
   const [schemas, setSchemas] = useState<TableSchema[]>([])
