@@ -32,6 +32,6 @@ module.exports = {
   },
   output: {
     path: path.resolve(__dirname, '.webpack/preload'),
-    filename: 'preload.js'
+    filename: 'index.js'
   }
 };
