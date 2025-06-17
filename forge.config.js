@@ -38,24 +38,7 @@ module.exports = {
   makers: [
     new MakerDMG({
       name: 'Datagres',
-      overwrite: true,
-      debug: false,
-      background: undefined,
-      contents: [
-        {
-          x: 448,
-          y: 344,
-          type: 'link',
-          path: '/Applications'
-        },
-        {
-          x: 192,
-          y: 344,
-          type: 'file',
-          path: 'Datagres.app'
-        }
-      ],
-      format: 'ULFO'
+      overwrite: true
     }),
     new MakerSquirrel({
       name: 'Datagres',
