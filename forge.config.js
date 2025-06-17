@@ -51,7 +51,8 @@ module.exports = {
         {
           x: 192,
           y: 344,
-          type: 'file'
+          type: 'file',
+          path: 'Datagres.app'
         }
       ],
       format: 'ULFO'
