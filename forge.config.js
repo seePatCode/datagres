@@ -16,21 +16,20 @@ module.exports = {
     icon: path.join(__dirname, 'build', 'icon'),
     appBundleId: 'com.datagres.app',
     appCategoryType: 'public.app-category.developer-tools',
-    // Code signing disabled for now
-    // osxSign: process.env.APPLE_IDENTITY ? {
-    //   identity: process.env.APPLE_IDENTITY,
-    //   hardenedRuntime: true,
-    //   gatekeeperAssess: false,
-    //   entitlements: path.join(__dirname, 'build', 'entitlements.mac.plist'),
-    //   'entitlements-inherit': path.join(__dirname, 'build', 'entitlements.mac.plist'),
-    //   'signature-flags': 'library'
-    // } : undefined,
-    // osxNotarize: process.env.APPLE_ID && process.env.APPLE_PASSWORD ? {
-    //   tool: 'notarytool',
-    //   appleId: process.env.APPLE_ID,
-    //   appleIdPassword: process.env.APPLE_PASSWORD,
-    //   teamId: process.env.APPLE_TEAM_ID
-    // } : undefined,
+    osxSign: process.env.APPLE_IDENTITY ? {
+      identity: process.env.APPLE_IDENTITY,
+      hardenedRuntime: true,
+      gatekeeperAssess: false,
+      entitlements: path.join(__dirname, 'build', 'entitlements.mac.plist'),
+      'entitlements-inherit': path.join(__dirname, 'build', 'entitlements.mac.plist'),
+      'signature-flags': 'library'
+    } : undefined,
+    osxNotarize: process.env.APPLE_ID && process.env.APPLE_PASSWORD ? {
+      tool: 'notarytool',
+      appleId: process.env.APPLE_ID,
+      appleIdPassword: process.env.APPLE_PASSWORD,
+      teamId: process.env.APPLE_TEAM_ID
+    } : undefined,
     asar: {
       unpack: '**/node_modules/{electron-store,keytar}/**/*'
     }
