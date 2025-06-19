@@ -86,7 +86,45 @@ Given the database schema, here is the SQL query that answers [QUESTION]${prompt
     }
     
     // Remove any markdown code blocks
-    sql = sql?.replace(/```sql\n?/g, '').replace(/```\n?/g, '').trim();
+    sql = sql?.replace(/```sql\n?/gi, '').replace(/```\n?/g, '').trim();
+    
+    // Extract only SQL from the response
+    // Look for SQL statements and remove any explanatory text
+    const lines = sql.split('\n');
+    const sqlLines = [];
+    let inSqlBlock = false;
+    
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      
+      // Check if line starts with SQL keywords or is a continuation
+      if (trimmedLine.match(/^(SELECT|INSERT|UPDATE|DELETE|WITH|FROM|WHERE|JOIN|ORDER|GROUP|HAVING|LIMIT|UNION|CREATE|ALTER|DROP|--)/i) ||
+          (inSqlBlock && trimmedLine.match(/^(AND|OR|ON|AS|BY|DESC|ASC|INTO|VALUES|SET|,|\(|\)|;)/i)) ||
+          (inSqlBlock && trimmedLine !== '' && !trimmedLine.match(/^[A-Z].*[.!?]$/))) {
+        sqlLines.push(line);
+        inSqlBlock = true;
+      } else if (trimmedLine === '' && inSqlBlock) {
+        // Empty line might be part of SQL formatting
+        sqlLines.push(line);
+      } else if (trimmedLine.endsWith(';')) {
+        // SQL statement ended
+        sqlLines.push(line);
+        inSqlBlock = false;
+      } else {
+        // Not SQL, skip this line
+        inSqlBlock = false;
+      }
+    }
+    
+    sql = sqlLines.join('\n').trim();
+    
+    // If no SQL found, check if the entire response might be SQL
+    if (!sql && lines.length > 0) {
+      const firstLine = lines[0].trim();
+      if (firstLine.match(/^(SELECT|INSERT|UPDATE|DELETE|WITH|CREATE|ALTER|DROP)/i)) {
+        sql = lines.join('\n').trim();
+      }
+    }
     
     // Basic validation
     if (sql && (sql.toLowerCase().includes('select') || sql.toLowerCase().includes('insert') || 

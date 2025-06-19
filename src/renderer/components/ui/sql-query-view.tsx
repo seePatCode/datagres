@@ -121,10 +121,15 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
     }
   }
 
-  const handleInsertSql = (sql: string) => {
+  const handleInsertSql = (sql: string, replaceSelection: boolean = false) => {
     if (editorRef.current) {
-      // Insert SQL at cursor position
-      editorRef.current.insertText(sql)
+      if (replaceSelection) {
+        // Replace selected text with generated SQL
+        editorRef.current.insertText(sql)
+      } else {
+        // Insert SQL at cursor position
+        editorRef.current.insertText(sql)
+      }
       // Focus back to editor
       editorRef.current.focus()
     }
@@ -303,6 +308,7 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
         tableName={tables[0]?.name}
         schemas={schemas}
         position={aiPromptPosition}
+        selectedText={editorRef.current?.getSelectedText()}
       />
     </div>
   )

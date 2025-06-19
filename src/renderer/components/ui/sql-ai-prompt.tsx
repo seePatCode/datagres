@@ -8,11 +8,12 @@ import type { GenerateSQLRequest, TableSchema } from '@shared/types'
 interface SqlAiPromptProps {
   isOpen: boolean
   onClose: () => void
-  onInsertSql: (sql: string) => void
+  onInsertSql: (sql: string, replaceSelection?: boolean) => void
   connectionString: string
   tableName?: string
   schemas?: TableSchema[]
   position?: { top: number; left: number }
+  selectedText?: string
 }
 
 // Track which commands have been executed
@@ -29,7 +30,8 @@ export function SqlAiPrompt({
   connectionString,
   tableName,
   schemas = [],
-  position 
+  position,
+  selectedText 
 }: SqlAiPromptProps) {
   const [prompt, setPrompt] = useState('')
   const [executedCommands, setExecutedCommands] = useState<ExecutedCommands>({})
@@ -39,8 +41,14 @@ export function SqlAiPrompt({
   // AI SQL generation mutation
   const generateMutation = useMutation({
     mutationFn: async (userPrompt: string) => {
+      // Build full prompt including selected text context if available
+      let fullPrompt = userPrompt
+      if (selectedText?.trim()) {
+        fullPrompt = `Given this SQL: ${selectedText}\n\n${userPrompt}`
+      }
+      
       // Try to detect which table the user is referring to
-      const lowerPrompt = userPrompt.toLowerCase()
+      const lowerPrompt = fullPrompt.toLowerCase()
       let targetTable = tableName || 'table'
       let columns: string[] = []
       
@@ -65,13 +73,13 @@ export function SqlAiPrompt({
       }
       
       const tableInfo: GenerateSQLRequest = {
-        prompt: userPrompt,
+        prompt: fullPrompt,
         tableName: targetTable,
         columns,
         allSchemas: schemas  // Pass all schemas for context
       }
       
-      const result = await window.electronAPI.generateSQL(userPrompt, tableInfo)
+      const result = await window.electronAPI.generateSQL(fullPrompt, tableInfo)
       if (!result.success) {
         throw new Error(result.error || 'Failed to generate SQL')
       }
@@ -80,7 +88,8 @@ export function SqlAiPrompt({
     },
     onSuccess: (data) => {
       if (data.sql) {
-        onInsertSql(data.sql)
+        // Replace selection if there was selected text
+        onInsertSql(data.sql, !!selectedText?.trim())
         handleClose()
       }
     }
@@ -175,7 +184,7 @@ export function SqlAiPrompt({
           ref={inputRef}
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Describe what you want in plain English..."
+          placeholder={selectedText?.trim() ? "Describe how to modify the selected SQL..." : "Describe what you want in plain English..."}
           className="flex-1 h-8 text-sm"
           disabled={generateMutation.isPending}
         />
@@ -314,7 +323,11 @@ export function SqlAiPrompt({
         </div>
       )}
       <div className="mt-1 text-xs text-muted-foreground px-6">
-        Press Enter to generate SQL, Esc to cancel
+        {selectedText?.trim() ? (
+          <>Selected text will be replaced. Press Enter to generate, Esc to cancel</>
+        ) : (
+          <>Press Enter to generate SQL, Esc to cancel</>
+        )}
       </div>
     </div>
   )
