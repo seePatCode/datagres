@@ -1,17 +1,26 @@
 const { BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
 
+// Check if we're in development mode
+const isDev = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
+
 
 /**
  * Creates the main application window
  * @returns {BrowserWindow} The created window instance
  */
 function createMainWindow() {
-  // Preload script path - in development, use webpack output
-  const isDev = process.env.NODE_ENV === 'development' || process.env.ELECTRON_RENDERER_URL
-  const preloadPath = isDev 
-    ? path.join(__dirname, '../../.webpack/renderer/main_window/preload.js')
-    : path.join(__dirname, '../preload/index.js')
+  // Preload script path - use webpack-provided constant when available
+  // MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY is defined by @electron-forge/plugin-webpack
+  let preloadPath
+  
+  // Check if the webpack constant is defined (it will be in packaged builds)
+  if (typeof MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY !== 'undefined') {
+    preloadPath = MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY
+  } else {
+    // Fallback for development or non-webpack builds
+    preloadPath = path.join(__dirname, '../../.webpack/renderer/main_window/preload.js')
+  }
   
   const win = new BrowserWindow({
     width: 1400,
