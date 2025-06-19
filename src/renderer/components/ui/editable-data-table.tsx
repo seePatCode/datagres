@@ -2,9 +2,11 @@
 
 import * as React from "react"
 import { useState, useRef, useEffect } from "react"
+import { createPortal } from "react-dom"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "./data-table"
 import { Input } from "./input"
+import { Textarea } from "./textarea"
 import { cn } from "@/lib/utils"
 
 interface EditableDataTableProps<TData, TValue> {
@@ -35,16 +37,41 @@ function EditableCell({ getValue, row, column, table, onEdit, isEdited, editedVa
   const initialValue = getValue()
   const [isEditing, setIsEditing] = useState(false)
   const [value, setValue] = useState(editedValue ?? initialValue)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+  const cellRef = useRef<HTMLDivElement>(null)
+  const [cellPosition, setCellPosition] = useState<{ top: number; left: number; width: number } | null>(null)
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus()
       inputRef.current.select()
+      // Auto-resize textarea to fit content
+      inputRef.current.style.height = 'auto'
+      inputRef.current.style.height = inputRef.current.scrollHeight + 'px'
+    }
+  }, [isEditing])
+
+  useEffect(() => {
+    // Update position if cell moves (e.g., due to scrolling)
+    if (isEditing && cellRef.current) {
+      const rect = cellRef.current.getBoundingClientRect()
+      setCellPosition({
+        top: rect.top,
+        left: rect.left,
+        width: rect.width
+      })
     }
   }, [isEditing])
 
   const handleClick = () => {
+    if (cellRef.current) {
+      const rect = cellRef.current.getBoundingClientRect()
+      setCellPosition({
+        top: rect.top,
+        left: rect.left,
+        width: rect.width
+      })
+    }
     setIsEditing(true)
   }
 
@@ -56,7 +83,8 @@ function EditableCell({ getValue, row, column, table, onEdit, isEdited, editedVa
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
       handleBlur()
     } else if (e.key === 'Escape') {
       setValue(editedValue ?? initialValue)
@@ -64,25 +92,65 @@ function EditableCell({ getValue, row, column, table, onEdit, isEdited, editedVa
     }
   }
 
+  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setValue(e.target.value)
+    // Auto-resize textarea
+    e.target.style.height = 'auto'
+    e.target.style.height = e.target.scrollHeight + 'px'
+  }
+
   const displayValue = isEdited ? editedValue : initialValue
 
-  if (isEditing) {
+  if (isEditing && cellPosition) {
     return (
-      <div className="px-2 py-1 h-full">
-        <Input
-          ref={inputRef}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onBlur={handleBlur}
-          onKeyDown={handleKeyDown}
-          className="h-6 px-1 py-0 text-sm border-primary"
-        />
-      </div>
+      <>
+        <div ref={cellRef} className="px-2 py-1 h-full opacity-0">
+          {/* Placeholder to maintain cell size */}
+        </div>
+        {/* Floating editor using portal */}
+        {createPortal(
+          <>
+            {/* Invisible backdrop to catch clicks outside */}
+            <div 
+              className="fixed inset-0 z-40" 
+              onClick={handleBlur}
+              style={{ cursor: 'default' }}
+            />
+            <div
+              className="fixed z-50"
+              style={{
+                top: cellPosition.top + 'px',
+                left: cellPosition.left + 'px',
+                width: Math.max(cellPosition.width, 200) + 'px',
+                minWidth: '200px',
+                maxWidth: '600px'
+              }}
+            >
+              <Textarea
+                ref={inputRef}
+                value={value}
+                onChange={handleInput}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
+                className="resize-none overflow-hidden font-mono text-vs-ui text-sm px-2 py-1 border-2 border-primary shadow-lg bg-background"
+                style={{
+                  minHeight: '28px',
+                  lineHeight: '20px',
+                  maxHeight: '400px',
+                  overflowY: 'auto'
+                }}
+              />
+            </div>
+          </>,
+          document.body
+        )}
+      </>
     )
   }
 
   return (
     <div 
+      ref={cellRef}
       className={cn(
         "font-mono text-vs-ui truncate py-1 px-2 hover:bg-muted/30 transition-colors w-full h-full cursor-text",
         isEdited && "bg-orange-500/10 relative"
