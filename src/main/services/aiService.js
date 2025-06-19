@@ -149,14 +149,27 @@ Given the database schema, here is the SQL query that answers [QUESTION]${prompt
 
 async function generateSQL(prompt, tableInfo) {
   try {
-    // Only use Ollama - no fallbacks
+    // Try Ollama first time
     const result = await tryOllama(prompt, tableInfo);
     return result;
   } catch (error) {
-    return {
-      success: false,
-      error: error.message
-    };
+    console.log('First Ollama attempt failed, retrying once:', error.message);
+    
+    // Retry once as Ollama can have transient errors
+    try {
+      // Wait a brief moment before retry
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const result = await tryOllama(prompt, tableInfo);
+      console.log('Retry successful');
+      return result;
+    } catch (retryError) {
+      console.error('Retry also failed:', retryError.message);
+      return {
+        success: false,
+        error: retryError.message
+      };
+    }
   }
 }
 
