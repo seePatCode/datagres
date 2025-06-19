@@ -157,6 +157,7 @@ export interface ElectronAPI {
   
   // AI SQL generation
   generateSQL: (prompt: string, tableInfo: GenerateSQLRequest) => Promise<GenerateSQLResponse>
+  executeShellCommand: (command: string) => Promise<{ success: boolean; output?: string; error?: string }>
   
   // Theme updates
   updateTheme?: (theme: 'dark' | 'light' | 'system') => Promise<APIResponse>

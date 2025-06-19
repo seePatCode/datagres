@@ -44,6 +44,7 @@
 - **🎨 Beautiful UI** - Modern interface built with Tailwind CSS and shadcn/ui
 - **💾 Smart Caching** - Intelligent data caching with TanStack Query
 - **🔍 SQL Editor** - Built-in Monaco editor with intelligent autocompletion
+- **🤖 AI-Powered SQL** - Generate SQL from natural language with `Cmd+K` (requires [Ollama](docs/OLLAMA_SETUP.md))
 - **☁️ Cloud Ready** - Auto-detects and configures SSL for Heroku, AWS, Azure
 - **🔄 Auto-Reconnect** - Automatically connects to your last used database
 
@@ -112,6 +113,11 @@ pnpm run dist
 - `Cmd+Enter` - Execute search
 - `Enter` / `Esc` - Edit/cancel cell edit
 - Click headers to sort columns
+
+### SQL Editor
+- `Cmd+K` - Generate SQL from natural language (requires [Ollama setup](docs/OLLAMA_SETUP.md))
+- `Cmd+Enter` - Execute query
+- Full Monaco editor shortcuts apply
 
 ## 🛠️ Development
 

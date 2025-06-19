@@ -5,7 +5,14 @@ async function tryOllama(prompt, tableInfo) {
     console.log('Trying Ollama with prompt:', prompt);
     
     // Check if Ollama is running
-    const testResponse = await fetch('http://localhost:11434/api/tags');
+    let testResponse;
+    try {
+      testResponse = await fetch('http://localhost:11434/api/tags');
+    } catch (error) {
+      // Network error - Ollama not running
+      throw new Error('Ollama is not running. Please start Ollama first.');
+    }
+    
     if (!testResponse.ok) {
       throw new Error('Ollama is not running. Please start Ollama first.');
     }
@@ -60,6 +67,12 @@ Given the database schema, here is the SQL query that answers [QUESTION]${prompt
     console.log('Ollama response status:', response.status);
     if (!response.ok) {
       const errorText = await response.text();
+      
+      // Parse specific error types
+      if (errorText.includes('model') && errorText.includes('not found')) {
+        throw new Error('AI model not installed. Run: ollama pull qwen2.5-coder:latest');
+      }
+      
       throw new Error(`Ollama API error (${response.status}): ${errorText}`);
     }
     
@@ -86,6 +99,12 @@ Given the database schema, here is the SQL query that answers [QUESTION]${prompt
     throw new Error('Ollama did not return a valid SQL query');
   } catch (error) {
     console.error('Ollama error:', error.message);
+    
+    // Handle network errors (fetch failed)
+    if (error.message.includes('fetch failed') || error.message.includes('ECONNREFUSED')) {
+      throw new Error('Ollama is not running. Please start Ollama first.');
+    }
+    
     throw error;
   }
 }

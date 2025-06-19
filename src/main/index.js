@@ -143,3 +143,37 @@ ipcMain.handle('generate-sql', async (_event, prompt, tableInfo) => {
     }
   }
 })
+
+// Handle shell command execution for Ollama setup
+ipcMain.handle('execute-shell-command', async (_event, command) => {
+  const { exec } = require('child_process')
+  const { promisify } = require('util')
+  const execAsync = promisify(exec)
+  
+  try {
+    // Only allow specific Ollama-related commands for security
+    const allowedCommands = [
+      'brew install ollama',
+      'brew services start ollama',
+      'ollama pull qwen2.5-coder:latest',
+      'open https://ollama.com/download'
+    ]
+    
+    if (!allowedCommands.includes(command)) {
+      throw new Error('Command not allowed')
+    }
+    
+    console.log(`Executing command: ${command}`)
+    const { stdout, stderr } = await execAsync(command)
+    
+    return {
+      success: true,
+      output: stdout || stderr || 'Command executed successfully'
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    }
+  }
+})

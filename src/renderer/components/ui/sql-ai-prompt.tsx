@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Input } from '@/components/ui/input'
-import { Sparkles, Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Sparkles, Loader2, Terminal, Check } from 'lucide-react'
 import type { GenerateSQLRequest, TableSchema } from '@shared/types'
 
 interface SqlAiPromptProps {
@@ -14,6 +15,13 @@ interface SqlAiPromptProps {
   position?: { top: number; left: number }
 }
 
+// Track which commands have been executed
+type ExecutedCommands = {
+  install?: boolean
+  start?: boolean
+  model?: boolean
+}
+
 export function SqlAiPrompt({ 
   isOpen, 
   onClose, 
@@ -24,6 +32,8 @@ export function SqlAiPrompt({
   position 
 }: SqlAiPromptProps) {
   const [prompt, setPrompt] = useState('')
+  const [executedCommands, setExecutedCommands] = useState<ExecutedCommands>({})
+  const [executing, setExecuting] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   // AI SQL generation mutation
@@ -79,7 +89,44 @@ export function SqlAiPrompt({
   const handleClose = () => {
     setPrompt('')
     generateMutation.reset()
+    setExecutedCommands({})
+    setExecuting(null)
     onClose()
+  }
+  
+  const executeCommand = async (command: string, commandKey: keyof ExecutedCommands) => {
+    setExecuting(command)
+    try {
+      // Check if the handler exists (for hot reload scenarios)
+      if (!window.electronAPI.executeShellCommand) {
+        console.error('Shell command handler not available. Please restart the app.')
+        alert('Please restart the app to enable the setup buttons.')
+        setExecuting(null)
+        return
+      }
+      
+      const result = await window.electronAPI.executeShellCommand(command)
+      if (result.success) {
+        setExecutedCommands(prev => ({ ...prev, [commandKey]: true }))
+        
+        // If all setup commands are done, retry the generation
+        if (commandKey === 'model' || 
+            (executedCommands.install && executedCommands.start && commandKey === 'model')) {
+          // Wait a moment for Ollama to be ready
+          setTimeout(() => {
+            if (prompt.trim()) {
+              generateMutation.mutate(prompt.trim())
+            }
+          }, 2000)
+        }
+      } else {
+        console.error('Command failed:', result.error)
+      }
+    } catch (error) {
+      console.error('Failed to execute command:', error)
+    } finally {
+      setExecuting(null)
+    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -137,8 +184,133 @@ export function SqlAiPrompt({
         )}
       </form>
       {generateMutation.error && (
-        <div className="mt-2 text-xs text-destructive px-6">
-          {generateMutation.error.message}
+        <div className="mt-2 px-6">
+          {generateMutation.error.message.includes('Ollama is not running') ? (
+            <div className="space-y-2">
+              <p className="text-xs text-destructive font-medium">Ollama is not installed or running</p>
+              <div className="text-xs text-muted-foreground space-y-2">
+                <p>To use AI SQL generation:</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="flex-1">
+                      1. Install Ollama: <code className="bg-muted px-1 rounded text-[10px]">brew install ollama</code>
+                    </span>
+                    <Button
+                      size="sm"
+                      variant={executedCommands.install ? "secondary" : "outline"}
+                      className="h-6 px-2 text-xs"
+                      onClick={() => executeCommand('brew install ollama', 'install')}
+                      disabled={executing !== null || executedCommands.install}
+                    >
+                      {executedCommands.install ? (
+                        <><Check className="h-3 w-3 mr-1" /> Done</>
+                      ) : executing === 'brew install ollama' ? (
+                        <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Installing...</>
+                      ) : (
+                        <><Terminal className="h-3 w-3 mr-1" /> Run</>
+                      )}
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <span className="flex-1">
+                      2. Start Ollama: <code className="bg-muted px-1 rounded text-[10px]">brew services start ollama</code>
+                    </span>
+                    <Button
+                      size="sm"
+                      variant={executedCommands.start ? "secondary" : "outline"}
+                      className="h-6 px-2 text-xs"
+                      onClick={() => executeCommand('brew services start ollama', 'start')}
+                      disabled={executing !== null || executedCommands.start || !executedCommands.install}
+                    >
+                      {executedCommands.start ? (
+                        <><Check className="h-3 w-3 mr-1" /> Done</>
+                      ) : executing === 'brew services start ollama' ? (
+                        <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Starting...</>
+                      ) : (
+                        <><Terminal className="h-3 w-3 mr-1" /> Run</>
+                      )}
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="flex-1">
+                        3. Download AI model: <code className="bg-muted px-1 rounded text-[10px]">ollama pull qwen2.5-coder:latest</code>
+                      </span>
+                      <Button
+                        size="sm"
+                        variant={executedCommands.model ? "secondary" : "outline"}
+                        className="h-6 px-2 text-xs"
+                        onClick={() => executeCommand('ollama pull qwen2.5-coder:latest', 'model')}
+                        disabled={executing !== null || executedCommands.model || !executedCommands.start}
+                      >
+                        {executedCommands.model ? (
+                          <><Check className="h-3 w-3 mr-1" /> Done</>
+                        ) : executing === 'ollama pull qwen2.5-coder:latest' ? (
+                          <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Downloading...</>
+                        ) : (
+                          <><Terminal className="h-3 w-3 mr-1" /> Run</>
+                        )}
+                      </Button>
+                    </div>
+                    {executing === 'ollama pull qwen2.5-coder:latest' && (
+                      <p className="text-[10px] text-muted-foreground ml-4">
+                        ⏱️ This downloads a 4.7GB model and may take 2-5 minutes depending on your connection...
+                      </p>
+                    )}
+                  </div>
+                </div>
+                
+                <p className="mt-2 pt-2 border-t">
+                  <a 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.open('https://github.com/seepatcode/datagres/blob/main/docs/OLLAMA_SETUP.md', '_blank');
+                    }}
+                    className="text-primary hover:underline"
+                  >
+                    View full setup guide →
+                  </a>
+                </p>
+              </div>
+            </div>
+          ) : generateMutation.error.message.includes('AI model not installed') ? (
+            <div className="space-y-2">
+              <p className="text-xs text-destructive font-medium">AI model not installed</p>
+              <div className="text-xs text-muted-foreground space-y-2">
+                <p>Download the required model:</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <code className="bg-muted px-1 rounded text-[10px] flex-1">ollama pull qwen2.5-coder:latest</code>
+                  <Button
+                    size="sm"
+                    variant={executedCommands.model ? "secondary" : "outline"}
+                    className="h-6 px-2 text-xs"
+                    onClick={() => executeCommand('ollama pull qwen2.5-coder:latest', 'model')}
+                    disabled={executing !== null || executedCommands.model}
+                  >
+                    {executedCommands.model ? (
+                      <><Check className="h-3 w-3 mr-1" /> Done</>
+                    ) : executing === 'ollama pull qwen2.5-coder:latest' ? (
+                      <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Downloading...</>
+                    ) : (
+                      <><Terminal className="h-3 w-3 mr-1" /> Run</>
+                    )}
+                  </Button>
+                </div>
+                {executing === 'ollama pull qwen2.5-coder:latest' ? (
+                  <p className="mt-2 text-[10px] text-muted-foreground">
+                    ⏱️ This downloads a 4.7GB model and may take 2-5 minutes depending on your connection...
+                  </p>
+                ) : (
+                  <p className="mt-2 text-[10px] text-muted-foreground">This will download a 4.7GB model for SQL generation.</p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-destructive">{generateMutation.error.message}</p>
+          )}
         </div>
       )}
       <div className="mt-1 text-xs text-muted-foreground px-6">

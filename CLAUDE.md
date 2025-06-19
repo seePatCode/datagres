@@ -278,6 +278,19 @@ The app currently supports PostgreSQL with plans for MySQL, SQLite, and MongoDB 
   - `app_goals.md` - Full Product Requirements Document
   - `implementation_todos.md` - TDD-based development tracking
 
+### AI-Powered SQL Generation (CMD+K)
+Datagres includes AI-powered SQL generation using Ollama:
+- **Model**: qwen2.5-coder:latest (4.7GB)
+- **Implementation**: `src/main/services/aiService.js`
+- **Setup Guide**: `docs/OLLAMA_SETUP.md`
+- **How it works**: Sends full database schema context to local AI model
+- **Privacy**: All processing happens locally, no data leaves the machine
+
+To modify the AI model, change the model name in `aiService.js`. Popular alternatives:
+- codellama:7b-instruct (better for pure SQL)
+- mistral:7b-instruct (general purpose)
+- llama2:7b (requires different prompt format)
+
 ## Common Issues and Solutions
 
 ### Issue Log
