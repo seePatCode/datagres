@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit'
 import type { RootState } from '../store'
-import type { SavedConnection, TableInfo } from '@shared/types'
+import type { SavedConnection, TableInfo, SchemaInfo } from '@shared/types'
 import { validateConnectionString } from '@shared/validation'
 
 export interface ConnectionState {
@@ -15,7 +15,8 @@ export interface ConnectionState {
   } | null
   
   // Connection tables
-  tables: TableInfo[]
+  tables: TableInfo[]  // For backward compatibility
+  schemas: SchemaInfo[]  // New: organized by schema
   
   // Saved connections
   savedConnections: SavedConnection[]
@@ -24,6 +25,7 @@ export interface ConnectionState {
 const initialState: ConnectionState = {
   activeConnection: null,
   tables: [],
+  schemas: [],
   savedConnections: [],
 }
 
@@ -63,6 +65,7 @@ export const connectToDatabase = createAsyncThunk(
       originalConnectionString: trimmedConnection,
       database: result.database || '',
       tables: (result.tables || []).map(name => ({ name })),
+      schemas: result.schemas || [],
       savedConnectionId
     }
   }
@@ -158,6 +161,7 @@ export const connectionSlice = createSlice({
     resetConnection: (state) => {
       state.activeConnection = null
       state.tables = []
+      state.schemas = []
       state.testConnectionStatus = 'idle'
       state.testConnectionError = undefined
     },
@@ -209,6 +213,7 @@ export const connectionSlice = createSlice({
           savedConnectionId: action.payload.savedConnectionId
         }
         state.tables = action.payload.tables
+        state.schemas = action.payload.schemas || []
       })
       .addCase(connectToDatabase.rejected, (state, action) => {
         if (state.activeConnection) {
@@ -278,6 +283,7 @@ export const selectActiveConnection = (state: RootState) => state.connection.act
 export const selectConnectionString = (state: RootState) => state.connection.activeConnection?.connectionString || ''
 export const selectCurrentDatabase = (state: RootState) => state.connection.activeConnection?.database || ''
 export const selectTables = (state: RootState) => state.connection.tables
+export const selectSchemas = (state: RootState) => state.connection.schemas
 export const selectSavedConnections = (state: RootState) => state.connection.savedConnections
 export const selectConnectionStatus = (state: RootState) => state.connection.activeConnection?.status || 'idle'
 export const selectConnectionError = (state: RootState) => state.connection.activeConnection?.error

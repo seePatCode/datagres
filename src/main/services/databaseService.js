@@ -134,7 +134,13 @@ async function connectDatabase(connectionString) {
       return {
         success: true,
         database: 'testdb',
-        tables: mockData.testdb.tables
+        tables: mockData.testdb.tables,
+        schemas: [
+          {
+            name: 'public',
+            tables: mockData.testdb.tables.map(name => ({ name, schema: 'public' }))
+          }
+        ]
       }
     }
     // Mock failure for invalid connection strings in tests
@@ -157,18 +163,43 @@ async function connectDatabase(connectionString) {
     const database = result.rows[0].current_database
     console.log(`[${new Date().toISOString()}] [MAIN] Connected to database: ${database}`)
     
-    // Fetch table names from the current database
-    console.log(`[${new Date().toISOString()}] [MAIN] Fetching table list...`)
-    const tablesResult = await client.query(`
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public' 
-      AND table_type = 'BASE TABLE'
-      ORDER BY table_name
+    // Fetch all schemas and their tables
+    console.log(`[${new Date().toISOString()}] [MAIN] Fetching schemas and tables...`)
+    const schemasResult = await client.query(`
+      SELECT 
+        n.nspname as schema_name,
+        COALESCE(
+          json_agg(
+            c.relname ORDER BY c.relname
+          ) FILTER (WHERE c.relname IS NOT NULL), 
+          '[]'::json
+        ) as tables
+      FROM pg_namespace n
+      LEFT JOIN pg_class c ON n.oid = c.relnamespace 
+        AND c.relkind = 'r'  -- 'r' = ordinary table
+      WHERE n.nspname NOT IN ('pg_toast', 'pg_temp_1', 'pg_toast_temp_1')
+        AND n.nspname NOT LIKE 'pg_temp_%'
+        AND n.nspname NOT LIKE 'pg_toast_temp_%'
+      GROUP BY n.nspname
+      ORDER BY 
+        CASE WHEN n.nspname = 'public' THEN 0 ELSE 1 END,
+        n.nspname
     `)
     
-    const tables = tablesResult.rows.map(row => row.table_name)
-    console.log(`[${new Date().toISOString()}] [MAIN] Found ${tables.length} tables`)
+    // Convert to our schema structure
+    const schemas = schemasResult.rows.map(row => ({
+      name: row.schema_name,
+      tables: (Array.isArray(row.tables) ? row.tables : []).map(tableName => ({
+        name: tableName,
+        schema: row.schema_name
+      }))
+    }))
+    
+    // For backward compatibility, also include flat table list (public schema only)
+    const publicSchema = schemas.find(s => s.name === 'public')
+    const tables = publicSchema ? publicSchema.tables.map(t => t.name) : []
+    
+    console.log(`[${new Date().toISOString()}] [MAIN] Found ${schemas.length} schemas with tables`)
     
     await client.end()
     console.log(`[${new Date().toISOString()}] [MAIN] Database connection completed successfully`)
@@ -176,7 +207,8 @@ async function connectDatabase(connectionString) {
     return {
       success: true,
       database: database,
-      tables: tables
+      tables: tables,  // backward compatibility
+      schemas: schemas
     }
   } catch (error) {
     console.log(`[${new Date().toISOString()}] [MAIN] Database connection failed:`, error.message)
@@ -212,11 +244,20 @@ function buildWhereClause(searchOptions = {}) {
 /**
  * Fetch data from a specific table with optional search/filter options
  * @param {string} connectionString - PostgreSQL connection string
- * @param {string} tableName - Name of the table to fetch data from
+ * @param {string} tableName - Name of the table to fetch data from (can be schema.table or just table)
  * @param {Object} searchOptions - Optional search and filter options
  * @returns {Promise<{success: boolean, tableName?: string, data?: {columns: string[], rows: any[][]}, totalRows?: number, page?: number, pageSize?: number, error?: string}>}
  */
 async function fetchTableData(connectionString, tableName, searchOptions = {}) {
+  // Parse schema and table name
+  let schemaName = 'public'
+  let actualTableName = tableName
+  
+  if (tableName.includes('.')) {
+    const parts = tableName.split('.')
+    schemaName = parts[0]
+    actualTableName = parts[1]
+  }
   // In test mode, return mock data
   if (process.env.NODE_ENV === 'test') {
     if (connectionString.includes('testdb')) {
@@ -271,9 +312,9 @@ async function fetchTableData(connectionString, tableName, searchOptions = {}) {
       SELECT column_name, data_type 
       FROM information_schema.columns 
       WHERE table_name = $1 
-      AND table_schema = 'public'
+      AND table_schema = $2
       ORDER BY ordinal_position
-    `, [tableName])
+    `, [actualTableName, schemaName])
     
     const columns = columnsResult.rows.map(row => row.column_name)
     
@@ -281,7 +322,7 @@ async function fetchTableData(connectionString, tableName, searchOptions = {}) {
     const { whereClause } = buildWhereClause(searchOptions)
     
     // Get total count with filters
-    const countQuery = `SELECT COUNT(*) FROM ${tableName} ${whereClause}`
+    const countQuery = `SELECT COUNT(*) FROM "${schemaName}"."${actualTableName}" ${whereClause}`
     const countResult = await client.query(countQuery)
     const totalRows = parseInt(countResult.rows[0].count, 10)
     
@@ -307,7 +348,7 @@ async function fetchTableData(connectionString, tableName, searchOptions = {}) {
     const limitClause = `LIMIT ${pageSize} OFFSET ${offset}`
     
     // Build and execute the data query
-    const dataQuery = `SELECT * FROM ${tableName} ${whereClause} ${orderByClause} ${limitClause}`
+    const dataQuery = `SELECT * FROM "${schemaName}"."${actualTableName}" ${whereClause} ${orderByClause} ${limitClause}`
     const dataResult = await client.query(dataQuery)
     const rows = dataResult.rows.map(row => columns.map(col => row[col]))
     
@@ -341,10 +382,20 @@ async function fetchTableData(connectionString, tableName, searchOptions = {}) {
 /**
  * Fetch schema information for a specific table
  * @param {string} connectionString - PostgreSQL connection string
- * @param {string} tableName - Name of the table
+ * @param {string} tableName - Name of the table (can be schema.table or just table)
+ * @param {string} schemaName - Optional schema name (defaults to 'public')
  * @returns {Promise<{success: boolean, schema?: {tableName: string, columns: Array}, error?: string}>}
  */
-async function fetchTableSchema(connectionString, tableName) {
+async function fetchTableSchema(connectionString, tableName, schemaName = 'public') {
+  // Parse schema and table name if provided as schema.table
+  let actualSchemaName = schemaName
+  let actualTableName = tableName
+  
+  if (tableName.includes('.')) {
+    const parts = tableName.split('.')
+    actualSchemaName = parts[0]
+    actualTableName = parts[1]
+  }
   // In test mode, return mock schema
   if (process.env.NODE_ENV === 'test') {
     if (connectionString.includes('testdb')) {
@@ -387,16 +438,16 @@ async function fetchTableSchema(connectionString, tableName) {
           ON tc.constraint_name = kcu.constraint_name
           AND tc.table_schema = kcu.table_schema
           AND tc.table_name = kcu.table_name
-        WHERE tc.table_schema = 'public'
+        WHERE tc.table_schema = $2
           AND tc.table_name = $1
           AND tc.constraint_type = 'PRIMARY KEY'
       ) pk ON c.column_name = pk.column_name
-      WHERE c.table_schema = 'public'
+      WHERE c.table_schema = $2
         AND c.table_name = $1
       ORDER BY c.ordinal_position
     `
     
-    const result = await client.query(schemaQuery, [tableName])
+    const result = await client.query(schemaQuery, [actualTableName, actualSchemaName])
     
     const columns = result.rows.map(row => ({
       name: row.column_name,
@@ -411,7 +462,8 @@ async function fetchTableSchema(connectionString, tableName) {
     return {
       success: true,
       schema: {
-        tableName: tableName,
+        tableName: actualTableName,
+        schemaName: actualSchemaName,
         columns: columns
       }
     }
@@ -436,7 +488,17 @@ async function fetchTableSchema(connectionString, tableName) {
  * @returns {Promise<{success: boolean, updatedCount?: number, error?: string}>}
  */
 async function updateTableData(connectionString, request) {
-  const { tableName, updates } = request
+  const { tableName, schemaName = 'public', updates } = request
+  
+  // Parse schema and table name if provided as schema.table
+  let actualSchemaName = schemaName
+  let actualTableName = tableName
+  
+  if (tableName.includes('.')) {
+    const parts = tableName.split('.')
+    actualSchemaName = parts[0]
+    actualTableName = parts[1]
+  }
   
   // In test mode, just return success
   if (process.env.NODE_ENV === 'test') {
@@ -461,7 +523,7 @@ async function updateTableData(connectionString, request) {
       
       // Check if we have primary key columns
       if (!primaryKeyColumns || Object.keys(primaryKeyColumns).length === 0) {
-        throw new Error(`Cannot update table without primary key. Table "${tableName}" may not have a primary key defined.`)
+        throw new Error(`Cannot update table without primary key. Table "${actualSchemaName}"."${actualTableName}" may not have a primary key defined.`)
       }
       
       // Build WHERE clause from primary key columns
@@ -478,7 +540,7 @@ async function updateTableData(connectionString, request) {
       const whereClause = whereConditions.join(' AND ')
       
       // Build and execute UPDATE query
-      const updateQuery = `UPDATE ${tableName} SET ${columnName} = $1 WHERE ${whereClause}`
+      const updateQuery = `UPDATE "${actualSchemaName}"."${actualTableName}" SET ${columnName} = $1 WHERE ${whereClause}`
       const queryValues = [value, ...whereValues]
       
       console.log('[MAIN] Executing update query:', updateQuery, 'with values:', queryValues)

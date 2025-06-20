@@ -1,11 +1,12 @@
-import { useState } from 'react'
-import { Database, Search, Table, Clock, ChevronDown, ChevronRight, FileCode2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Database, Search, Table, Clock, ChevronDown, ChevronRight, FileCode2, ChevronsUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
+import type { SchemaInfo, TableInfo } from '@shared/types'
 
 interface DatabaseConnection {
   id: string
@@ -13,18 +14,14 @@ interface DatabaseConnection {
   database: string
 }
 
-interface Table {
-  name: string
-  rowCount?: number
-}
-
 interface DatabaseSidebarProps {
   connections: DatabaseConnection[]
   currentConnection?: DatabaseConnection
-  tables: Table[]
-  recentTables: Table[]
+  tables: TableInfo[]  // Still support flat table list for backward compatibility
+  schemas?: SchemaInfo[]  // New: schemas with their tables
+  recentTables: TableInfo[]
   onConnectionChange: (connectionId: string) => void
-  onTableSelect: (tableName: string) => void
+  onTableSelect: (tableName: string, schemaName?: string) => void
   selectedTable?: string
   className?: string
   onNewQuery?: () => void
@@ -34,6 +31,7 @@ export function DatabaseSidebar({
   connections,
   currentConnection,
   tables,
+  schemas,
   recentTables,
   onConnectionChange,
   onTableSelect,
@@ -44,16 +42,57 @@ export function DatabaseSidebar({
   const [searchQuery, setSearchQuery] = useState('')
   const [recentExpanded, setRecentExpanded] = useState(true)
   const [allTablesExpanded, setAllTablesExpanded] = useState(true)
+  const [schemaExpanded, setSchemaExpanded] = useState<Record<string, boolean>>({})
+  
+  // Initialize all schemas as expanded when schemas change
+  useEffect(() => {
+    if (schemas) {
+      const initialExpanded: Record<string, boolean> = {}
+      schemas.forEach(schema => {
+        initialExpanded[schema.name] = true
+      })
+      setSchemaExpanded(initialExpanded)
+    }
+  }, [schemas])
 
   const filteredTables = tables.filter(table =>
     table.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
+  
+  // Filter schemas and their tables
+  const filteredSchemas = schemas?.map(schema => ({
+    ...schema,
+    tables: schema.tables.filter(table =>
+      table.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  })).filter(schema => schema.tables.length > 0)
 
   const formatRowCount = (count?: number) => {
     if (!count) return ''
     if (count < 1000) return `(${count})`
     if (count < 1000000) return `(${(count / 1000).toFixed(1)}k)`
     return `(${(count / 1000000).toFixed(1)}M)`
+  }
+  
+  const handleExpandAll = () => {
+    if (schemas) {
+      const expanded: Record<string, boolean> = {}
+      schemas.forEach(schema => {
+        expanded[schema.name] = true
+      })
+      setSchemaExpanded(expanded)
+    }
+  }
+  
+  const handleCollapseAll = () => {
+    setSchemaExpanded({})
+  }
+  
+  const toggleSchema = (schemaName: string) => {
+    setSchemaExpanded(prev => ({
+      ...prev,
+      [schemaName]: !prev[schemaName]
+    }))
   }
 
   return (
@@ -146,7 +185,7 @@ export function DatabaseSidebar({
                         key={`recent-${table.name}`}
                         variant={selectedTable === table.name ? "secondary" : "ghost"}
                         size="sm"
-                        onClick={() => onTableSelect(table.name)}
+                        onClick={() => onTableSelect(table.name, table.schema)}
                         className="w-full justify-start gap-2 h-7 px-2 text-xs"
                       >
                         <Table className="h-3 w-3" />
@@ -164,42 +203,118 @@ export function DatabaseSidebar({
               </>
             )}
 
-            {/* All Tables */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setAllTablesExpanded(!allTablesExpanded)}
-              className="w-full justify-start gap-1 h-7 px-2 text-muted-foreground hover:text-foreground"
-            >
-              {allTablesExpanded ? (
-                <ChevronDown className="h-3 w-3" />
-              ) : (
-                <ChevronRight className="h-3 w-3" />
-              )}
-              <Table className="h-3 w-3" />
-              <span className="text-xs font-medium">All Tables</span>
-            </Button>
-
-            {allTablesExpanded && (
-              <div className="ml-4 space-y-0.5">
-                {filteredTables.map((table) => (
-                  <Button
-                    key={table.name}
-                    variant={selectedTable === table.name ? "secondary" : "ghost"}
-                    size="sm"
-                    onClick={() => onTableSelect(table.name)}
-                    className="w-full justify-start gap-2 h-7 px-2 text-xs"
-                  >
-                    <Table className="h-3 w-3" />
-                    <span className="truncate">{table.name}</span>
-                    {table.rowCount && (
-                      <span className="text-muted-foreground ml-auto">
-                        {formatRowCount(table.rowCount)}
+            {/* All Tables - with schemas or fallback */}
+            {schemas && schemas.length > 0 ? (
+              <>
+                <div className="flex items-center justify-between px-2 pb-1">
+                  <span className="text-xs font-medium text-muted-foreground">All Tables</span>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleExpandAll}
+                      className="h-6 px-2 text-xs"
+                      title="Expand all schemas"
+                    >
+                      Expand All
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCollapseAll}
+                      className="h-6 px-2 text-xs"
+                      title="Collapse all schemas"
+                    >
+                      Collapse All
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* Render schemas */}
+                {filteredSchemas?.map((schema) => (
+                  <div key={schema.name}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleSchema(schema.name)}
+                      className="w-full justify-start gap-1 h-7 px-2 text-muted-foreground hover:text-foreground"
+                    >
+                      {schemaExpanded[schema.name] ? (
+                        <ChevronDown className="h-3 w-3" />
+                      ) : (
+                        <ChevronRight className="h-3 w-3" />
+                      )}
+                      <Database className="h-3 w-3" />
+                      <span className="text-xs font-medium">{schema.name}</span>
+                      <span className="text-xs text-muted-foreground ml-auto">
+                        ({schema.tables.length})
                       </span>
+                    </Button>
+                    
+                    {schemaExpanded[schema.name] && (
+                      <div className="ml-6 space-y-0.5">
+                        {schema.tables.map((table) => (
+                          <Button
+                            key={`${schema.name}.${table.name}`}
+                            variant={selectedTable === table.name ? "secondary" : "ghost"}
+                            size="sm"
+                            onClick={() => onTableSelect(table.name, schema.name)}
+                            className="w-full justify-start gap-2 h-7 px-2 text-xs"
+                          >
+                            <Table className="h-3 w-3" />
+                            <span className="truncate">{table.name}</span>
+                            {table.rowCount && (
+                              <span className="text-muted-foreground ml-auto">
+                                {formatRowCount(table.rowCount)}
+                              </span>
+                            )}
+                          </Button>
+                        ))}
+                      </div>
                     )}
-                  </Button>
+                  </div>
                 ))}
-              </div>
+              </>
+            ) : (
+              /* Fallback to old flat table list */
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setAllTablesExpanded(!allTablesExpanded)}
+                  className="w-full justify-start gap-1 h-7 px-2 text-muted-foreground hover:text-foreground"
+                >
+                  {allTablesExpanded ? (
+                    <ChevronDown className="h-3 w-3" />
+                  ) : (
+                    <ChevronRight className="h-3 w-3" />
+                  )}
+                  <Table className="h-3 w-3" />
+                  <span className="text-xs font-medium">All Tables</span>
+                </Button>
+
+                {allTablesExpanded && (
+                  <div className="ml-4 space-y-0.5">
+                    {filteredTables.map((table) => (
+                      <Button
+                        key={table.name}
+                        variant={selectedTable === table.name ? "secondary" : "ghost"}
+                        size="sm"
+                        onClick={() => onTableSelect(table.name, table.schema)}
+                        className="w-full justify-start gap-2 h-7 px-2 text-xs"
+                      >
+                        <Table className="h-3 w-3" />
+                        <span className="truncate">{table.name}</span>
+                        {table.rowCount && (
+                          <span className="text-muted-foreground ml-auto">
+                            {formatRowCount(table.rowCount)}
+                          </span>
+                        )}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
 
             {searchQuery && filteredTables.length === 0 && (

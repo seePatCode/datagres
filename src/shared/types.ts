@@ -8,9 +8,15 @@ export interface APIResponse {
   error?: string
 }
 
+export interface SchemaInfo {
+  name: string
+  tables: TableInfo[]
+}
+
 export interface ConnectDatabaseResponse extends APIResponse {
   database?: string
-  tables?: string[]
+  tables?: string[]  // Keep for backward compatibility
+  schemas?: SchemaInfo[]  // New: organized by schema
 }
 
 export interface FetchTableDataResponse extends APIResponse {
@@ -70,6 +76,7 @@ export interface SavedConnection {
 
 export interface TableInfo {
   name: string
+  schema?: string  // New: schema this table belongs to
   rowCount?: number
 }
 
@@ -83,6 +90,7 @@ export interface ColumnInfo {
 
 export interface TableSchema {
   tableName: string
+  schemaName?: string  // New: schema this table belongs to
   columns: ColumnInfo[]
 }
 
@@ -92,6 +100,7 @@ export interface FetchTableSchemaResponse extends APIResponse {
 
 export interface UpdateTableDataRequest {
   tableName: string
+  schemaName?: string  // New: schema for the table
   updates: Array<{
     rowIndex: number
     columnName: string
@@ -120,6 +129,7 @@ export interface ExecuteSQLResponse extends APIResponse {
 export interface GenerateSQLRequest {
   prompt: string
   tableName: string
+  schemaName?: string  // New: schema for the table
   columns: string[]
   allSchemas?: TableSchema[]  // Full schema context for all tables
 }
@@ -144,7 +154,7 @@ export interface ElectronAPI {
   // Database operations
   connectDatabase: (connectionString: string) => Promise<ConnectDatabaseResponse>
   fetchTableData: (connectionString: string, tableName: string, searchOptions?: SearchOptions) => Promise<FetchTableDataResponse>
-  fetchTableSchema: (connectionString: string, tableName: string) => Promise<FetchTableSchemaResponse>
+  fetchTableSchema: (connectionString: string, tableName: string, schemaName?: string) => Promise<FetchTableSchemaResponse>
   updateTableData: (connectionString: string, request: UpdateTableDataRequest) => Promise<UpdateTableDataResponse>
   executeSQL: (connectionString: string, request: ExecuteSQLRequest) => Promise<ExecuteSQLResponse>
   
@@ -189,6 +199,7 @@ export interface TableTab {
   id: string
   type: 'table'
   tableName: string
+  schemaName?: string  // New: schema for the table
   searchTerm: string
   page?: number
   pageSize?: number

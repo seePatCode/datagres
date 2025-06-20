@@ -27,7 +27,12 @@ async function tryOllama(prompt, tableInfo) {
         return colStr;
       }).join(',\n  ');
       
-      return `CREATE TABLE ${schema.tableName} (\n  ${columnDetails}\n);`;
+      // Include schema name if not 'public'
+      const tableName = schema.schemaName && schema.schemaName !== 'public' 
+        ? `${schema.schemaName}.${schema.tableName}` 
+        : schema.tableName;
+      
+      return `CREATE TABLE ${tableName} (\n  ${columnDetails}\n);`;
     }).join('\n\n') || '';
     
     // Create prompt using official SQLCoder template format

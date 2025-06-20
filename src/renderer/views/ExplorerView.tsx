@@ -24,6 +24,7 @@ import {
   selectActiveConnection,
   selectCurrentDatabase,
   selectTables,
+  selectSchemas,
   selectSavedConnections,
   loadAndConnectToSavedConnection,
   saveConnection,
@@ -63,6 +64,7 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
   const activeConnection = useSelector(selectActiveConnection)
   const currentDatabase = useSelector(selectCurrentDatabase)
   const tables = useSelector(selectTables)
+  const schemas = useSelector(selectSchemas)
   const savedConnections = useSelector(selectSavedConnections)
   const connectionString = activeConnection?.connectionString || ''
   const tabs = useSelector(selectTabs(connectionString))
@@ -92,9 +94,11 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
     dispatch(loadAndConnectToSavedConnection(connectionId))
   }
   
-  const handleTableSelect = (tableName: string) => {
+  const handleTableSelect = (tableName: string, schemaName?: string) => {
     if (connectionString) {
-      dispatch(selectOrAddTableTab({ connectionString, tableName }))
+      // If schema is provided, use fully qualified name
+      const tabName = schemaName && schemaName !== 'public' ? `${schemaName}.${tableName}` : tableName
+      dispatch(selectOrAddTableTab({ connectionString, tableName: tabName }))
     }
   }
   
@@ -178,6 +182,7 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
               connections={savedConnections}
               currentConnection={currentConnection}
               tables={tables}
+              schemas={schemas}
               recentTables={recentTables}
               onConnectionChange={handleConnectionChange}
               onTableSelect={handleTableSelect}

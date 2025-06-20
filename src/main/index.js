@@ -53,8 +53,8 @@ ipcMain.handle('fetch-table-data', async (_event, connectionString, tableName, s
 })
 
 // Handle table schema requests
-ipcMain.handle('fetch-table-schema', async (_event, connectionString, tableName) => {
-  return await databaseService.fetchTableSchema(connectionString, tableName)
+ipcMain.handle('fetch-table-schema', async (_event, connectionString, tableName, schemaName) => {
+  return await databaseService.fetchTableSchema(connectionString, tableName, schemaName)
 })
 
 // Handle table data updates
