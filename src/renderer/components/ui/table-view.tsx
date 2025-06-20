@@ -232,11 +232,13 @@ export function TableView({
         })
       } else {
         // Failed to update data
+        console.error('Update failed:', result.error)
         setSaveError(result.error || 'Failed to save changes')
       }
     } catch (error) {
       // Error updating data
-      setSaveError('An error occurred while saving')
+      console.error('Update error:', error)
+      setSaveError(error instanceof Error ? error.message : 'An error occurred while saving')
     } finally {
       setIsSaving(false)
     }

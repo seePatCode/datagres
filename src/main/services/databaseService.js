@@ -459,6 +459,11 @@ async function updateTableData(connectionString, request) {
     for (const update of updates) {
       const { columnName, value, primaryKeyColumns } = update
       
+      // Check if we have primary key columns
+      if (!primaryKeyColumns || Object.keys(primaryKeyColumns).length === 0) {
+        throw new Error(`Cannot update table without primary key. Table "${tableName}" may not have a primary key defined.`)
+      }
+      
       // Build WHERE clause from primary key columns
       const whereConditions = []
       const whereValues = []
@@ -476,19 +481,28 @@ async function updateTableData(connectionString, request) {
       const updateQuery = `UPDATE ${tableName} SET ${columnName} = $1 WHERE ${whereClause}`
       const queryValues = [value, ...whereValues]
       
+      console.log('[MAIN] Executing update query:', updateQuery, 'with values:', queryValues)
+      
       const result = await client.query(updateQuery, queryValues)
       updatedCount += result.rowCount || 0
+      
+      if (result.rowCount === 0) {
+        console.warn(`[MAIN] No rows updated for query: ${updateQuery}`)
+      }
     }
     
     // Commit the transaction
     await client.query('COMMIT')
     await client.end()
     
+    console.log(`[MAIN] Successfully updated ${updatedCount} rows in table ${tableName}`)
+    
     return {
       success: true,
       updatedCount: updatedCount
     }
   } catch (error) {
+    console.error('[MAIN] Error updating table data:', error.message)
     try {
       // Rollback on error
       await client.query('ROLLBACK')
