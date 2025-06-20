@@ -307,6 +307,7 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
         open={quickSearchOpen}
         onOpenChange={setQuickSearchOpen}
         tables={tables}
+        schemas={schemas}
         onSelectTable={handleTableSelect}
       />
     </div>
