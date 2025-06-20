@@ -39,7 +39,7 @@ function EditableCell({ getValue, row, column, table, onEdit, isEdited, editedVa
   const [value, setValue] = useState(editedValue ?? initialValue)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const cellRef = useRef<HTMLDivElement>(null)
-  const [cellPosition, setCellPosition] = useState<{ top: number; left: number; width: number } | null>(null)
+  const [cellPosition, setCellPosition] = useState<{ top: number; left: number; width: number; height: number } | null>(null)
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -58,7 +58,8 @@ function EditableCell({ getValue, row, column, table, onEdit, isEdited, editedVa
       setCellPosition({
         top: rect.top,
         left: rect.left,
-        width: rect.width
+        width: rect.width,
+        height: rect.height
       })
     }
   }, [isEditing])
@@ -69,7 +70,8 @@ function EditableCell({ getValue, row, column, table, onEdit, isEdited, editedVa
       setCellPosition({
         top: rect.top,
         left: rect.left,
-        width: rect.width
+        width: rect.width,
+        height: rect.height
       })
     }
     setIsEditing(true)
@@ -102,6 +104,16 @@ function EditableCell({ getValue, row, column, table, onEdit, isEdited, editedVa
   const displayValue = isEdited ? editedValue : initialValue
 
   if (isEditing && cellPosition) {
+    // Calculate if we should open upward
+    const estimatedHeight = 150 // Estimate max height of expanded textarea
+    const spaceBelow = window.innerHeight - cellPosition.top - cellPosition.height
+    const shouldOpenUpward = spaceBelow < estimatedHeight && cellPosition.top > estimatedHeight
+    
+    // Calculate position
+    const topPosition = shouldOpenUpward 
+      ? cellPosition.top + cellPosition.height - estimatedHeight 
+      : cellPosition.top
+    
     return (
       <>
         <div ref={cellRef} className="px-2 py-1 h-full opacity-0">
@@ -119,11 +131,11 @@ function EditableCell({ getValue, row, column, table, onEdit, isEdited, editedVa
             <div
               className="fixed z-50"
               style={{
-                top: cellPosition.top + 'px',
+                top: topPosition + 'px',
                 left: cellPosition.left + 'px',
-                width: Math.max(cellPosition.width, 200) + 'px',
-                minWidth: '200px',
-                maxWidth: '600px'
+                width: Math.max(cellPosition.width, 300) + 'px',
+                minWidth: '300px',
+                maxWidth: '800px'
               }}
             >
               <Textarea
