@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { useDispatch } from 'react-redux'
 import { setCurrentView } from '@/store/slices/uiSlice'
 import type { AppDispatch } from '@/store/store'
+import { LOGO_DATA_URL } from '@/constants/logo'
 
 export function AboutView() {
   const dispatch = useDispatch<AppDispatch>()
@@ -32,7 +33,7 @@ export function AboutView() {
           {/* Logo and Title */}
           <div className="text-center space-y-4">
             <img 
-              src="logo.png" 
+              src={LOGO_DATA_URL} 
               alt="Datagres Logo" 
               className="h-24 w-24 mx-auto"
             />
