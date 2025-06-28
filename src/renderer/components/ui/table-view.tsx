@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
-import { RefreshCw, AlertCircle } from 'lucide-react'
+import { RefreshCw, AlertCircle, Sparkles, Loader2 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { EditableDataTable } from '@/components/ui/editable-data-table'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { TableToolbar } from '@/components/ui/table-toolbar'
 import { TableStatusBar } from '@/components/ui/table-status-bar'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useInfiniteTableData } from '@/hooks/useInfiniteTableData'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { DEFAULT_PAGE_SIZE, DEFAULT_COLUMN_WIDTH, MIN_COLUMN_WIDTH, MAX_COLUMN_WIDTH, INFINITE_SCROLL_THRESHOLD } from '@/constants'
@@ -355,18 +356,49 @@ export function TableView({
         connectionString={connectionString}
         tableName={tableName}
         schemas={allSchemas}
-        queryError={isError ? error : null}
-        lastExecutedSearch={lastExecutedSearch}
-        isFixingError={isFixingError}
-        onFixError={async (errorMessage: string) => {
-          setIsFixingError(true)
-          try {
-            // Generate a prompt for fixing the WHERE clause
-            const fixPrompt = `Fix this WHERE clause error.
+      />
 
-Error: ${errorMessage}
+      {/* Data Table */}
+      <div className="flex-1 overflow-hidden">
+        {isError ? (
+          <div className="flex h-full items-center justify-center">
+            <div className="max-w-md">
+              <Alert variant="destructive">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <AlertDescription className="text-sm">
+                      <div className="font-medium mb-1">Error loading table</div>
+                      <div className="opacity-90">{error?.message}</div>
+                      {lastExecutedSearch && (
+                        <div className="mt-2 text-xs opacity-70">
+                          WHERE: {lastExecutedSearch}
+                        </div>
+                      )}
+                    </AlertDescription>
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-3">
+                  <Button variant="outline" size="sm" onClick={() => refetch()}>
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Retry
+                  </Button>
+                  {lastExecutedSearch && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              setIsFixingError(true)
+                              try {
+                                // Generate a prompt for fixing the WHERE clause
+                                const fixPrompt = `Fix this WHERE clause error.
 
-Failed WHERE clause: ${lastExecutedSearch || searchTerm}
+Error: ${error?.message}
+
+Failed WHERE clause: ${lastExecutedSearch}
 
 The error indicates a problem with the WHERE condition. Common issues:
 - Column doesn't exist (check exact column names)
@@ -374,44 +406,55 @@ The error indicates a problem with the WHERE condition. Common issues:
 - Invalid syntax
 
 Return ONLY the corrected WHERE condition.`
-            
-            const result = await window.electronAPI.generateSQL('[where-clause-only] ' + fixPrompt, {
-              prompt: '[where-clause-only] ' + fixPrompt,
-              tableName: tableName,
-              columns: schemaData?.columns.map(c => c.name) || [],
-              allSchemas: schemaData ? [schemaData] : []
-            })
-            
-            if (result.success && result.sql) {
-              // Update the search term with the fixed WHERE clause
-              handleSearchChange(result.sql)
-              // Clear the error by triggering a new search
-              setTimeout(() => {
-                handleSearchCommitWithTracking()
-              }, 100)
-            } else {
-              alert(result.error || 'Failed to fix WHERE clause. Please check the column names and syntax.')
-            }
-          } catch (error) {
-            console.error('Error fixing WHERE clause:', error)
-            alert('Failed to connect to AI service. Please ensure Ollama is running.')
-          } finally {
-            setIsFixingError(false)
-          }
-        }}
-      />
-
-      {/* Data Table */}
-      <div className="flex-1 overflow-hidden">
-        {isError ? (
-          <div className="flex h-full items-center justify-center">
-            <div className="text-center">
-              <div className="text-destructive mb-2">Error loading table</div>
-              <div className="text-sm text-muted-foreground mb-4">{error?.message}</div>
-              <Button variant="outline" onClick={() => refetch()}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Retry
-              </Button>
+                                
+                                const result = await window.electronAPI.generateSQL('[where-clause-only] ' + fixPrompt, {
+                                  prompt: '[where-clause-only] ' + fixPrompt,
+                                  tableName: tableName,
+                                  columns: schemaData?.columns.map(c => c.name) || [],
+                                  allSchemas: schemaData ? [schemaData] : []
+                                })
+                                
+                                if (result.success && result.sql) {
+                                  // Update the search term with the fixed WHERE clause
+                                  handleSearchChange(result.sql)
+                                  // Clear the error by triggering a new search
+                                  setTimeout(() => {
+                                    handleSearchCommitWithTracking()
+                                  }, 100)
+                                } else {
+                                  alert(result.error || 'Failed to fix WHERE clause. Please check the column names and syntax.')
+                                }
+                              } catch (error) {
+                                console.error('Error fixing WHERE clause:', error)
+                                alert('Failed to connect to AI service. Please ensure Ollama is running.')
+                              } finally {
+                                setIsFixingError(false)
+                              }
+                            }}
+                            disabled={isFixingError}
+                            className="gap-1"
+                          >
+                            {isFixingError ? (
+                              <>
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                                Fixing...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="h-3 w-3" />
+                                Fix with AI
+                              </>
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Use AI to analyze and fix the WHERE clause error</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
+              </Alert>
             </div>
           </div>
         ) : (optimisticData || data) && (optimisticData || data).columns.length > 0 ? (
