@@ -46,6 +46,7 @@ const SQLWhereEditorComponent = memo(function SQLWhereEditor({
 }: SQLWhereEditorProps) {
   const editorRef = useRef<any>(null)
   const monacoRef = useRef<any>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const [isEditorReady, setIsEditorReady] = useState(false)
   const onCommitRef = useRef(onCommit)
   const onAiPromptRef = useRef(onAiPrompt)
@@ -69,6 +70,22 @@ const SQLWhereEditorComponent = memo(function SQLWhereEditor({
   useEffect(() => {
     initializeTheme()
   }, [])
+
+  // Handle container resize
+  useEffect(() => {
+    if (!isEditorReady || !editorRef.current || !containerRef.current) return
+
+    const resizeObserver = new ResizeObserver(() => {
+      // Force Monaco to re-layout when container size changes
+      editorRef.current?.layout()
+    })
+
+    resizeObserver.observe(containerRef.current)
+
+    return () => {
+      resizeObserver.disconnect()
+    }
+  }, [isEditorReady])
 
   const handleEditorDidMount: OnMount = useCallback((editor, monaco) => {
     editorRef.current = editor
@@ -297,6 +314,7 @@ const SQLWhereEditorComponent = memo(function SQLWhereEditor({
     // Monaco-specific optimizations
     fixedOverflowWidgets: true,
     readOnly: disabled,
+    automaticLayout: true,
     
     // Performance optimizations
     suggest: {
@@ -306,7 +324,7 @@ const SQLWhereEditorComponent = memo(function SQLWhereEditor({
   }), [disabled])
 
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-background">
+    <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-background min-w-0">
       <button
         className="h-4 w-4 text-muted-foreground flex-shrink-0 hover:text-foreground transition-colors cursor-pointer"
         onClick={() => onCommitRef.current()}
@@ -314,7 +332,7 @@ const SQLWhereEditorComponent = memo(function SQLWhereEditor({
       >
         <Search className="h-4 w-4" />
       </button>
-      <div className="flex-1 -my-1.5 -mr-3 relative">
+      <div ref={containerRef} className="flex-1 -my-1.5 -mr-3 relative min-w-0 overflow-hidden">
         {!isEditorReady && (
           <div className="absolute inset-0 flex items-center">
             <div className="w-full h-6 bg-[#09090b] text-[#fafafa] text-sm px-2 flex items-center">

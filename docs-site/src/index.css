@@ -2,6 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Modern glass morphism effect */
+@supports (backdrop-filter: blur(20px)) {
+  .glass {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Gradient text animation */
+@keyframes gradient-text {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-text {
+  background-size: 200% 200%;
+  animation: gradient-text 5s ease infinite;
+}
+
+/* Fix for gradient text clipping */
+.gradient-text-fix {
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-fill-color: transparent;
+  display: inline-block;
+  padding-bottom: 0.1em;
+  line-height: 1.2;
+}
+
 /* Ensure Radix UI portals (context menus, dropdowns, etc.) appear above Monaco editor */
 [data-radix-popper-content-wrapper] {
   z-index: 9999 !important;

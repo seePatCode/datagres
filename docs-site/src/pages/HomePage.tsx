@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/card'
-import { ArrowRight, Zap, Keyboard, Lock, Database, Table, Plus, Loader2, CheckCircle, MousePointer, RefreshCw, MoreHorizontal, Eye, EyeOff, Save, X, Search, FileText } from 'lucide-react'
+import { ArrowRight, Zap, Keyboard, Lock, Database, Table, Loader2, CheckCircle, MousePointer, RefreshCw, MoreHorizontal, Eye, EyeOff, Save, X, Search, FileText } from 'lucide-react'
 import Editor from '@monaco-editor/react'
 import {
   DropdownMenu,
@@ -20,14 +20,13 @@ import {
   TableCell,
 } from '@/components/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/tabs'
-import { Link } from 'react-router-dom'
 
 export default function HomePage() {
   const [connectionString, setConnectionString] = useState('')
   const [isConnecting, setIsConnecting] = useState(false)
   const [isConnected, setIsConnected] = useState(false)
   const [selectedTable, setSelectedTable] = useState<string | null>(null)
-  const [showDemo, setShowDemo] = useState(true)
+  const [showDemo] = useState(true)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [showMouse, setShowMouse] = useState(false)
   const mousePositionRef = useRef({ x: 0, y: 0 })
@@ -822,7 +821,7 @@ ORDER BY o.order_date DESC;`
                                   const cleanValue = value.replace(/['";]/g, '')
                                   return row[field as keyof typeof row]?.toString().toLowerCase() === cleanValue.toLowerCase()
                                 }
-                                return Object.values(row).some(v => 
+                                return Object.values(row).some((v: any) => 
                                   v.toString().toLowerCase().includes(searchQuery.toLowerCase())
                                 )
                               } catch {

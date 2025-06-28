@@ -7,6 +7,8 @@ import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "./data-table"
 import { Input } from "./input"
 import { Textarea } from "./textarea"
+import { Button } from "./button"
+import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { formatCellValue, formatCellTooltip, isJsonValue, formatForEditor } from "@/lib/formatters"
 
@@ -104,8 +106,12 @@ function EditableCell({ getValue, row, column, table, onEdit, isEdited, editedVa
       e.preventDefault()
       handleBlur()
     } else if (e.key === 'Escape') {
-      setValue(editedValue ?? initialValue)
+      setValue(formatForEditor(initialValue))
       setIsEditing(false)
+      // If cell is edited, revert to original value
+      if (isEdited) {
+        onEdit(initialValue)
+      }
     }
   }
 
@@ -176,28 +182,56 @@ function EditableCell({ getValue, row, column, table, onEdit, isEdited, editedVa
     )
   }
 
+  const handleCellKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape' && isEdited) {
+      e.preventDefault()
+      onEdit(initialValue)
+    }
+  }
+
+  const handleRevert = (e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent triggering cell edit
+    onEdit(initialValue)
+  }
+
   return (
     <div 
       ref={cellRef}
       className={cn(
-        "font-mono text-vs-ui py-1 px-2 hover:bg-muted/30 transition-colors w-full h-full cursor-text overflow-hidden",
-        isEdited && "bg-orange-500/10 relative"
+        "font-mono text-vs-ui py-1 px-2 hover:bg-muted/30 transition-colors w-full h-full cursor-text",
+        isEdited && "bg-orange-500/10 relative group"
       )}
       title={formatCellTooltip(displayValue)}
       onClick={handleClick}
+      onKeyDown={handleCellKeyDown}
+      tabIndex={0}
     >
       {isEdited && (
-        <div className="absolute top-0 right-0 w-2 h-2 bg-orange-500 rounded-bl-md" />
+        <>
+          <div className="absolute top-0 right-0 w-2 h-2 bg-orange-500 rounded-bl-md" />
+          {/* Floating revert button that appears on hover */}
+          <Button
+            size="sm"
+            variant="ghost"
+            className="absolute top-0.5 right-0.5 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-background border shadow-sm z-10 rounded-none"
+            onClick={handleRevert}
+            title="Revert change (Esc)"
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        </>
       )}
-      {displayValue !== null ? (
-        <span className="text-foreground block truncate">
-          {formatCellValue(displayValue)}
-        </span>
-      ) : (
-        <span className="text-muted-foreground italic font-system text-vs-ui-small">
-          NULL
-        </span>
-      )}
+      <div className="truncate">
+        {displayValue !== null ? (
+          <span className="text-foreground">
+            {formatCellValue(displayValue)}
+          </span>
+        ) : (
+          <span className="text-muted-foreground italic font-system text-vs-ui-small">
+            NULL
+          </span>
+        )}
+      </div>
     </div>
   )
 }

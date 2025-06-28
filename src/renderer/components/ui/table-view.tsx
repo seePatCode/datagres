@@ -261,12 +261,19 @@ export function TableView({
     }
   }, [connectionString, tableName, data, schemaData, editedCells, activeSearchTerm, refetch])
   
-  // Handle Cmd+S for saving changes
+  // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd+S for saving changes
       if ((e.metaKey || e.ctrlKey) && e.key === 's' && editedCells.size > 0) {
         e.preventDefault()
         handleSaveChanges()
+      }
+      // Cmd+Z or Escape for canceling all edits
+      else if (((e.metaKey || e.ctrlKey) && e.key === 'z') || (e.key === 'Escape' && editedCells.size > 0)) {
+        e.preventDefault()
+        setEditedCells(new Map())
+        setSaveError(null)
       }
     }
     
@@ -329,7 +336,7 @@ export function TableView({
   const hasEdits = editedCells.size > 0
 
   return (
-    <div className={`flex h-full flex-col min-w-0 ${className}`}>
+    <div className={`flex h-full flex-col min-w-0 relative ${className}`}>
       {/* Error Alert */}
       {saveError && (
         <Alert variant="destructive" className="mb-2">
@@ -348,6 +355,10 @@ export function TableView({
         editedCellsCount={editedCells.size}
         isSaving={isSaving}
         onSave={handleSaveChanges}
+        onCancelEdits={() => {
+          setEditedCells(new Map())
+          setSaveError(null)
+        }}
         isLoading={isLoading}
         onRefresh={() => {
           setEditedCells(new Map())

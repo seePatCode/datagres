@@ -1,4 +1,4 @@
-import { RefreshCw, Save, MoreHorizontal, Eye, EyeOff } from 'lucide-react'
+import { RefreshCw, Save, MoreHorizontal, Eye, EyeOff, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SQLWhereEditor } from '@/components/ui/sql-where-editor-monaco'
 import { SqlAiPrompt } from '@/components/ui/sql-ai-prompt'
@@ -24,6 +24,7 @@ interface TableToolbarProps {
   editedCellsCount: number
   isSaving: boolean
   onSave: () => void
+  onCancelEdits?: () => void
   
   // Refresh props
   isLoading: boolean
@@ -50,6 +51,7 @@ export function TableToolbar({
   editedCellsCount,
   isSaving,
   onSave,
+  onCancelEdits,
   isLoading,
   onRefresh,
   columns,
@@ -73,8 +75,8 @@ export function TableToolbar({
     onSearchCommit()
   }
   return (
-    <div className="flex items-center justify-between border-b bg-background" style={{ overflow: 'visible', zIndex: 100 }}>
-      <div className="flex-1 m-0.5" style={{ overflow: 'visible' }}>
+    <div className="flex items-center border-b bg-background" style={{ zIndex: 100 }}>
+      <div className="flex-1 min-w-0 px-2" style={{ overflow: 'visible' }}>
         <SQLWhereEditor
           value={searchTerm}
           onChange={onSearchChange}
@@ -85,28 +87,39 @@ export function TableToolbar({
         />
       </div>
 
-      <div className="flex items-center gap-2 px-3">
-        {/* Save button (if changes) */}
+      <div className="flex items-center gap-1 px-2 bg-background border-l">
+        {/* Save/Cancel buttons (if changes) */}
         {hasEdits && (
-          <Button 
-            onClick={onSave} 
-            size="sm" 
-            className="gap-1" 
-            variant="default"
-            disabled={isSaving}
-          >
-            {isSaving ? (
-              <>
+          <>
+            <Button 
+              onClick={onSave} 
+              size="sm" 
+              className="rounded-none px-2" 
+              variant="default"
+              disabled={isSaving}
+            >
+              {isSaving ? (
                 <RefreshCw className="h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4" />
-                Save {editedCellsCount} Change{editedCellsCount > 1 ? 's' : ''}
-              </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-1" />
+                  {editedCellsCount}
+                </>
+              )}
+            </Button>
+            {onCancelEdits && (
+              <Button
+                onClick={onCancelEdits}
+                size="sm"
+                className="rounded-none px-2"
+                variant="outline"
+                disabled={isSaving}
+                title="Cancel all changes"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             )}
-          </Button>
+          </>
         )}
         
         {/* Refresh button */}
@@ -115,16 +128,16 @@ export function TableToolbar({
           size="sm"
           onClick={onRefresh}
           disabled={isLoading}
-          className="gap-1"
+          className="rounded-none px-2"
+          title="Refresh"
         >
           <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh
         </Button>
         
         {/* More options */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="rounded-none">
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
