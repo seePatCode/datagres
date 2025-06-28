@@ -77,14 +77,14 @@ git clone https://github.com/seepatcode/datagres.git
 cd datagres
 
 # Install dependencies
-pnpm install
+npm install
 
 # Run in development mode
-pnpm run dev
+npm run dev
 
 # Build for your platform
-pnpm run build
-pnpm run dist
+npm run make
+npm run dist
 ```
 
 ## 🚀 Quick Start
@@ -121,17 +121,17 @@ pnpm run dist
 
 ## 🛠️ Development
 
-**Prerequisites**: Node.js 18+, pnpm 8+, PostgreSQL (for testing)
+**Prerequisites**: Node.js 18+, npm 8+, PostgreSQL (for testing)
 
 ```bash
 # Development
-pnpm run dev          # Start with hot reload
-pnpm test            # Run E2E tests
-pnpm test:unit       # Run unit tests
+npm run dev          # Start with hot reload
+npm test            # Run E2E tests
+npm run test:unit    # Run unit tests
 
 # Production
-pnpm run build       # Build application
-pnpm run dist        # Package for distribution
+npm run make        # Build application
+npm run dist        # Package for distribution
 ```
 
 ### Project Structure
@@ -159,11 +159,11 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ### Development Guidelines
 
-1. **Use pnpm** for package management
+1. **Use npm** for package management
 2. **Follow TDD** - Write tests first
 3. **Use TypeScript** for type safety
 4. **Follow existing patterns** - Check similar code first
-5. **Never manually create shadcn components** - Use `pnpm dlx shadcn@latest add [component]`
+5. **Never manually create shadcn components** - Use `npx shadcn@latest add [component]`
 
 ### Reporting Issues
 

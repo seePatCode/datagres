@@ -1,8 +1,0 @@
-packages:
-  - 'docs-site'
-  
-ignoredBuiltDependencies:
-  - electron
-  - electron-winstaller
-  - esbuild
-  - keytar

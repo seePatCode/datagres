@@ -5,21 +5,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ### Development
-- `pnpm run dev` - Start development server with hot reload
-- `pnpm start` - Start the Electron app (never run in Claude Code - user only)
-- `pnpm run typecheck` or `pnpm run lint` - Check TypeScript compilation
+- `npm run dev` - Start development server with hot reload
+- `npm start` - Start the Electron app (never run in Claude Code - user only)
+- `npm run typecheck` or `npm run lint` - Check TypeScript compilation
 
 ### Testing
-- `pnpm test` - Run Playwright e2e tests
-- `pnpm test:headed` - Run tests with visible browser
-- `pnpm run test:unit` - Run unit tests with Vitest
-- `pnpm run test:unit:coverage` - Run unit tests with coverage
+- `npm test` - Run Playwright e2e tests
+- `npm test:headed` - Run tests with visible browser
+- `npm run test:unit` - Run unit tests with Vitest
+- `npm run test:unit:coverage` - Run unit tests with coverage
 
 ### Distribution
-- `pnpm run dist` - Build and package for all platforms
-- `pnpm run dist:mac` - Build for macOS only
-- `pnpm run dist:win` - Build for Windows only
-- `pnpm run dist:linux` - Build for Linux only
+- `npm run dist` - Build and package for all platforms
+- `npm run dist:mac` - Build for macOS only
+- `npm run dist:win` - Build for Windows only
+- `npm run dist:linux` - Build for Linux only
 
 ## Architecture Overview
 
@@ -78,19 +78,19 @@ All IPC responses follow: `{success: boolean, error?: string, ...data}`
 ## Development Guidelines
 
 ### Package Management
-**Always use pnpm** with `--shamefully-hoist` for Electron:
+**Use npm** for all package management:
 ```bash
-pnpm add -D electron --shamefully-hoist
+npm install --save-dev electron
 ```
 
 ### Component Development
-- **NEVER manually create shadcn components** - use: `pnpm dlx shadcn@latest add [component]`
+- **NEVER manually create shadcn components** - use: `npx shadcn@latest add [component]`
 - Follow existing patterns in `src/renderer/components/`
-- Use TypeScript strictly - run `pnpm run typecheck` before claiming completion
+- Use TypeScript strictly - run `npm run typecheck` before claiming completion
 
 ### Testing Without Running
 Before implementation is complete, verify:
-1. TypeScript compilation: `pnpm run typecheck`
+1. TypeScript compilation: `npm run typecheck`
 2. Module resolution: `node -e "require('./path/to/file')"`
 3. Integration points: `grep -n "handler-name" src/main/index.js`
 4. Component imports: Check all imports resolve
@@ -129,13 +129,9 @@ Test critical business logic only:
 
 ## Common Issues and Solutions
 
-### 1. pnpm + Electron Post-Install
-**Issue**: "Electron failed to install correctly"
-**Fix**: Always install with `pnpm add -D electron --shamefully-hoist`
-
-### 2. Missing shadcn Components
+### 1. Missing shadcn Components
 **Issue**: Import errors for UI components
-**Fix**: `pnpm dlx shadcn@latest add [component-name]`
+**Fix**: `npx shadcn@latest add [component-name]`
 
 ### 3. Cloud Database SSL Errors
 **Issue**: Heroku/AWS connection failures

@@ -80,13 +80,23 @@ async function tryOllama(prompt, tableInfo) {
       throw new Error('Ollama is not running. Please start Ollama first.');
     }
     
-    // Build schema context with full column details
+    // Build schema context with column details and helpful comments
     const schemaContext = tableInfo.allSchemas?.map(schema => {
       const columnDetails = schema.columns.map(col => {
         let colStr = `${col.name} ${col.dataType}`;
         if (!col.nullable) colStr += ' NOT NULL';
         if (col.isPrimaryKey) colStr += ' PRIMARY KEY';
         if (col.defaultValue) colStr += ` DEFAULT ${col.defaultValue}`;
+        
+        // Add helpful comments for text columns that might contain categories/types
+        if ((col.dataType.toLowerCase().includes('varchar') || col.dataType.toLowerCase().includes('text')) &&
+            (col.name.toLowerCase().includes('type') || 
+             col.name.toLowerCase().includes('category') || 
+             col.name.toLowerCase().includes('status') ||
+             col.name.toLowerCase().includes('kind'))) {
+          colStr += ` -- Contains values like 'recovery', 'maintenance', etc.`;
+        }
+        
         return colStr;
       }).join(',\n  ');
       
@@ -95,26 +105,58 @@ async function tryOllama(prompt, tableInfo) {
         ? `${schema.schemaName}.${schema.tableName}` 
         : schema.tableName;
       
-      return `CREATE TABLE ${tableName} (\n  ${columnDetails}\n);`;
+      // Add table comment if it has potential category/type columns
+      const hasTypeColumns = schema.columns.some(col => 
+        col.name.toLowerCase().includes('type') || 
+        col.name.toLowerCase().includes('category') ||
+        col.name.toLowerCase().includes('status')
+      );
+      
+      let tableSQL = `CREATE TABLE ${tableName} (\n  ${columnDetails}\n);`;
+      
+      if (hasTypeColumns) {
+        const typeColumns = schema.columns
+          .filter(col => col.name.toLowerCase().includes('type') || 
+                        col.name.toLowerCase().includes('category') ||
+                        col.name.toLowerCase().includes('status'))
+          .map(col => col.name);
+        tableSQL += `\n-- Note: ${typeColumns.join(', ')} columns may contain classification data`;
+      }
+      
+      return tableSQL;
     }).join('\n\n') || '';
     
-    // Create prompt using official SQLCoder template format
+    // Enhanced prompt with best practices from research
     const systemPrompt = `### Task
-Generate a SQL query to answer [QUESTION]${prompt}[/QUESTION]
+Generate a PostgreSQL query to answer the natural language question.
 
 ### Instructions
-- If you cannot answer the question with the available database schema, return 'I do not know'
-- Deliberately go through the question and database schema word by word to appropriately answer the question
-- Use Table Aliases to prevent ambiguity. For example, \`SELECT t1.col1, t2.col1 FROM table1 t1 JOIN table2 t2 ON t1.id = t2.id\`
-- When creating a ratio, always cast the numerator as float
+- Return ONLY the SQL query, no explanations
+- If you cannot answer with the available schema, return exactly: 'I do not know'
+- Use table aliases to prevent ambiguity (e.g., a.column_name)
+- For text searches, use ILIKE for case-insensitive matching
+- Look for columns that might contain the requested data:
+  * For "recovery", "type", "category" → look for columns like activity_type, type, category
+  * For user names → look for email, name, username columns
+  * For dates → look for created_at, updated_at, date columns
+- When filtering text, use LIKE '%keyword%' unless exact match is clearly needed
 
 ### Database Schema
-The query will run on a PostgreSQL database with the following schema:
+PostgreSQL database with these tables:
 ${schemaContext || `CREATE TABLE ${tableInfo.tableName} (/* schema not available */);`}
 
-### Answer
-Given the database schema, here is the SQL query that answers [QUESTION]${prompt}[/QUESTION]
-[SQL]`;
+### Examples
+Question: show recovery activities
+SQL: SELECT * FROM activities WHERE activity_type ILIKE '%recovery%';
+
+Question: find users named pat
+SQL: SELECT * FROM users WHERE email ILIKE '%pat%' OR name ILIKE '%pat%';
+
+### Question
+${prompt}
+
+### SQL Query
+`;
     
     console.log('Sending to Ollama:', systemPrompt.substring(0, 200) + '...');
     
@@ -215,11 +257,8 @@ Given the database schema, here is the SQL query that answers [QUESTION]${prompt
     
     let sql = data.response?.trim();
     
-    // Extract SQL from [SQL] tags if present
-    const sqlMatch = sql?.match(/\[SQL\]([\s\S]*?)(?:\[\/SQL\]|$)/);
-    if (sqlMatch) {
-      sql = sqlMatch[1].trim();
-    }
+    // The new prompt doesn't use [SQL] tags, so skip this extraction
+    // sql is already the response text
     
     // Remove any markdown code blocks
     sql = sql?.replace(/```sql\n?/gi, '').replace(/```\n?/g, '').trim();
@@ -278,6 +317,9 @@ Given the database schema, here is the SQL query that answers [QUESTION]${prompt
     if (sql && (sql.toLowerCase().includes('select') || sql.toLowerCase().includes('insert') || 
                 sql.toLowerCase().includes('update') || sql.toLowerCase().includes('delete'))) {
       console.log('Ollama generated SQL:', sql);
+      
+      // Clean up any trailing semicolons if multiple
+      sql = sql.replace(/;+$/, ';');
       
       const totalTime = Date.now() - startTime;
       devLog(`Request completed successfully in ${totalTime}ms`, {

@@ -43,19 +43,19 @@ If you need to build and release manually:
 
 ### macOS
 ```bash
-pnpm run dist:mac
+npm run dist:mac
 # Output: dist/Datagres-1.0.0.dmg
 ```
 
 ### Windows
 ```bash
-pnpm run dist:win
+npm run dist:win
 # Output: dist/Datagres Setup 1.0.0.exe
 ```
 
 ### Linux
 ```bash
-pnpm run dist:linux
+npm run dist:linux
 # Output: dist/Datagres-1.0.0.AppImage
 ```
 
@@ -84,7 +84,7 @@ For signed Windows builds:
 
 ## Release Checklist
 
-- [ ] All tests pass (`pnpm test` and `pnpm test:unit`)
+- [ ] All tests pass (`npm test` and `npm run test:unit`)
 - [ ] Update version in `package.json`
 - [ ] Update CHANGELOG.md (if maintaining one)
 - [ ] Commit version changes
@@ -108,12 +108,12 @@ For signed Windows builds:
 1. **Clean and rebuild**:
    ```bash
    rm -rf node_modules dist out
-   pnpm install
-   pnpm run build
+   npm install
+   npm run make
    ```
 
 2. **Electron rebuild** (for native modules):
    ```bash
-   pnpm add -D @electron/rebuild
+   npm install --save-dev @electron/rebuild
    npx electron-rebuild
    ```

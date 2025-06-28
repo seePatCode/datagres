@@ -101,13 +101,13 @@ To troubleshoot Ollama issues, enable debug logging with different verbosity lev
 
 ```bash
 # Basic info logging (errors + key events)
-DEBUG_OLLAMA=true pnpm run dev
+DEBUG_OLLAMA=true npm run dev
 
 # Detailed debug logging (includes memory usage, response bodies)
-DEBUG_OLLAMA=true OLLAMA_LOG_LEVEL=debug pnpm run dev
+DEBUG_OLLAMA=true OLLAMA_LOG_LEVEL=debug npm run dev
 
 # Production mode (errors only)
-OLLAMA_LOG_LEVEL=error pnpm run dev
+OLLAMA_LOG_LEVEL=error npm run dev
 ```
 
 Log levels:

@@ -12,7 +12,7 @@ Thank you for your interest in contributing to Datagres! We welcome contribution
    ```
 3. Install dependencies:
    ```bash
-   pnpm install
+   npm install
    ```
 4. Create a new branch:
    ```bash
@@ -21,14 +21,14 @@ Thank you for your interest in contributing to Datagres! We welcome contribution
 
 ## Development Setup
 
-1. **Use pnpm** - This project uses pnpm for package management
+1. **Use npm** - This project uses npm for package management
 2. **Install Electron properly** - If you need to reinstall Electron:
    ```bash
-   pnpm add -D electron --shamefully-hoist
+   npm install --save-dev electron
    ```
 3. **Run in development mode**:
    ```bash
-   pnpm run dev
+   npm run dev
    ```
 
 ## Code Style
@@ -43,8 +43,8 @@ Thank you for your interest in contributing to Datagres! We welcome contribution
 - Write tests for new features
 - Run tests before submitting PR:
   ```bash
-  pnpm test
-  pnpm test:unit
+  npm test
+  npm run test:unit
   ```
 - Ensure all tests pass
 
@@ -64,7 +64,7 @@ Thank you for your interest in contributing to Datagres! We welcome contribution
 
 When adding new UI components:
 - **Never manually create shadcn components**
-- Always use: `pnpm dlx shadcn@latest add [component]`
+- Always use: `npx shadcn@latest add [component]`
 - Follow the existing component patterns
 
 ## Database Operations

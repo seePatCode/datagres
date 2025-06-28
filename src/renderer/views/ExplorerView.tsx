@@ -309,6 +309,9 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
         tables={tables}
         schemas={schemas}
         onSelectTable={handleTableSelect}
+        savedConnections={savedConnections}
+        onSelectConnection={handleConnectionChange}
+        currentConnectionId={activeConnection?.savedConnectionId}
       />
     </div>
   )
