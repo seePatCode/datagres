@@ -1,0 +1,17 @@
+{
+  "name": "Datagres",
+  "short_name": "Datagres",
+  "description": "Lightning-Fast PostgreSQL Explorer",
+  "theme_color": "#8b5cf6",
+  "background_color": "#030712",
+  "display": "standalone",
+  "start_url": "/datagres/",
+  "icons": [
+    {
+      "src": "/datagres/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

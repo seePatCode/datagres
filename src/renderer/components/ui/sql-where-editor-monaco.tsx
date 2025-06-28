@@ -265,9 +265,44 @@ const SQLWhereEditorComponent = memo(function SQLWhereEditor({
     }
   }, [isEditorReady, generateSuggestions])
 
-  // Memoize onChange handler
+  // Refs for debouncing
+  const changeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const lastValueRef = useRef(value)
+  
+  // Update editor value when prop changes (controlled component)
+  useEffect(() => {
+    if (editorRef.current && value !== lastValueRef.current) {
+      const currentValue = editorRef.current.getValue()
+      if (currentValue !== value) {
+        editorRef.current.setValue(value)
+      }
+      lastValueRef.current = value
+    }
+  }, [value])
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (changeTimeoutRef.current) {
+        clearTimeout(changeTimeoutRef.current)
+      }
+    }
+  }, [])
+  
+  // Memoize onChange handler with debouncing
   const handleChange = useCallback((val: string | undefined) => {
-    onChange(val || '')
+    const newValue = val || ''
+    lastValueRef.current = newValue
+    
+    // Clear any pending change
+    if (changeTimeoutRef.current) {
+      clearTimeout(changeTimeoutRef.current)
+    }
+    
+    // Debounce the onChange callback
+    changeTimeoutRef.current = setTimeout(() => {
+      onChange(newValue)
+    }, 50) // 50ms debounce for typing
   }, [onChange])
   
   // Memoize editor options
@@ -276,7 +311,6 @@ const SQLWhereEditorComponent = memo(function SQLWhereEditor({
     minimap: { enabled: false },
     lineNumbers: 'off',
     folding: false,
-    renderLineHighlight: 'none',
     scrollbar: { vertical: 'hidden', horizontal: 'hidden' },
     overviewRulerLanes: 0,
     hideCursorInOverviewRuler: true,
@@ -288,15 +322,12 @@ const SQLWhereEditorComponent = memo(function SQLWhereEditor({
     
     // Behavior
     wordWrap: 'off',
-    quickSuggestions: {
-      other: true,
-      comments: false,
-      strings: false
-    },
+    quickSuggestions: false, // Disable automatic suggestions while typing
     acceptSuggestionOnEnter: 'off',
     tabCompletion: 'on',
     suggestOnTriggerCharacters: true,
     suggestSelection: 'first',
+    quickSuggestionsDelay: 500, // Increase delay for suggestions
     
     // Appearance
     renderWhitespace: 'none',
@@ -310,6 +341,8 @@ const SQLWhereEditorComponent = memo(function SQLWhereEditor({
     occurrencesHighlight: 'off',
     selectionHighlight: false,
     renderValidationDecorations: 'off',
+    foldingHighlight: false,
+    matchBrackets: 'never',
     
     // Monaco-specific optimizations
     fixedOverflowWidgets: true,
@@ -320,7 +353,25 @@ const SQLWhereEditorComponent = memo(function SQLWhereEditor({
     suggest: {
       maxVisibleSuggestions: 8,
       localityBonus: true,
-    }
+      shareSuggestSelections: false,
+      snippetsPreventQuickSuggestions: false,
+      showIcons: false, // Disable icons for performance
+      showStatusBar: false,
+      preview: false, // Disable suggestion preview
+    },
+    
+    // Additional performance settings
+    renderControlCharacters: false,
+    fontLigatures: false,
+    renderLineHighlight: 'none',
+    renderIndentGuides: false,
+    mouseWheelZoom: false,
+    multiCursorModifier: 'alt',
+    accessibilitySupport: 'off',
+    autoIndent: 'simple',
+    formatOnPaste: false,
+    formatOnType: false,
+    trimAutoWhitespace: false
   }), [disabled])
 
   return (
