@@ -225,7 +225,7 @@ export function DemoSection() {
       // Demo Quick Search
       setShowMouse(false)
       setShowQuickSearch(true)
-      setCurrentCallout({ message: "Press Shift+Shift for instant table search", position: "top-left" })
+      setCurrentCallout({ message: "Quick table and connection search", position: "top-left" })
       await wait(600)
       
       // Switch to Production Database

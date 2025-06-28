@@ -12,11 +12,12 @@ export default function DocsPage() {
       </div>
 
       <Tabs defaultValue="why-datagres" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="why-datagres">Why Datagres</TabsTrigger>
           <TabsTrigger value="getting-started">Getting Started</TabsTrigger>
           <TabsTrigger value="shortcuts">Shortcuts</TabsTrigger>
           <TabsTrigger value="features">Features</TabsTrigger>
+          <TabsTrigger value="ai-features">AI Features</TabsTrigger>
           <TabsTrigger value="troubleshooting">Troubleshooting</TabsTrigger>
         </TabsList>
 
@@ -59,8 +60,8 @@ export default function DocsPage() {
                   <li className="flex items-start gap-2">
                     <span className="text-green-500">→</span>
                     <div>
-                      <strong>Keyboard Driven:</strong> Switch between databases with Shift+Shift. 
-                      Generate SQL with Cmd+K. Navigate tabs with Cmd+1-9. Your hands never leave the keyboard.
+                      <strong>Keyboard Driven:</strong> Generate SQL with Cmd+K. 
+                      Quick connection switching. Navigate with keyboard shortcuts. Your hands never leave the keyboard.
                     </div>
                   </li>
                   <li className="flex items-start gap-2">
@@ -115,9 +116,9 @@ export default function DocsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <h3 className="mb-2 font-semibold">🔍 Unified Quick Search (Shift+Shift)</h3>
+                <h3 className="mb-2 font-semibold">🔍 Quick Table & Connection Search</h3>
                 <p className="text-sm text-muted-foreground">
-                  Search and switch between both tables AND database connections in one dialog. 
+                  Search and switch between both tables AND database connections instantly. 
                   No more navigating through connection managers and object browsers.
                 </p>
               </div>
@@ -217,8 +218,8 @@ export default function DocsPage() {
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center justify-between rounded bg-secondary/50 p-3">
-                  <span className="text-sm">Quick search (tables & connections)</span>
-                  <kbd className="rounded bg-background px-2 py-1 text-xs">Shift+Shift</kbd>
+                  <span className="text-sm">Generate SQL with AI</span>
+                  <kbd className="rounded bg-background px-2 py-1 text-xs">Cmd+K</kbd>
                 </div>
                 <div className="flex items-center justify-between rounded bg-secondary/50 p-3">
                   <span className="text-sm">New connection</span>
@@ -240,16 +241,8 @@ export default function DocsPage() {
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center justify-between rounded bg-secondary/50 p-3">
-                  <span className="text-sm">Jump to tab 1-9</span>
-                  <kbd className="rounded bg-background px-2 py-1 text-xs">Cmd+1-9</kbd>
-                </div>
-                <div className="flex items-center justify-between rounded bg-secondary/50 p-3">
-                  <span className="text-sm">Navigate back</span>
-                  <kbd className="rounded bg-background px-2 py-1 text-xs">Cmd+[</kbd>
-                </div>
-                <div className="flex items-center justify-between rounded bg-secondary/50 p-3">
-                  <span className="text-sm">Navigate forward</span>
-                  <kbd className="rounded bg-background px-2 py-1 text-xs">Cmd+]</kbd>
+                  <span className="text-sm">New query tab</span>
+                  <kbd className="rounded bg-background px-2 py-1 text-xs">Cmd+T</kbd>
                 </div>
                 <div className="flex items-center justify-between rounded bg-secondary/50 p-3">
                   <span className="text-sm">Close tab</span>
@@ -264,13 +257,13 @@ export default function DocsPage() {
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Quick Search</CardTitle>
+                <CardTitle>AI-Powered SQL</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Press Shift+Shift to instantly search through all tables AND saved connections. 
-                  This Spotlight-like feature helps you find tables quickly or switch between databases in seconds.
-                  Perfect for developers working with multiple environments (dev, staging, production).
+                  Press Cmd+K to generate SQL using plain English. Uses local Ollama models 
+                  for complete privacy - your schema never leaves your machine. Also includes 
+                  smart error correction and WHERE clause generation.
                 </p>
               </CardContent>
             </Card>
@@ -310,7 +303,84 @@ export default function DocsPage() {
                 </p>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>In-Place Data Editing</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Edit data directly in the table view with full undo/redo support. 
+                  Smart JSON formatting automatically prettifies JSON columns for easy viewing and editing.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Auto-Reconnect</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Datagres remembers your connections and automatically reconnects on startup. 
+                  Connection strings are preserved exactly as entered, supporting all PostgreSQL parameters.
+                </p>
+              </CardContent>
+            </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="ai-features" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Local AI with Ollama</CardTitle>
+              <CardDescription>Privacy-first SQL generation that runs entirely on your machine</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h3 className="mb-2 font-semibold">Setup</h3>
+                <ol className="list-decimal space-y-2 pl-6 text-sm text-muted-foreground">
+                  <li>Install Ollama from <code className="rounded bg-secondary px-1">ollama.ai</code></li>
+                  <li>Pull the model: <code className="rounded bg-secondary px-1">ollama pull qwen2.5-coder</code></li>
+                  <li>Restart Datagres to enable AI features</li>
+                </ol>
+              </div>
+              
+              <div>
+                <h3 className="mb-2 font-semibold">Features</h3>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500">→</span>
+                    <div>
+                      <strong>SQL Generation (Cmd+K):</strong> Describe what you want in plain English 
+                      and get accurate SQL queries based on your actual schema.
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500">→</span>
+                    <div>
+                      <strong>Error Correction:</strong> When a query fails, Datagres can suggest 
+                      fixes based on the error message and your schema.
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500">→</span>
+                    <div>
+                      <strong>WHERE Clause Helper:</strong> Generate complex WHERE clauses by describing 
+                      your filtering criteria in natural language.
+                    </div>
+                  </li>
+                </ul>
+              </div>
+              
+              <div className="rounded bg-secondary/50 p-4">
+                <p className="text-sm">
+                  <strong>Privacy Note:</strong> Your schema and data never leave your machine. 
+                  All AI processing happens locally via Ollama on localhost:11434.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="troubleshooting">

@@ -86,7 +86,7 @@ export default function HomePage2() {
             </h2>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {[
               {
                 title: "15 Second Connection",
@@ -96,7 +96,7 @@ export default function HomePage2() {
               },
               {
                 title: "Keyboard First",
-                description: "Shift+Shift to search. Cmd+K for AI SQL.",
+                description: "Cmd+K for AI SQL. Quick navigation shortcuts.",
                 icon: "⌨️",
                 gradient: "from-blue-600/20 to-cyan-600/20",
               },
@@ -111,6 +111,18 @@ export default function HomePage2() {
                 description: "SQL generation runs locally. Your data stays yours.",
                 icon: "🔒",
                 gradient: "from-purple-600/20 to-pink-600/20",
+              },
+              {
+                title: "Secure Credentials",
+                description: "OS keychain storage. Auto-reconnect on startup.",
+                icon: "🔐",
+                gradient: "from-yellow-600/20 to-orange-600/20",
+              },
+              {
+                title: "Edit In-Place",
+                description: "Edit data directly. Smart JSON formatting.",
+                icon: "✏️",
+                gradient: "from-pink-600/20 to-red-600/20",
               },
             ].map((feature, index) => (
               <motion.div

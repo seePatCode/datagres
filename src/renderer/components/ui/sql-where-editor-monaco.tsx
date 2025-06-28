@@ -322,12 +322,16 @@ const SQLWhereEditorComponent = memo(function SQLWhereEditor({
     
     // Behavior
     wordWrap: 'off',
-    quickSuggestions: false, // Disable automatic suggestions while typing
+    quickSuggestions: {
+      other: true,
+      comments: false,
+      strings: false
+    },
     acceptSuggestionOnEnter: 'off',
     tabCompletion: 'on',
     suggestOnTriggerCharacters: true,
     suggestSelection: 'first',
-    quickSuggestionsDelay: 500, // Increase delay for suggestions
+    quickSuggestionsDelay: 300, // Slightly increased delay for better performance
     
     // Appearance
     renderWhitespace: 'none',
@@ -346,6 +350,7 @@ const SQLWhereEditorComponent = memo(function SQLWhereEditor({
     
     // Monaco-specific optimizations
     fixedOverflowWidgets: true,
+    overflowWidgetsDomNode: document.body, // Place suggestions in body to avoid clipping
     readOnly: disabled,
     automaticLayout: true,
     
@@ -375,7 +380,7 @@ const SQLWhereEditorComponent = memo(function SQLWhereEditor({
   }), [disabled])
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 border rounded-md bg-background min-w-0">
+    <div className="flex items-center gap-2 px-3 py-2 border rounded-md bg-background min-w-0" style={{ overflow: 'visible', zIndex: 1000 }}>
       <button
         className="h-4 w-4 text-muted-foreground flex-shrink-0 hover:text-foreground transition-colors cursor-pointer"
         onClick={() => onCommitRef.current()}
@@ -383,7 +388,7 @@ const SQLWhereEditorComponent = memo(function SQLWhereEditor({
       >
         <Search className="h-4 w-4" />
       </button>
-      <div ref={containerRef} className="flex-1 -my-1 -mr-3 relative min-w-0 overflow-hidden">
+      <div ref={containerRef} className="flex-1 -my-1 -mr-3 relative min-w-0">
         {!isEditorReady && (
           <div className="absolute inset-0 flex items-center">
             <div className="w-full h-6 bg-[#09090b] text-[#fafafa] text-sm px-2 flex items-center">
@@ -391,7 +396,7 @@ const SQLWhereEditorComponent = memo(function SQLWhereEditor({
             </div>
           </div>
         )}
-        <div className={!isEditorReady ? 'opacity-0' : ''}>
+        <div className={!isEditorReady ? 'opacity-0' : ''} style={{ position: 'relative', zIndex: 1001 }}>
           <Editor
             height="28px"
             defaultLanguage="sql"

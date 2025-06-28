@@ -1,6 +1,6 @@
 import { RefreshCw, Save, MoreHorizontal, Eye, EyeOff, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { SQLWhereEditor } from '@/components/ui/sql-where-editor-monaco'
+import { SQLWhereEditorSimple } from '@/components/ui/sql-where-editor-simple'
 import { SqlAiPrompt } from '@/components/ui/sql-ai-prompt'
 import {
   DropdownMenu,
@@ -77,7 +77,7 @@ export function TableToolbar({
   return (
     <div className="flex items-center border-b bg-background py-1" style={{ zIndex: 100 }}>
       <div className="flex-1 min-w-0 px-2 py-1" style={{ overflow: 'visible' }}>
-        <SQLWhereEditor
+        <SQLWhereEditorSimple
           value={searchTerm}
           onChange={onSearchChange}
           onCommit={onSearchCommit}

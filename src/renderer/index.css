@@ -7,6 +7,21 @@
   z-index: 9999 !important;
 }
 
+/* Ensure Monaco editor suggestion widgets appear above other elements */
+.monaco-editor .suggest-widget {
+  z-index: 10000 !important;
+}
+
+/* Ensure Monaco editor autocomplete details appear above other elements */
+.monaco-editor .suggest-details {
+  z-index: 10001 !important;
+}
+
+/* Ensure Monaco editor hover widgets appear above other elements */
+.monaco-editor .monaco-hover {
+  z-index: 10002 !important;
+}
+
 @layer base {
   :root {
     /* Light mode (default) */
