@@ -178,7 +178,7 @@ export const tabsSlice = createSlice({
       const newTab: QueryTabInternal = {
         id: `query_${Date.now()}`,
         type: 'query',
-        title: initialQuery ? 'AI Query' : 'New Query',
+        title: initialQuery ? 'AI Query' : 'Scratchpad',
         query: typeof initialQuery === 'string' ? initialQuery : '',
         isSaved: false
       }

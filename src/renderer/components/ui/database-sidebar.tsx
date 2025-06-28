@@ -123,7 +123,7 @@ export function DatabaseSidebar({
         </Select>
       </div>
 
-      {/* New Query Button */}
+      {/* Scratchpad Button */}
       {onNewQuery && (
         <div className="p-3 border-b">
           <Button 
@@ -133,7 +133,7 @@ export function DatabaseSidebar({
             size="sm"
           >
             <FileCode2 className="h-4 w-4" />
-            New Query
+            Scratchpad
           </Button>
         </div>
       )}

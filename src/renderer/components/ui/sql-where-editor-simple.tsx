@@ -30,7 +30,6 @@ export function SQLWhereEditorSimple({
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [cursorPosition, setCursorPosition] = useState(0)
-  const [internalValue, setInternalValue] = useState(value)
   
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -140,9 +139,12 @@ export function SQLWhereEditorSimple({
     return suggestions.slice(0, 10) // Limit suggestions
   }, [schemaColumns])
   
-  // Sync internal value with prop
+  // Sync input value with prop
   useEffect(() => {
-    setInternalValue(value)
+    if (inputRef.current && inputRef.current.value !== value) {
+      inputRef.current.value = value
+      latestValueRef.current = value
+    }
   }, [value])
   
   // Cleanup timers on unmount
@@ -153,14 +155,22 @@ export function SQLWhereEditorSimple({
     }
   }, [])
   
+  // Store the latest value in a ref to avoid state updates
+  const latestValueRef = useRef(value)
+  
   // Handle input change with debouncing
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value
     const position = e.target.selectionStart || 0
     
-    // Update internal value immediately for responsive UI
-    setInternalValue(newValue)
+    // Store in ref instead of state to avoid re-renders
+    latestValueRef.current = newValue
     setCursorPosition(position)
+    
+    // Update the input value directly without React state
+    if (inputRef.current) {
+      inputRef.current.value = newValue
+    }
     
     // Debounce the onChange callback
     if (debounceTimerRef.current) {
@@ -169,26 +179,27 @@ export function SQLWhereEditorSimple({
     
     debounceTimerRef.current = setTimeout(() => {
       onChange(newValue)
-    }, 30) // 30ms debounce - reduced for better responsiveness
+    }, 50) // 50ms debounce like Monaco
     
-    // Debounce suggestion generation
+    // Cancel previous suggestion timer
     if (suggestionTimerRef.current) {
       clearTimeout(suggestionTimerRef.current)
     }
     
+    // Don't generate suggestions if empty
+    if (newValue.trim() === '') {
+      setSuggestions([])
+      setIsOpen(false)
+      return
+    }
+    
     // Show suggestions after a short delay
     suggestionTimerRef.current = setTimeout(() => {
-      // Don't show suggestions for empty input
-      if (newValue.trim() === '') {
-        setSuggestions([])
-        setIsOpen(false)
-      } else {
-        const newSuggestions = generateSuggestions(newValue, position)
-        setSuggestions(newSuggestions)
-        setIsOpen(newSuggestions.length > 0)
-        setSelectedIndex(0)
-      }
-    }, 100) // 100ms delay for suggestions - reduced for better UX
+      const newSuggestions = generateSuggestions(newValue, position)
+      setSuggestions(newSuggestions)
+      setIsOpen(newSuggestions.length > 0)
+      setSelectedIndex(0)
+    }, 100) // 100ms delay for suggestions
   }, [onChange, generateSuggestions])
   
   // Handle keyboard navigation
@@ -207,7 +218,7 @@ export function SQLWhereEditorSimple({
     }
     
     // If dropdown is not open or empty input, Enter should commit
-    if (!isOpen || suggestions.length === 0 || internalValue.trim() === '') {
+    if (!isOpen || suggestions.length === 0 || latestValueRef.current.trim() === '') {
       if (e.key === 'Enter') {
         e.preventDefault()
         setIsOpen(false)
@@ -230,7 +241,7 @@ export function SQLWhereEditorSimple({
       case 'Enter':
         e.preventDefault()
         // Only insert suggestion if Shift is held or if there's actual input
-        if (e.shiftKey || internalValue.trim() !== '') {
+        if (e.shiftKey || latestValueRef.current.trim() !== '') {
           if (suggestions[selectedIndex]) {
             insertSuggestion(suggestions[selectedIndex])
           }
@@ -253,7 +264,7 @@ export function SQLWhereEditorSimple({
         setIsOpen(false)
         break
     }
-  }, [isOpen, suggestions, selectedIndex, onCommit, onAiPrompt, internalValue])
+  }, [isOpen, suggestions, selectedIndex, onCommit, onAiPrompt])
   
   // Insert suggestion at cursor position
   const insertSuggestion = useCallback((suggestion: Suggestion) => {
@@ -329,20 +340,22 @@ export function SQLWhereEditorSimple({
   
   // Handle focus
   const handleFocus = useCallback(() => {
+    const currentValue = inputRef.current?.value || ''
+    
     // Don't show suggestions for empty input
-    if (internalValue.trim() === '') {
+    if (currentValue.trim() === '') {
       setIsOpen(false)
       return
     }
     
     const position = inputRef.current?.selectionStart || 0
-    const newSuggestions = generateSuggestions(internalValue, position)
+    const newSuggestions = generateSuggestions(currentValue, position)
     setSuggestions(newSuggestions)
     if (newSuggestions.length > 0) {
       setIsOpen(true)
       setSelectedIndex(0)
     }
-  }, [internalValue, generateSuggestions])
+  }, [generateSuggestions])
   
   return (
     <div ref={containerRef} className="relative flex items-center gap-2 px-3 py-2 border rounded-md bg-background">
@@ -358,7 +371,7 @@ export function SQLWhereEditorSimple({
       <input
         ref={inputRef}
         type="text"
-        value={internalValue}
+        defaultValue={value}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
         onFocus={handleFocus}
