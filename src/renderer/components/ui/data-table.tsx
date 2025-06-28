@@ -178,9 +178,10 @@ export function DataTable<TData, TValue>({
                     {row.getVisibleCells().map((cell) => (
                       <TableCell 
                         key={cell.id}
-                        className="p-0 border-r border-b border-muted-foreground/40 h-8 align-middle"
+                        className="p-0 border-r border-b border-muted-foreground/40 h-8 align-middle overflow-hidden"
                         style={{ 
-                          width: cell.column.getSize()
+                          width: cell.column.getSize(),
+                          maxWidth: cell.column.getSize()
                         }}
                       >
                         {flexRender(

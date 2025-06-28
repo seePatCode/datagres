@@ -10,8 +10,8 @@ export function formatCellValue(value: any): string {
   // Handle objects and arrays (including JSON columns)
   if (typeof value === 'object') {
     try {
-      // Pretty print JSON with 2-space indentation
-      return JSON.stringify(value, null, 2)
+      // Always use compact format for table cells (single line)
+      return JSON.stringify(value)
     } catch (error) {
       // Fallback if JSON.stringify fails
       return String(value)
@@ -54,4 +54,25 @@ export function isJsonValue(value: any): boolean {
          value !== undefined && 
          typeof value === 'object' &&
          (Array.isArray(value) || Object.keys(value).length > 0)
+}
+
+/**
+ * Format a value for display in an editor (pretty-printed for JSON)
+ */
+export function formatForEditor(value: any): string {
+  if (value === null || value === undefined) {
+    return 'NULL'
+  }
+
+  // Handle objects and arrays with pretty printing
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value, null, 2)
+    } catch (error) {
+      return String(value)
+    }
+  }
+
+  // Handle other types
+  return String(value)
 }

@@ -34,9 +34,7 @@ const createColumns = (columnNames: string[]): ColumnDef<any>[] => {
       const isJson = isJsonValue(value)
       return (
         <div 
-          className={`font-mono text-vs-ui py-1 px-2 hover:bg-muted/30 transition-colors w-full ${
-            isJson ? 'whitespace-pre-wrap' : 'truncate'
-          }`}
+          className="font-mono text-vs-ui py-1 px-2 hover:bg-muted/30 transition-colors w-full truncate"
           title={formatCellTooltip(value)}
         >
           {value !== null ? (

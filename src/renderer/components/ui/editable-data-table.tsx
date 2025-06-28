@@ -8,7 +8,7 @@ import { DataTable } from "./data-table"
 import { Input } from "./input"
 import { Textarea } from "./textarea"
 import { cn } from "@/lib/utils"
-import { formatCellValue, formatCellTooltip, isJsonValue } from "@/lib/formatters"
+import { formatCellValue, formatCellTooltip, isJsonValue, formatForEditor } from "@/lib/formatters"
 
 interface EditableDataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -37,7 +37,7 @@ interface EditableCellProps {
 function EditableCell({ getValue, row, column, table, onEdit, isEdited, editedValue }: EditableCellProps) {
   const initialValue = getValue()
   const [isEditing, setIsEditing] = useState(false)
-  const [value, setValue] = useState(editedValue ?? initialValue)
+  const [value, setValue] = useState(formatForEditor(editedValue ?? initialValue))
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const cellRef = useRef<HTMLDivElement>(null)
   const [cellPosition, setCellPosition] = useState<{ top: number; left: number; width: number; height: number } | null>(null)
@@ -75,6 +75,8 @@ function EditableCell({ getValue, row, column, table, onEdit, isEdited, editedVa
         height: rect.height
       })
     }
+    // Re-format value when starting to edit
+    setValue(formatForEditor(editedValue ?? initialValue))
     setIsEditing(true)
   }
 
@@ -154,7 +156,7 @@ function EditableCell({ getValue, row, column, table, onEdit, isEdited, editedVa
             >
               <Textarea
                 ref={inputRef}
-                value={isJsonValue(value) ? JSON.stringify(value, null, 2) : value}
+                value={value}
                 onChange={handleInput}
                 onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
@@ -178,9 +180,7 @@ function EditableCell({ getValue, row, column, table, onEdit, isEdited, editedVa
     <div 
       ref={cellRef}
       className={cn(
-        `font-mono text-vs-ui py-1 px-2 hover:bg-muted/30 transition-colors w-full h-full cursor-text ${
-          isJson ? 'whitespace-pre-wrap' : 'truncate'
-        }`,
+        "font-mono text-vs-ui py-1 px-2 hover:bg-muted/30 transition-colors w-full h-full cursor-text overflow-hidden",
         isEdited && "bg-orange-500/10 relative"
       )}
       title={formatCellTooltip(displayValue)}
@@ -190,7 +190,7 @@ function EditableCell({ getValue, row, column, table, onEdit, isEdited, editedVa
         <div className="absolute top-0 right-0 w-2 h-2 bg-orange-500 rounded-bl-md" />
       )}
       {displayValue !== null ? (
-        <span className="text-foreground">
+        <span className="text-foreground block truncate">
           {formatCellValue(displayValue)}
         </span>
       ) : (
