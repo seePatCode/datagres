@@ -11,6 +11,12 @@ const aiService = require('./services/aiService')
 // Set app name as early as possible
 app.setName('Datagres')
 
+// Set dock icon for macOS
+if (process.platform === 'darwin' && app.dock) {
+  const path = require('path')
+  app.dock.setIcon(path.join(__dirname, '../../build/icon.png'))
+}
+
 app.whenReady().then(async () => {
   await connectionStore.initialize()
   const mainWindow = createMainWindow()

@@ -27,6 +27,7 @@ function createMainWindow() {
     height: 900,
     title: 'Datagres - Database Explorer',
     backgroundColor: '#171A1F', // Dark background with navy tint to prevent white flash
+    icon: path.join(__dirname, '../../../build/icon.png'), // Add icon for all platforms
     ...(process.platform === 'darwin' 
       ? { titleBarStyle: 'hidden' } // macOS: Hide title but keep traffic lights
       : { frame: false }), // Windows/Linux: Completely frameless
