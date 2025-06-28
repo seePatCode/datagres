@@ -15,6 +15,7 @@ export interface SQLEditorHandle {
   insertText: (text: string) => void
   isFocused: () => boolean
   getCursorPosition: () => { top: number; left: number } | null
+  selectText: (startOffset: number, endOffset: number) => void
 }
 
 export const SQLEditor = forwardRef<SQLEditorHandle, SQLEditorProps>(
@@ -232,6 +233,33 @@ export const SQLEditor = forwardRef<SQLEditorHandle, SQLEditorProps>(
           top: editorRect.top + coords.top,
           left: editorRect.left + coords.left
         }
+      },
+      selectText: (startOffset: number, endOffset: number) => {
+        if (!editorRef.current || !monacoRef.current) return
+        
+        const model = editorRef.current.getModel()
+        if (!model) return
+        
+        // Convert offsets to positions
+        const startPosition = model.getPositionAt(startOffset)
+        const endPosition = model.getPositionAt(endOffset)
+        
+        // Create a selection range
+        const selection = new monacoRef.current.Selection(
+          startPosition.lineNumber,
+          startPosition.column,
+          endPosition.lineNumber,
+          endPosition.column
+        )
+        
+        // Set the selection
+        editorRef.current.setSelection(selection)
+        
+        // Reveal the selection in viewport
+        editorRef.current.revealRangeInCenter(selection)
+        
+        // Focus the editor
+        editorRef.current.focus()
       }
     }), [])
 

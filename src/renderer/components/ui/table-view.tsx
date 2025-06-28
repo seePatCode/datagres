@@ -10,6 +10,7 @@ import { TableStatusBar } from '@/components/ui/table-status-bar'
 import { useInfiniteTableData } from '@/hooks/useInfiniteTableData'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { DEFAULT_PAGE_SIZE, DEFAULT_COLUMN_WIDTH, MIN_COLUMN_WIDTH, MAX_COLUMN_WIDTH, INFINITE_SCROLL_THRESHOLD } from '@/constants'
+import type { TableSchema } from '@shared/types'
 
 interface TableViewProps {
   tableName: string
@@ -20,6 +21,7 @@ interface TableViewProps {
   initialSearchTerm?: string
   initialPageSize?: number
   onSearchChange?: (searchTerm: string) => void
+  tables?: Array<{ name: string }>
 }
 
 // Helper function to create columns dynamically
@@ -62,6 +64,7 @@ export function TableView({
   initialSearchTerm = '',
   initialPageSize = DEFAULT_PAGE_SIZE,
   onSearchChange,
+  tables = [],
 }: TableViewProps) {
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({})
   const [editedCells, setEditedCells] = useState<Map<string, any>>(new Map())
@@ -69,6 +72,7 @@ export function TableView({
   const [saveError, setSaveError] = useState<string | null>(null)
   const [optimisticData, setOptimisticData] = useState<any>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [allSchemas, setAllSchemas] = useState<TableSchema[]>([])
   
   // Fetch table schema for autocomplete
   const { data: schemaData } = useQuery({
@@ -115,7 +119,7 @@ export function TableView({
     hasMore: hasNextPage,
     isLoading: isLoadingMore,
     threshold: INFINITE_SCROLL_THRESHOLD,
-    rootRef: scrollContainerRef
+    rootRef: scrollContainerRef as React.RefObject<HTMLElement>
   })
   
   // Initialize search term from props when table changes
@@ -227,9 +231,10 @@ export function TableView({
         setSaveError(null)
         
         // Refetch in the background and clear optimistic data when done
-        refetch().then(() => {
+        ;(async () => {
+          await refetch()
           setOptimisticData(null)
-        })
+        })()
       } else {
         // Failed to update data
         console.error('Update failed:', result.error)
@@ -277,6 +282,38 @@ export function TableView({
     setEditedCells(newEditedCells)
   }
 
+  // Fetch all table schemas for AI context
+  useEffect(() => {
+    const fetchAllSchemas = async () => {
+      try {
+        if (tables.length > 0) {
+          // Fetch schemas for all tables
+          const schemaPromises = tables.slice(0, 10).map(async (table) => { // Limit to first 10 tables for performance
+            try {
+              const result = await window.electronAPI.fetchTableSchema(connectionString, table.name)
+              if (result.success && result.schema) {
+                return result.schema
+              }
+            } catch (error) {
+              // Schema fetch failed - continue without it
+            }
+            return null
+          })
+          
+          const results = await Promise.all(schemaPromises)
+          const validSchemas = results.filter((schema): schema is TableSchema => schema !== null)
+          setAllSchemas(validSchemas)
+        }
+      } catch (error) {
+        console.error('Failed to fetch schemas:', error)
+      }
+    }
+    
+    if (connectionString && tables.length > 0) {
+      fetchAllSchemas()
+    }
+  }, [connectionString, tables])
+
   const hasEdits = editedCells.size > 0
 
   return (
@@ -307,6 +344,9 @@ export function TableView({
         columns={data?.columns || []}
         columnVisibility={columnVisibility}
         onColumnVisibilityChange={setColumnVisibility}
+        connectionString={connectionString}
+        tableName={tableName}
+        schemas={allSchemas}
       />
 
       {/* Data Table */}
@@ -331,24 +371,24 @@ export function TableView({
             onColumnVisibilityChange={setColumnVisibility}
             onCellEdit={handleCellEdit}
             editedCells={editedCells}
-            scrollContainerRef={scrollContainerRef}
-            onSortingChange={(updaterOrValue) => {
+            scrollContainerRef={scrollContainerRef as React.RefObject<HTMLDivElement>}
+            onSortingChange={(updaterOrValue: any) => {
               // Handle both updater function and direct value
               const newSorting = typeof updaterOrValue === 'function' 
-                ? updaterOrValue(orderBy.map(sort => ({
+                ? updaterOrValue(orderBy.map((sort: any) => ({
                     id: sort.column,
                     desc: sort.direction === 'desc'
                   })))
                 : updaterOrValue
               
               // Convert TanStack sorting state to our orderBy format
-              const newOrderBy = newSorting.map(sort => ({
+              const newOrderBy = newSorting.map((sort: any) => ({
                 column: sort.id,
                 direction: sort.desc ? 'desc' as const : 'asc' as const
               }))
               setOrderBy(newOrderBy)
             }}
-            sorting={orderBy.map(sort => ({
+            sorting={orderBy.map((sort: any) => ({
               id: sort.column,
               desc: sort.direction === 'desc'
             }))}

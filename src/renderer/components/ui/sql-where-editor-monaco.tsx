@@ -8,6 +8,7 @@ interface SQLWhereEditorProps {
   onCommit: () => void
   schema?: any
   disabled?: boolean
+  onAiPrompt?: (position: { top: number; left: number }) => void
 }
 
 // Define theme once globally
@@ -40,17 +41,23 @@ export function SQLWhereEditor({
   onChange,
   onCommit,
   schema,
-  disabled = false
+  disabled = false,
+  onAiPrompt
 }: SQLWhereEditorProps) {
   const editorRef = useRef<any>(null)
   const monacoRef = useRef<any>(null)
   const [isEditorReady, setIsEditorReady] = useState(false)
   const onCommitRef = useRef(onCommit)
+  const onAiPromptRef = useRef(onAiPrompt)
   
-  // Keep the ref up to date
+  // Keep the refs up to date
   useEffect(() => {
     onCommitRef.current = onCommit
   }, [onCommit])
+  
+  useEffect(() => {
+    onAiPromptRef.current = onAiPrompt
+  }, [onAiPrompt])
 
   // Initialize theme before any editor mounts
   useEffect(() => {
@@ -88,6 +95,35 @@ export function SQLWhereEditor({
         onCommitRef.current()
       }
     })
+    
+    // Handle Cmd+K for AI prompt
+    if (onAiPrompt) {
+      editor.addAction({
+        id: 'open-ai-prompt',
+        label: 'Open AI Prompt',
+        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK],
+        run: () => {
+          if (!onAiPromptRef.current) return
+          
+          // Get cursor position for prompt placement
+          const position = editor.getPosition()
+          if (!position) return
+          
+          const coords = editor.getScrolledVisiblePosition(position)
+          if (!coords) return
+          
+          const editorDom = editor.getDomNode()
+          if (!editorDom) return
+          
+          const editorRect = editorDom.getBoundingClientRect()
+          
+          onAiPromptRef.current({
+            top: editorRect.top + coords.top + 20, // Offset below cursor
+            left: editorRect.left + coords.left
+          })
+        }
+      })
+    }
 
     editor.focus()
     setIsEditorReady(true)
@@ -297,14 +333,13 @@ export function SQLWhereEditor({
             // Features to disable for cleaner look
             contextmenu: false,
             links: false,
-            occurrencesHighlight: false,
+            occurrencesHighlight: 'off',
             selectionHighlight: false,
             renderValidationDecorations: 'off',
             
             // Monaco-specific optimizations
             fixedOverflowWidgets: true,
             readOnly: disabled,
-            domReadOnly: disabled,
           }}
           />
         </div>

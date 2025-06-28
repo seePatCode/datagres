@@ -14,6 +14,7 @@ interface SqlAiPromptProps {
   schemas?: TableSchema[]
   position?: { top: number; left: number }
   selectedText?: string
+  mode?: 'sql' | 'where-clause'
 }
 
 // Track which commands have been executed
@@ -31,7 +32,8 @@ export function SqlAiPrompt({
   tableName,
   schemas = [],
   position,
-  selectedText 
+  selectedText,
+  mode = 'sql'
 }: SqlAiPromptProps) {
   const [prompt, setPrompt] = useState('')
   const [executedCommands, setExecutedCommands] = useState<ExecutedCommands>({})
@@ -45,6 +47,11 @@ export function SqlAiPrompt({
       let fullPrompt = userPrompt
       if (selectedText?.trim()) {
         fullPrompt = `Given this SQL: ${selectedText}\n\n${userPrompt}`
+      }
+      
+      // Add mode marker for WHERE clause generation
+      if (mode === 'where-clause') {
+        fullPrompt = `[where-clause-only] ${fullPrompt}`
       }
       
       // Try to detect which table the user is referring to
@@ -119,8 +126,7 @@ export function SqlAiPrompt({
         setExecutedCommands(prev => ({ ...prev, [commandKey]: true }))
         
         // If all setup commands are done, retry the generation
-        if (commandKey === 'model' || 
-            (executedCommands.install && executedCommands.start && commandKey === 'model')) {
+        if (commandKey === 'model') {
           // Wait a moment for Ollama to be ready
           setTimeout(() => {
             if (prompt.trim()) {
@@ -184,7 +190,13 @@ export function SqlAiPrompt({
           ref={inputRef}
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder={selectedText?.trim() ? "Describe how to modify the selected SQL..." : "Describe what you want in plain English..."}
+          placeholder={
+            mode === 'where-clause' 
+              ? "Describe the filter condition in plain English..."
+              : selectedText?.trim() 
+                ? "Describe how to modify the selected SQL..." 
+                : "Describe what you want in plain English..."
+          }
           className="flex-1 h-8 text-sm"
           disabled={generateMutation.isPending}
         />

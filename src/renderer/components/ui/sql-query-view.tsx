@@ -330,9 +330,19 @@ Return ONLY the corrected SQL query.`;
                                 result.sql +
                                 currentEditorContent.substring(failedQueryIndex + failedQuery.length);
                               handleQueryChange(newContent);
+                              
+                              // Select the fixed query in the editor
+                              setTimeout(() => {
+                                editorRef.current?.selectText(failedQueryIndex, failedQueryIndex + result.sql.length);
+                              }, 50); // Small delay to ensure editor has updated
                             } else {
                               // If we can't find the exact query, just replace the whole content
                               handleQueryChange(result.sql);
+                              
+                              // Select all text
+                              setTimeout(() => {
+                                editorRef.current?.selectText(0, result.sql.length);
+                              }, 50);
                             }
                             
                             // Clear the error by resetting the mutation

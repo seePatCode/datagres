@@ -11,13 +11,143 @@ export default function DocsPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="getting-started" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs defaultValue="why-datagres" className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="why-datagres">Why Datagres</TabsTrigger>
           <TabsTrigger value="getting-started">Getting Started</TabsTrigger>
-          <TabsTrigger value="shortcuts">Keyboard Shortcuts</TabsTrigger>
+          <TabsTrigger value="shortcuts">Shortcuts</TabsTrigger>
           <TabsTrigger value="features">Features</TabsTrigger>
           <TabsTrigger value="troubleshooting">Troubleshooting</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="why-datagres" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Built for Developers, Not DBAs</CardTitle>
+              <CardDescription>
+                Datagres is designed for developers who need to quickly check data across multiple databases
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h3 className="mb-2 font-semibold">The Problem with Traditional Database Tools</h3>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  Most free database tools were built for database administrators who spend all day in one tool. 
+                  They're powerful but slow, complex, and require extensive configuration. As a developer, 
+                  you just want to quickly check if that migration ran correctly or debug why a query isn't 
+                  returning the expected results.
+                </p>
+              </div>
+              
+              <div>
+                <h3 className="mb-2 font-semibold">Datagres Philosophy</h3>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500">→</span>
+                    <div>
+                      <strong>Speed First:</strong> From launch to browsing data in under 15 seconds. 
+                      No waiting for Java to start, no driver downloads, no workspace configuration.
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500">→</span>
+                    <div>
+                      <strong>Zero Configuration:</strong> Paste a connection string and go. 
+                      Datagres handles SSL, cloud providers, and connection pooling automatically.
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500">→</span>
+                    <div>
+                      <strong>Keyboard Driven:</strong> Switch between databases with Shift+Shift. 
+                      Generate SQL with Cmd+K. Navigate tabs with Cmd+1-9. Your hands never leave the keyboard.
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500">→</span>
+                    <div>
+                      <strong>Developer Workflow:</strong> Quick connection switching for dev/staging/prod. 
+                      AI-powered SQL generation. Smart autocomplete that understands your schema.
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Real-World Speed Comparison</CardTitle>
+              <CardDescription>Time from launch to viewing data in a table</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium">Datagres</span>
+                    <span className="text-sm text-green-500">~13 seconds</span>
+                  </div>
+                  <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                    <div className="h-full bg-green-500 rounded-full" style={{ width: '15%' }}></div>
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium">Traditional Free Tools</span>
+                    <span className="text-sm text-muted-foreground">2-5 minutes</span>
+                  </div>
+                  <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                    <div className="h-full bg-muted-foreground rounded-full" style={{ width: '100%' }}></div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Includes: App startup (30s+), driver download, connection setup, navigation to table
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Unique Features</CardTitle>
+              <CardDescription>What makes Datagres different</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h3 className="mb-2 font-semibold">🔍 Unified Quick Search (Shift+Shift)</h3>
+                <p className="text-sm text-muted-foreground">
+                  Search and switch between both tables AND database connections in one dialog. 
+                  No more navigating through connection managers and object browsers.
+                </p>
+              </div>
+              
+              <div>
+                <h3 className="mb-2 font-semibold">🤖 Local AI SQL Generation</h3>
+                <p className="text-sm text-muted-foreground">
+                  Press Cmd+K and describe what you want in plain English. Datagres generates 
+                  the SQL locally using Ollama - your schema never leaves your machine.
+                </p>
+              </div>
+              
+              <div>
+                <h3 className="mb-2 font-semibold">☁️ Cloud Provider Auto-Detection</h3>
+                <p className="text-sm text-muted-foreground">
+                  Automatically configures SSL for Heroku, AWS RDS, Azure, and Google Cloud SQL. 
+                  No manual certificate management or connection parameter tweaking.
+                </p>
+              </div>
+              
+              <div>
+                <h3 className="mb-2 font-semibold">⚡ Instant Startup</h3>
+                <p className="text-sm text-muted-foreground">
+                  Native app that starts in under 2 seconds. Auto-reconnects to your last database. 
+                  By the time other tools show their splash screen, you're already querying data.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="getting-started" className="space-y-6">
           <Card>

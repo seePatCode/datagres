@@ -11,7 +11,7 @@ function App() {
           <div className="container flex h-14 items-center justify-between">
             <div className="flex items-center gap-6">
               <Link to="/" className="flex items-center gap-2">
-                <img src="/datagres/icon.png" alt="Datagres" className="h-7 w-7" />
+                <img src={`${import.meta.env.BASE_URL}icon.png`} alt="Datagres" className="h-7 w-7" />
                 <span className="text-lg font-semibold">Datagres</span>
               </Link>
               <div className="flex gap-1">

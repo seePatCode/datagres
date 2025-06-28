@@ -130,10 +130,39 @@ async function tryOllama(prompt, tableInfo) {
     const isErrorFix = prompt.toLowerCase().includes('fix this sql') && 
                       prompt.toLowerCase().includes('error');
     
+    // Check if this is a WHERE clause generation request
+    const isWhereClause = prompt.toLowerCase().includes('[where-clause-only]');
+    
     // Enhanced prompt with best practices from research
     let systemPrompt;
     
-    if (isErrorFix) {
+    if (isWhereClause) {
+      // Special prompt for generating WHERE clauses only
+      const userPrompt = prompt.replace('[where-clause-only]', '').trim();
+      
+      // Create a very focused prompt
+      const tableColumns = tableInfo.allSchemas?.[0]?.columns?.map(c => `${c.name} (${c.dataType})`).join(', ') || 'unknown columns';
+      
+      systemPrompt = `Convert this natural language filter into a PostgreSQL WHERE condition.
+
+RULES:
+1. Return ONLY the condition (e.g., "status = 'active'")
+2. NO SELECT, FROM, WHERE keywords
+3. Use exact column names from the table
+4. Use = for exact match, ILIKE for contains
+5. "is" means exact match (=), "contains" means partial match (ILIKE '%...%')
+
+Table columns: ${tableColumns}
+
+Examples:
+"status is active" → status = 'active'
+"title is recovery" → title = 'recovery'
+"title contains recovery" → title ILIKE '%recovery%'
+"created today" → created_at >= CURRENT_DATE
+
+Convert: "${userPrompt}"
+Condition:`;
+    } else if (isErrorFix) {
       // Special prompt for fixing SQL errors
       systemPrompt = `### Task
 Fix the PostgreSQL query error. The error message indicates which column doesn't exist - find the correct column name from the schema.
@@ -202,6 +231,9 @@ ${prompt}
     
     if (isDev) {
       devLog(`Sending prompt: ${systemPrompt.length} chars, ${tableInfo.allSchemas?.length || 0} tables`);
+      if (isWhereClause) {
+        devLog('WHERE clause mode active - expecting only condition');
+      }
     }
     
     const generateStart = Date.now();
@@ -212,11 +244,12 @@ ${prompt}
         model: 'qwen2.5-coder:latest',  // Use qwen2.5-coder for code generation
         prompt: systemPrompt,
         stream: false,
+        system: isWhereClause ? "You are a WHERE clause generator. Return ONLY the condition without any SQL keywords." : undefined,
         options: {
-          temperature: 0.1,  // Low temperature for deterministic SQL
-          top_p: 0.9,
+          temperature: isWhereClause ? 0.0 : 0.1,  // Zero temperature for WHERE clauses
+          top_p: isWhereClause ? 0.8 : 0.9,
           num_ctx: 4096,     // Limit context to prevent memory issues
-          num_predict: 1024  // Limit response length
+          num_predict: isWhereClause ? 200 : 1024  // Shorter response for WHERE clauses
         }
       })
     });
@@ -303,6 +336,38 @@ ${prompt}
     // Remove any markdown code blocks
     sql = sql?.replace(/```sql\n?/gi, '').replace(/```\n?/g, '').trim();
     
+    // For WHERE clause requests, the response should be just the condition
+    if (isWhereClause) {
+      // Clean up common issues with WHERE clause responses
+      sql = sql.replace(/^WHERE\s+/i, ''); // Remove WHERE if included
+      sql = sql.replace(/;\s*$/, ''); // Remove trailing semicolon
+      
+      // Basic validation - should not contain SELECT, FROM, etc.
+      if (sql.match(/\b(SELECT|FROM|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP)\b/i)) {
+        console.warn('AI returned full SQL query instead of WHERE clause:', sql);
+        devLog('AI did not follow WHERE-only instructions, extracting...', { 
+          originalResponse: sql 
+        }, 'warn');
+        // Try to extract just the WHERE clause
+        const whereMatch = sql.match(/WHERE\s+(.+?)(?:ORDER BY|GROUP BY|LIMIT|;|$)/i);
+        if (whereMatch && whereMatch[1]) {
+          sql = whereMatch[1].trim();
+          devLog('Extracted WHERE clause', { extracted: sql });
+        }
+      }
+      
+      // Return immediately for WHERE clauses
+      if (sql && sql.length > 0) {
+        console.log('Ollama generated WHERE clause:', sql);
+        const totalTime = Date.now() - startTime;
+        devLog(`WHERE clause generated successfully in ${totalTime}ms`, {
+          clauseLength: sql.length,
+          clause: sql
+        });
+        return { success: true, sql, method: 'ollama' };
+      }
+    }
+    
     // Extract only SQL from the response
     // Look for SQL statements and remove any explanatory text
     const lines = sql.split('\n');
@@ -353,8 +418,8 @@ ${prompt}
       };
     }
     
-    // Basic validation for actual SQL
-    if (sql && (sql.toLowerCase().includes('select') || sql.toLowerCase().includes('insert') || 
+    // Basic validation for actual SQL (skip for WHERE clauses as they're already handled)
+    if (!isWhereClause && sql && (sql.toLowerCase().includes('select') || sql.toLowerCase().includes('insert') || 
                 sql.toLowerCase().includes('update') || sql.toLowerCase().includes('delete'))) {
       console.log('Ollama generated SQL:', sql);
       

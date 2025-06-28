@@ -1,6 +1,7 @@
 import { RefreshCw, Save, MoreHorizontal, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SQLWhereEditor } from '@/components/ui/sql-where-editor-monaco'
+import { SqlAiPrompt } from '@/components/ui/sql-ai-prompt'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useState } from 'react'
 
 interface TableToolbarProps {
   // Search props
@@ -31,6 +33,11 @@ interface TableToolbarProps {
   columns: string[]
   columnVisibility: Record<string, boolean>
   onColumnVisibilityChange: (visibility: Record<string, boolean>) => void
+  
+  // AI props
+  connectionString?: string
+  tableName?: string
+  schemas?: any[]
 }
 
 export function TableToolbar({
@@ -47,7 +54,23 @@ export function TableToolbar({
   columns,
   columnVisibility,
   onColumnVisibilityChange,
+  connectionString,
+  tableName,
+  schemas,
 }: TableToolbarProps) {
+  const [showAiPrompt, setShowAiPrompt] = useState(false)
+  const [aiPromptPosition, setAiPromptPosition] = useState<{ top: number; left: number } | undefined>()
+  
+  const handleAiPrompt = (position: { top: number; left: number }) => {
+    setAiPromptPosition(position)
+    setShowAiPrompt(true)
+  }
+  
+  const handleInsertWhereClause = (sql: string) => {
+    // The SQL should already be just the WHERE clause condition
+    onSearchChange(sql.trim())
+    onSearchCommit()
+  }
   return (
     <div className="flex items-center justify-between border-b bg-background" style={{ overflow: 'visible', zIndex: 100 }}>
       <div className="flex-1 m-0.5" style={{ overflow: 'visible' }}>
@@ -57,6 +80,7 @@ export function TableToolbar({
           onCommit={onSearchCommit}
           schema={schemaData}
           disabled={isLoading}
+          onAiPrompt={handleAiPrompt}
         />
       </div>
 
@@ -141,6 +165,18 @@ export function TableToolbar({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      
+      {/* AI Prompt */}
+      <SqlAiPrompt
+        isOpen={showAiPrompt}
+        onClose={() => setShowAiPrompt(false)}
+        onInsertSql={handleInsertWhereClause}
+        connectionString={connectionString || ''}
+        tableName={tableName}
+        schemas={schemaData ? [schemaData] : []}
+        position={aiPromptPosition}
+        mode="where-clause"
+      />
     </div>
   )
 }

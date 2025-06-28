@@ -395,7 +395,7 @@ ORDER BY o.order_date DESC;`
         <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-transparent to-transparent" />
         <div className="container relative py-16 text-center">
           <img 
-            src="/datagres/icon.png" 
+            src={`${import.meta.env.BASE_URL}icon.png`} 
             alt="Datagres" 
             className="mx-auto mb-6 h-24 w-24 drop-shadow-2xl"
           />
@@ -403,7 +403,7 @@ ORDER BY o.order_date DESC;`
             Datagres
           </h1>
           <p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground">
-            The Lightning-Fast PostgreSQL Explorer. Try it live below.
+            The PostgreSQL client that respects your time. Connect and browse data in under 15 seconds.
           </p>
           <div className="flex gap-4 justify-center">
             <a href="https://github.com/seepatcode/datagres/releases">
@@ -415,9 +415,48 @@ ORDER BY o.order_date DESC;`
         </div>
       </section>
 
+      {/* Pain Points Section */}
+      <section className="bg-red-950/10 border-y border-red-900/20">
+        <div className="container py-12">
+          <h2 className="mb-8 text-center text-3xl font-bold">Frustrated with Existing Database Tools?</h2>
+          <div className="mx-auto max-w-3xl">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="flex items-start gap-3">
+                <span className="text-red-500">✗</span>
+                <div>
+                  <h3 className="font-semibold">Waiting for Java to start</h3>
+                  <p className="text-sm text-muted-foreground">30+ seconds just to open the app</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-red-500">✗</span>
+                <div>
+                  <h3 className="font-semibold">JDBC driver hell</h3>
+                  <p className="text-sm text-muted-foreground">Download, configure, troubleshoot, repeat</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-red-500">✗</span>
+                <div>
+                  <h3 className="font-semibold">Complex UI for simple tasks</h3>
+                  <p className="text-sm text-muted-foreground">5 clicks to see table data</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-red-500">✗</span>
+                <div>
+                  <h3 className="font-semibold">Memory hungry</h3>
+                  <p className="text-sm text-muted-foreground">1GB+ RAM for a database viewer</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Interactive Demo Section */}
       <section className="container py-12">
-          <Card className="mx-auto max-w-6xl overflow-hidden">
+          <Card className="mx-auto max-w-6xl overflow-hidden relative">
             <div className="border-b bg-secondary/30 p-4">
               <div className="flex items-center gap-2">
                 <div className="h-3 w-3 rounded-full bg-red-500" />
@@ -427,6 +466,7 @@ ORDER BY o.order_date DESC;`
               </div>
             </div>
             
+            <div className="relative">
             {!isConnected ? (
               <CardContent className="p-0">
                 <div className="flex h-[600px] items-center justify-center p-8">
@@ -931,26 +971,17 @@ ORDER BY o.order_date DESC;`
                 </div>
               </div>
             )}
-          </Card>
-          
-          <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              This is a demo. Download Datagres to connect to your real databases.
-            </p>
-          </div>
-        </section>
-        
-        {/* Quick Search Modal */}
-        {showQuickSearch && (
-          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
-            <div className="fixed left-[50%] top-[50%] z-50 w-full max-w-2xl translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-0 shadow-lg rounded-lg">
+            
+            {/* Quick Search Modal - Contained within demo */}
+            {showQuickSearch && (
+              <div className="absolute inset-0 z-50 bg-background/80 backdrop-blur-sm">
+                <div className="absolute left-[50%] top-[50%] z-50 w-full max-w-2xl translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-0 shadow-lg rounded-lg">
               <div className="flex items-center border-b px-4 py-3">
                 <Search className="mr-2 h-4 w-4 text-muted-foreground" />
                 <input
                   type="text"
                   placeholder="Search tables and connections..."
                   className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
-                  autoFocus
                 />
               </div>
               <div className="max-h-[400px] overflow-y-auto p-2">
@@ -1000,6 +1031,15 @@ ORDER BY o.order_date DESC;`
             </div>
           </div>
         )}
+        </div>
+          </Card>
+          
+          <div className="mt-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              This is a demo. Download Datagres to connect to your real databases.
+            </p>
+          </div>
+        </section>
 
       {/* Features Grid */}
       <section className="container py-24">
@@ -1061,6 +1101,129 @@ ORDER BY o.order_date DESC;`
               </div>
             </CardContent>
           </Card>
+
+          <Card className="relative overflow-hidden">
+            <div className="absolute right-0 top-0 h-32 w-32 translate-x-8 -translate-y-8 rounded-full bg-purple-500/10" />
+            <CardHeader>
+              <Keyboard className="mb-4 h-10 w-10 text-purple-500" />
+              <CardTitle>AI-Powered SQL</CardTitle>
+              <CardDescription>
+                Generate complex queries in plain English. Runs locally for complete privacy.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 text-sm">
+                <div className="rounded bg-secondary p-2">
+                  <span className="text-muted-foreground">Cmd+K:</span> "show orders with their products"
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  → Instant JOIN query with proper relationships
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="relative overflow-hidden">
+            <div className="absolute right-0 top-0 h-32 w-32 translate-x-8 -translate-y-8 rounded-full bg-orange-500/10" />
+            <CardHeader>
+              <Database className="mb-4 h-10 w-10 text-orange-500" />
+              <CardTitle>Zero Configuration</CardTitle>
+              <CardDescription>
+                No JDBC drivers. No workspace setup. Just paste your connection string and go.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-1 text-xs text-muted-foreground">
+                <div>❌ Other tools: Download drivers, configure workspace</div>
+                <div>✅ Datagres: Paste connection string, done!</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="relative overflow-hidden">
+            <div className="absolute right-0 top-0 h-32 w-32 translate-x-8 -translate-y-8 rounded-full bg-cyan-500/10" />
+            <CardHeader>
+              <Zap className="mb-4 h-10 w-10 text-cyan-500" />
+              <CardTitle>10x Faster Workflow</CardTitle>
+              <CardDescription>
+                Switch between dev, staging, and production databases in 2 keystrokes.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Traditional tools:</span>
+                  <span className="font-mono">30s-2min startup</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Datagres to data:</span>
+                  <span className="font-mono text-green-500">&lt;15s total</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Comparison Table */}
+      <section className="bg-secondary/30">
+        <div className="container py-24">
+          <h2 className="mb-12 text-center text-4xl font-bold text-foreground">How Datagres Compares</h2>
+          <div className="mx-auto max-w-4xl overflow-hidden rounded-lg border bg-background">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="p-4 text-left font-medium">Feature</th>
+                    <th className="p-4 text-center font-medium">Datagres</th>
+                    <th className="p-4 text-center font-medium">Traditional Tools</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  <tr>
+                    <td className="p-4">Time to first query</td>
+                    <td className="p-4 text-center font-mono text-green-500">&lt;15 seconds</td>
+                    <td className="p-4 text-center font-mono text-muted-foreground">2-5 minutes</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4">Driver installation</td>
+                    <td className="p-4 text-center text-green-500">✓ None required</td>
+                    <td className="p-4 text-center text-red-500">✗ Manual setup</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4">Quick table search</td>
+                    <td className="p-4 text-center font-mono">Shift+Shift</td>
+                    <td className="p-4 text-center text-muted-foreground">Navigate menus</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4">Switch databases</td>
+                    <td className="p-4 text-center font-mono">2 keystrokes</td>
+                    <td className="p-4 text-center text-muted-foreground">Multiple dialogs</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4">Memory usage</td>
+                    <td className="p-4 text-center font-mono text-green-500">~100MB</td>
+                    <td className="p-4 text-center font-mono text-muted-foreground">1GB+</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4">AI SQL assistance</td>
+                    <td className="p-4 text-center text-green-500">✓ Built-in (local)</td>
+                    <td className="p-4 text-center text-red-500">✗ None</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4">Startup time</td>
+                    <td className="p-4 text-center font-mono text-green-500">&lt;2s</td>
+                    <td className="p-4 text-center font-mono text-muted-foreground">10-30s</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4">Target audience</td>
+                    <td className="p-4 text-center">Developers</td>
+                    <td className="p-4 text-center">Enterprise/DBAs</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </section>
 

@@ -267,6 +267,7 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
                         initialSearchTerm={tab.searchTerm}
                         initialPageSize={(tab as any).pageSize || DEFAULT_PAGE_SIZE}
                         onSearchChange={(searchTerm) => handleUpdateTab(tab.id, { searchTerm })}
+                        tables={tables}
                       />
                     ) : (
                       <MemoizedSQLQueryView
