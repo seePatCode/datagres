@@ -788,7 +788,7 @@ ORDER BY o.order_date DESC;`
                                     return row[field as keyof typeof row]?.toString().toLowerCase() === cleanValue.toLowerCase()
                                   }
                                   return Object.values(row).some(v => 
-                                    v.toString().toLowerCase().includes(searchQuery.toLowerCase())
+                                    v?.toString().toLowerCase().includes(searchQuery.toLowerCase())
                                   )
                                 } catch {
                                   return true
