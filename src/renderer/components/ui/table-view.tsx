@@ -73,6 +73,8 @@ export function TableView({
   const [optimisticData, setOptimisticData] = useState<any>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [allSchemas, setAllSchemas] = useState<TableSchema[]>([])
+  const [isFixingError, setIsFixingError] = useState(false)
+  const [lastExecutedSearch, setLastExecutedSearch] = useState<string>('')
   
   // Fetch table schema for autocomplete
   const { data: schemaData } = useQuery({
@@ -147,6 +149,12 @@ export function TableView({
     setSearchTerm(newSearchTerm)
     onSearchChange?.(newSearchTerm)
   }, [onSearchChange, setSearchTerm])
+  
+  // Track search commits for error fixing
+  const handleSearchCommitWithTracking = useCallback(() => {
+    setLastExecutedSearch(searchTerm)
+    handleSearchCommit()
+  }, [searchTerm, handleSearchCommit])
 
   // Create column definitions
   const columns = data ? createColumns(data.columns) : []
@@ -330,7 +338,7 @@ export function TableView({
       <TableToolbar
         searchTerm={searchTerm}
         onSearchChange={handleSearchChange}
-        onSearchCommit={handleSearchCommit}
+        onSearchCommit={handleSearchCommitWithTracking}
         schemaData={schemaData}
         hasEdits={hasEdits}
         editedCellsCount={editedCells.size}
@@ -347,6 +355,50 @@ export function TableView({
         connectionString={connectionString}
         tableName={tableName}
         schemas={allSchemas}
+        queryError={isError ? error : null}
+        lastExecutedSearch={lastExecutedSearch}
+        isFixingError={isFixingError}
+        onFixError={async (errorMessage: string) => {
+          setIsFixingError(true)
+          try {
+            // Generate a prompt for fixing the WHERE clause
+            const fixPrompt = `Fix this WHERE clause error.
+
+Error: ${errorMessage}
+
+Failed WHERE clause: ${lastExecutedSearch || searchTerm}
+
+The error indicates a problem with the WHERE condition. Common issues:
+- Column doesn't exist (check exact column names)
+- Wrong data type (e.g., comparing text to number)
+- Invalid syntax
+
+Return ONLY the corrected WHERE condition.`
+            
+            const result = await window.electronAPI.generateSQL('[where-clause-only] ' + fixPrompt, {
+              prompt: '[where-clause-only] ' + fixPrompt,
+              tableName: tableName,
+              columns: schemaData?.columns.map(c => c.name) || [],
+              allSchemas: schemaData ? [schemaData] : []
+            })
+            
+            if (result.success && result.sql) {
+              // Update the search term with the fixed WHERE clause
+              handleSearchChange(result.sql)
+              // Clear the error by triggering a new search
+              setTimeout(() => {
+                handleSearchCommitWithTracking()
+              }, 100)
+            } else {
+              alert(result.error || 'Failed to fix WHERE clause. Please check the column names and syntax.')
+            }
+          } catch (error) {
+            console.error('Error fixing WHERE clause:', error)
+            alert('Failed to connect to AI service. Please ensure Ollama is running.')
+          } finally {
+            setIsFixingError(false)
+          }
+        }}
       />
 
       {/* Data Table */}

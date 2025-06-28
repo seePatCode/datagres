@@ -1,7 +1,9 @@
-import { RefreshCw, Save, MoreHorizontal, Eye, EyeOff } from 'lucide-react'
+import { RefreshCw, Save, MoreHorizontal, Eye, EyeOff, AlertCircle, Sparkles, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SQLWhereEditor } from '@/components/ui/sql-where-editor-monaco'
 import { SqlAiPrompt } from '@/components/ui/sql-ai-prompt'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,6 +40,12 @@ interface TableToolbarProps {
   connectionString?: string
   tableName?: string
   schemas?: any[]
+  
+  // Error handling props
+  queryError?: Error | null
+  lastExecutedSearch?: string
+  isFixingError?: boolean
+  onFixError?: (errorMessage: string) => void | Promise<void>
 }
 
 export function TableToolbar({
@@ -57,6 +65,10 @@ export function TableToolbar({
   connectionString,
   tableName,
   schemas,
+  queryError,
+  lastExecutedSearch,
+  isFixingError,
+  onFixError,
 }: TableToolbarProps) {
   const [showAiPrompt, setShowAiPrompt] = useState(false)
   const [aiPromptPosition, setAiPromptPosition] = useState<{ top: number; left: number } | undefined>()
@@ -72,7 +84,58 @@ export function TableToolbar({
     onSearchCommit()
   }
   return (
-    <div className="flex items-center justify-between border-b bg-background" style={{ overflow: 'visible', zIndex: 100 }}>
+    <div className="flex flex-col" style={{ overflow: 'visible', zIndex: 100 }}>
+      {/* Error Alert */}
+      {queryError && (
+        <div className="flex justify-center p-2 border-b bg-background">
+          <Alert variant="destructive" className="w-auto max-w-2xl" data-testid="where-clause-error">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+              <AlertDescription className="text-sm">
+                {queryError.message}
+                {lastExecutedSearch && (
+                  <div className="mt-1 text-xs opacity-80">
+                    WHERE: {lastExecutedSearch}
+                  </div>
+                )}
+              </AlertDescription>
+              {onFixError && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onFixError(queryError.message)}
+                        disabled={isFixingError}
+                        className="gap-1 flex-shrink-0"
+                      >
+                        {isFixingError ? (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Fixing...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-3 w-3" />
+                            Fix with AI
+                          </>
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Use AI to analyze and fix the WHERE clause error</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
+          </Alert>
+        </div>
+      )}
+      
+      {/* Main Toolbar */}
+      <div className="flex items-center justify-between border-b bg-background" style={{ overflow: 'visible' }}>
       <div className="flex-1 m-0.5" style={{ overflow: 'visible' }}>
         <SQLWhereEditor
           value={searchTerm}
@@ -164,6 +227,7 @@ export function TableToolbar({
             })}
           </DropdownMenuContent>
         </DropdownMenu>
+      </div>
       </div>
       
       {/* AI Prompt */}
