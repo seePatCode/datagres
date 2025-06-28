@@ -4,11 +4,15 @@ import { DemoSection } from '@/components/sections/demo'
 import { Button } from '@/components/button'
 import { Card } from '@/components/card'
 import { AnimatedText } from '@/components/ui/animated/text'
-import { Database, ArrowRight, XCircle, Star } from 'lucide-react'
+import { ArrowRight, XCircle } from 'lucide-react'
+import { GitHubStars } from '@/components/ui/github-stars'
+import { LaunchBanner } from '@/components/ui/launch-banner'
+import { Testimonials } from '@/components/ui/testimonials'
 
 export default function HomePage2() {
   return (
     <div className="min-h-screen">
+      <LaunchBanner />
       <HeroSection />
       
       {/* Pain Points Section - Simplified to 3 key frustrations */}
@@ -47,11 +51,18 @@ export default function HomePage2() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
                 viewport={{ once: true }}
+                whileHover={{ scale: 1.05, y: -5 }}
               >
-                <Card className="p-6 bg-red-950/20 border-red-900/30 text-center">
-                  <div className="text-4xl mb-3">{pain.icon}</div>
+                <Card className="p-6 bg-red-950/20 border-red-900/30 text-center hover:bg-red-950/30 hover:border-red-900/50 transition-all duration-300 cursor-default group">
+                  <motion.div 
+                    className="text-4xl mb-3"
+                    whileHover={{ rotate: [-5, 5, -5, 0] }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    {pain.icon}
+                  </motion.div>
                   <h3 className="font-semibold text-white flex items-center justify-center gap-2">
-                    <XCircle className="h-5 w-5 text-red-500" />
+                    <XCircle className="h-5 w-5 text-red-500 group-hover:text-red-400 transition-colors" />
                     {pain.title}
                   </h3>
                 </Card>
@@ -110,10 +121,17 @@ export default function HomePage2() {
                 viewport={{ once: true }}
                 whileHover={{ scale: 1.02, y: -5 }}
               >
-                <Card className={`p-8 bg-gradient-to-br ${feature.gradient} border-gray-800 hover:border-gray-700 transition-all`}>
-                  <div className="text-4xl mb-4">{feature.icon}</div>
-                  <h3 className="text-xl font-bold mb-2 text-white">{feature.title}</h3>
-                  <p className="text-gray-400">{feature.description}</p>
+                <Card className={`p-8 bg-gradient-to-br ${feature.gradient} border-gray-800 hover:border-gray-700 transition-all group relative overflow-hidden`}>
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <motion.div 
+                    className="text-4xl mb-4 relative z-10"
+                    whileHover={{ scale: 1.2, rotate: 5 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    {feature.icon}
+                  </motion.div>
+                  <h3 className="text-xl font-bold mb-2 text-white relative z-10">{feature.title}</h3>
+                  <p className="text-gray-400 relative z-10">{feature.description}</p>
                 </Card>
               </motion.div>
             ))}
@@ -161,17 +179,19 @@ export default function HomePage2() {
               </Button>
             </a>
             
-            {/* GitHub Stars */}
-            <motion.a
-              href="https://github.com/seepatcode/datagres"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
-              whileHover={{ scale: 1.05 }}
-            >
-              <Star className="h-4 w-4" />
-              <span className="text-sm">Star on GitHub</span>
-            </motion.a>
+            {/* GitHub Stars Component */}
+            <GitHubStars />
+          </motion.div>
+          
+          {/* Testimonials */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            viewport={{ once: true }}
+            className="mt-16"
+          >
+            <Testimonials />
           </motion.div>
         </div>
       </section>

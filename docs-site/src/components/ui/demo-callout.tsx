@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 
@@ -72,5 +73,3 @@ export function DemoTimer({ startTime, isRunning }: DemoTimerProps) {
     </motion.div>
   )
 }
-
-import { useState, useEffect } from 'react'

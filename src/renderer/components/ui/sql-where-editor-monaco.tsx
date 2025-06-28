@@ -324,7 +324,7 @@ const SQLWhereEditorComponent = memo(function SQLWhereEditor({
   }), [disabled])
 
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-background min-w-0">
+    <div className="flex items-center gap-2 px-3 py-2 border rounded-md bg-background min-w-0">
       <button
         className="h-4 w-4 text-muted-foreground flex-shrink-0 hover:text-foreground transition-colors cursor-pointer"
         onClick={() => onCommitRef.current()}
@@ -332,7 +332,7 @@ const SQLWhereEditorComponent = memo(function SQLWhereEditor({
       >
         <Search className="h-4 w-4" />
       </button>
-      <div ref={containerRef} className="flex-1 -my-1.5 -mr-3 relative min-w-0 overflow-hidden">
+      <div ref={containerRef} className="flex-1 -my-1 -mr-3 relative min-w-0 overflow-hidden">
         {!isEditorReady && (
           <div className="absolute inset-0 flex items-center">
             <div className="w-full h-6 bg-[#09090b] text-[#fafafa] text-sm px-2 flex items-center">
@@ -342,7 +342,7 @@ const SQLWhereEditorComponent = memo(function SQLWhereEditor({
         )}
         <div className={!isEditorReady ? 'opacity-0' : ''}>
           <Editor
-            height="24px"
+            height="28px"
             defaultLanguage="sql"
             theme="datagres-search"
             value={value}

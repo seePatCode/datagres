@@ -17,10 +17,11 @@ export function LaunchBanner() {
       <div className="container mx-auto px-4 py-3 flex items-center justify-center text-sm md:text-base">
         <Sparkles className="h-4 w-4 mr-2 animate-pulse" />
         <span className="font-medium">
-          Launch Week Special: Free forever for early adopters • 
+          Launch Week Special: Free forever* • 
           <a href="https://github.com/seepatcode/datagres/releases" className="underline ml-1 hover:no-underline">
             Download now
           </a>
+          <span className="text-xs ml-2 opacity-80">(*it's always free 😉)</span>
         </span>
         <button
           onClick={() => setIsVisible(false)}

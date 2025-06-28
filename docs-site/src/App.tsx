@@ -4,6 +4,8 @@ import HomePage2 from './pages/HomePage2-simplified'
 import DocsPage from './pages/DocsPage'
 import { Button } from '@/components/button'
 import { motion } from 'framer-motion'
+import { Footer } from '@/components/layout/footer'
+import { BuyMeCoffeeIcon } from '@/components/ui/buy-me-coffee-icon'
 
 function App() {
   return (
@@ -34,7 +36,8 @@ function App() {
                 </Link>
               </div>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-3 items-center">
+              <BuyMeCoffeeIcon />
               <a href="https://github.com/seepatcode/datagres/releases" target="_blank" rel="noopener noreferrer">
                 <Button 
                   size="sm" 
@@ -63,6 +66,8 @@ function App() {
           <Route path="/original" element={<HomePage />} />
           <Route path="/docs" element={<DocsPage />} />
         </Routes>
+        
+        <Footer />
         </div>
       </div>
     </BrowserRouter>

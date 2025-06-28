@@ -188,34 +188,6 @@
     width: 100%;
   }
   
-  /* Column resizer handle */
-  .resizer {
-    position: absolute;
-    right: 0;
-    top: 0;
-    height: 100%;
-    width: 5px;
-    background: rgba(0, 0, 0, 0.5);
-    cursor: col-resize;
-    user-select: none;
-    touch-action: none;
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
-  
-  .resizer:hover,
-  .resizer.isResizing {
-    opacity: 1;
-    background-color: hsl(var(--primary));
-  }
-  
-  /* Add global resizing cursor only when actually resizing */
-  body.col-resizing,
-  body.col-resizing * {
-    cursor: col-resize !important;
-    user-select: none !important;
-  }
-  
   /* Ensure th elements are positioned for absolute resizer */
   th {
     position: relative;

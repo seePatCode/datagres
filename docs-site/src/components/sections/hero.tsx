@@ -3,6 +3,7 @@ import { ArrowRight, Database, Sparkles } from 'lucide-react'
 import { Button } from '@/components/button'
 import { TypewriterText, AnimatedText } from '@/components/ui/animated/text'
 import { GradientBackground } from '@/components/ui/animated/gradient-background'
+import { DownloadCounter } from '@/components/ui/download-counter'
 
 export function HeroSection() {
   return (
@@ -112,8 +113,17 @@ export function HeroSection() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
+          transition={{ delay: 2.2 }}
+          className="mt-8 flex justify-center"
+        >
+          <DownloadCounter />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ delay: 2.5 }}
-          className="mt-16 flex items-center justify-center gap-8 text-sm text-gray-500"
+          className="mt-12 flex items-center justify-center gap-8 text-sm text-gray-500"
         >
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />

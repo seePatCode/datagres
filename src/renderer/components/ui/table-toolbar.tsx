@@ -75,8 +75,8 @@ export function TableToolbar({
     onSearchCommit()
   }
   return (
-    <div className="flex items-center border-b bg-background" style={{ zIndex: 100 }}>
-      <div className="flex-1 min-w-0 px-2" style={{ overflow: 'visible' }}>
+    <div className="flex items-center border-b bg-background py-1" style={{ zIndex: 100 }}>
+      <div className="flex-1 min-w-0 px-2 py-1" style={{ overflow: 'visible' }}>
         <SQLWhereEditor
           value={searchTerm}
           onChange={onSearchChange}

@@ -4,14 +4,7 @@ import { Card } from '@/components/card'
 import { Button } from '@/components/button'
 import { Database, Table, Loader2, MousePointer, Search, FileText } from 'lucide-react'
 import Editor from '@monaco-editor/react'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { DemoCallout, DemoTimer } from '@/components/ui/demo-callout'
 import { 
   Table as DataTable, 
   TableHeader, 
@@ -21,7 +14,7 @@ import {
   TableCell,
 } from '@/components/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/tabs'
-import { MoreHorizontal, Eye, EyeOff, Save, RefreshCw, X, Keyboard } from 'lucide-react'
+import { RefreshCw, X, Keyboard } from 'lucide-react'
 
 export function DemoSection() {
   const [connectionString, setConnectionString] = useState('')
@@ -33,8 +26,6 @@ export function DemoSection() {
   const [showMouse, setShowMouse] = useState(false)
   const mousePositionRef = useRef({ x: 0, y: 0 })
   const [searchQuery, setSearchQuery] = useState('')
-  const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({})
-  const [editedCells] = useState(new Map())
   const [isLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<string | null>(null)
   const [showQuickSearch, setShowQuickSearch] = useState(false)
@@ -42,6 +33,11 @@ export function DemoSection() {
   const [sqlQuery, setSqlQuery] = useState('')
   const [showSqlGeneration, setShowSqlGeneration] = useState(false)
   const [openTabs, setOpenTabs] = useState<Array<{id: string, type: 'table' | 'query', name: string, tableName?: string}>>([])
+  
+  // Timer and callout states
+  const [timerStartTime, setTimerStartTime] = useState<number | null>(null)
+  const [isTimerRunning, setIsTimerRunning] = useState(false)
+  const [currentCallout, setCurrentCallout] = useState<{ message: string; position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' } | null>(null)
 
   const savedConnections = [
     { id: '1', name: 'Production DB', database: 'prod_db' },
@@ -184,6 +180,9 @@ export function DemoSection() {
         setShowMouse(true)
       }
       
+      // Show callout for connection
+      setCurrentCallout({ message: "Just paste your connection string", position: "top-right" })
+      
       // Type Connection String
       await wait(300)
       await typeText('postgresql://user:pass@localhost:5432/sample_db', setConnectionString)
@@ -196,14 +195,22 @@ export function DemoSection() {
         await animateMouseTo(rect.left + rect.width / 2, rect.top + rect.height / 2)
       }
       
+      // Start timer and hide callout
       await wait(200)
+      setCurrentCallout(null)
       setIsConnecting(true)
+      setTimerStartTime(Date.now())
+      setIsTimerRunning(true)
       await wait(800)
       setIsConnecting(false)
       setIsConnected(true)
       
+      // Show success callout
+      setCurrentCallout({ message: "Connected! Browse your data instantly", position: "bottom-right" })
+      
       // Browse Initial Data
       await wait(800)
+      setCurrentCallout(null)
       
       const usersButton = findButtonByText('users', 'button[data-table]')
       if (usersButton) {
@@ -218,6 +225,7 @@ export function DemoSection() {
       // Demo Quick Search
       setShowMouse(false)
       setShowQuickSearch(true)
+      setCurrentCallout({ message: "Press Shift+Shift for instant table search", position: "top-left" })
       await wait(600)
       
       // Switch to Production Database
@@ -232,6 +240,7 @@ export function DemoSection() {
       
       await wait(300)
       setShowQuickSearch(false)
+      setCurrentCallout(null)
       setCurrentDatabase('prod_db')
       setSelectedTable(null)
       
@@ -264,6 +273,7 @@ export function DemoSection() {
       
       // Demo AI SQL Generation
       await wait(800)
+      setCurrentCallout({ message: "Press Cmd+K to generate SQL with AI", position: "bottom-left" })
       setShowSqlGeneration(true)
       await wait(2000)
       
@@ -285,12 +295,20 @@ WHERE o.status = 'completed'
 ORDER BY o.order_date DESC;`
       
       await typeText(generatedSql, setSqlQuery, 5)
+      setCurrentCallout(null)
       
       // Show Query Results
       await wait(2500)
       
+      // Stop timer and show final callout
+      setIsTimerRunning(false)
+      setCurrentCallout({ message: "15 seconds to browse your data!", position: "top-right" })
+      await wait(2000)
+      
       // Reset and Loop
       await wait(1500)
+      setCurrentCallout(null)
+      setTimerStartTime(null)
       setShowMouse(false)
       setConnectionString('')
       setIsConnected(false)
@@ -346,6 +364,18 @@ ORDER BY o.order_date DESC;`
           className="max-w-6xl mx-auto"
         >
           <Card className="overflow-hidden bg-gray-950/50 backdrop-blur border-gray-800 relative">
+            {/* Timer Display */}
+            <DemoTimer startTime={timerStartTime} isRunning={isTimerRunning} />
+            
+            {/* Callout Display */}
+            {currentCallout && (
+              <DemoCallout
+                message={currentCallout.message}
+                isVisible={true}
+                position={currentCallout.position}
+              />
+            )}
+            
             {/* Animated Cursor */}
             {showMouse && (
               <div 
