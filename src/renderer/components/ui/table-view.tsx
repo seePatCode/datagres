@@ -13,6 +13,7 @@ import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { DEFAULT_PAGE_SIZE, DEFAULT_COLUMN_WIDTH, MIN_COLUMN_WIDTH, MAX_COLUMN_WIDTH, INFINITE_SCROLL_THRESHOLD } from '@/constants'
 import type { TableSchema } from '@shared/types'
 import { toast } from '@/hooks/use-toast'
+import { formatCellValue, formatCellTooltip, isJsonValue } from '@/lib/formatters'
 
 interface TableViewProps {
   tableName: string
@@ -34,14 +35,17 @@ const createColumns = (columnNames: string[]): ColumnDef<any>[] => {
     header: columnName,
     cell: ({ getValue }) => {
       const value = getValue()
+      const isJson = isJsonValue(value)
       return (
         <div 
-          className="font-mono text-vs-ui truncate py-1 px-2 hover:bg-muted/30 transition-colors w-full"
-          title={value !== null ? String(value) : 'NULL'}
+          className={`font-mono text-vs-ui py-1 px-2 hover:bg-muted/30 transition-colors w-full ${
+            isJson ? 'whitespace-pre-wrap' : 'truncate'
+          }`}
+          title={formatCellTooltip(value)}
         >
           {value !== null ? (
             <span className="text-foreground">
-              {String(value)}
+              {formatCellValue(value)}
             </span>
           ) : (
             <span className="text-muted-foreground italic font-system text-vs-ui-small">

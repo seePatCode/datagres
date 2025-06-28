@@ -1,8 +1,8 @@
 // Table and data display constants
 export const DEFAULT_PAGE_SIZE = 100
 export const DEFAULT_COLUMN_WIDTH = 120
-export const MIN_COLUMN_WIDTH = 60
-export const MAX_COLUMN_WIDTH = 180
+export const MIN_COLUMN_WIDTH = 40
+export const MAX_COLUMN_WIDTH = Number.MAX_SAFE_INTEGER
 
 // Timing constants
 export const DOUBLE_SHIFT_TIMEOUT = 300 // ms

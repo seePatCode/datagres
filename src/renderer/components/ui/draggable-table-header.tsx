@@ -78,6 +78,15 @@ export function DraggableTableHeader({
           )}
         </div>
       </div>
+      
+      {/* Column resize handle */}
+      <div
+        onMouseDown={header.getResizeHandler()}
+        onTouchStart={header.getResizeHandler()}
+        className={`resizer ${
+          header.column.getIsResizing() ? 'isResizing' : ''
+        }`}
+      />
     </TableHead>
   )
 }

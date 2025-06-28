@@ -28,6 +28,7 @@ import {
   selectSavedConnections,
   loadAndConnectToSavedConnection,
   saveConnection,
+  loadSavedConnections,
 } from '@/store/slices/connectionSlice'
 import {
   selectTabs,
@@ -136,6 +137,8 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
     const result = await dispatch(saveConnection({ connectionString: pendingConnectionString, name }))
     if (result.meta.requestStatus === 'fulfilled') {
       dispatch(hideSaveConnectionDialog())
+      // Refresh the saved connections list to show the newly saved connection
+      dispatch(loadSavedConnections())
     }
   }
   

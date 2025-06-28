@@ -13,6 +13,8 @@ import { useDebounce } from '@/hooks/useDebounce'
 import { Play, Loader2, AlertCircle, Clock, Eye, Sparkles, Check } from 'lucide-react'
 import { ColumnDef } from '@tanstack/react-table'
 import type { TableSchema, TableInfo } from '@shared/types'
+import { formatCellValue, formatCellTooltip, isJsonValue } from '@/lib/formatters'
+import { DEFAULT_COLUMN_WIDTH, MIN_COLUMN_WIDTH, MAX_COLUMN_WIDTH } from '@/constants'
 
 interface SQLQueryViewProps {
   connectionString: string
@@ -24,18 +26,22 @@ interface SQLQueryViewProps {
 // Helper function to create columns dynamically
 const createColumns = (columnNames: string[]): ColumnDef<any>[] => {
   return columnNames.map((columnName, index) => ({
+    id: columnName,
     accessorKey: index.toString(),
     header: columnName,
     cell: ({ getValue }) => {
       const value = getValue()
+      const isJson = isJsonValue(value)
       return (
         <div 
-          className="font-mono text-vs-ui truncate py-1 px-2 hover:bg-muted/30 transition-colors w-full"
-          title={value !== null ? String(value) : 'NULL'}
+          className={`font-mono text-vs-ui py-1 px-2 hover:bg-muted/30 transition-colors w-full ${
+            isJson ? 'whitespace-pre-wrap' : 'truncate'
+          }`}
+          title={formatCellTooltip(value)}
         >
           {value !== null ? (
             <span className="text-foreground">
-              {String(value)}
+              {formatCellValue(value)}
             </span>
           ) : (
             <span className="text-muted-foreground italic font-system text-vs-ui-small">
@@ -45,9 +51,9 @@ const createColumns = (columnNames: string[]): ColumnDef<any>[] => {
         </div>
       )
     },
-    size: 120,
-    minSize: 60,
-    maxSize: 300,
+    size: DEFAULT_COLUMN_WIDTH,
+    minSize: MIN_COLUMN_WIDTH,
+    maxSize: MAX_COLUMN_WIDTH,
   }))
 }
 

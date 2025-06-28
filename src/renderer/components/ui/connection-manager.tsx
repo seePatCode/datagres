@@ -22,6 +22,7 @@ import {
   saveConnection,
   deleteConnection,
   updateConnectionName,
+  loadSavedConnections,
 } from '@/store/slices/connectionSlice'
 
 interface ConnectionManagerProps {
@@ -59,6 +60,8 @@ export function ConnectionManager({ onConnectionSelect, onSavedConnectionSelect,
     if (result.meta.requestStatus === 'fulfilled') {
       setIsDialogOpen(false)
       setConnectionName('')
+      // Refresh the saved connections list to show the newly saved connection
+      dispatch(loadSavedConnections())
     } else {
       setError('Failed to save connection')
     }

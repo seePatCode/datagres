@@ -6,6 +6,7 @@ import {
   ColumnFiltersState,
   SortingState,
   ColumnOrderState,
+  ColumnSizingState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -68,6 +69,8 @@ export function DataTable<TData, TValue>({
   const [columnOrder, setColumnOrder] = React.useState<ColumnOrderState>(
     columns.map((column) => column.id as string)
   )
+  const [columnSizing, setColumnSizing] = React.useState<ColumnSizingState>({})
+  
 
   // Use external sorting if provided, otherwise use internal state
   const sorting = externalSorting || internalSorting
@@ -80,21 +83,25 @@ export function DataTable<TData, TValue>({
   const table = useReactTable({
     data,
     columns,
-    onSortingChange: setSorting,
+    onSortingChange: setSorting as any,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     // Only use client-side sorting if no external sorting handler is provided
     getSortedRowModel: externalOnSortingChange ? undefined : getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
+    onColumnVisibilityChange: setColumnVisibility as any,
     onRowSelectionChange: setRowSelection,
     onColumnOrderChange: setColumnOrder,
+    onColumnSizingChange: setColumnSizing,
+    columnResizeMode: 'onChange',
+    enableColumnResizing: true,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
       columnOrder,
+      columnSizing,
     },
   })
 
@@ -116,33 +123,21 @@ export function DataTable<TData, TValue>({
     }
   }
 
-  // Update column sizes based on content (VSCode-style)
+  // Track if any column is being resized
   React.useEffect(() => {
-    const rows = table.getRowModel().rows
-    const headers = table.getHeaderGroups()[0]?.headers || []
+    const columnSizingInfo = table.getState().columnSizingInfo
+    const isResizing = columnSizingInfo?.isResizingColumn !== null
     
-    headers.forEach((header, columnIndex) => {
-      // Get the header text length
-      const headerText = String(header.column.columnDef.header || '')
-      const headerLength = headerText.length
-      
-      // Sample first 20 rows to estimate content width
-      const sampleRows = rows.slice(0, 20)
-      const maxContentLength = sampleRows.reduce((max, row) => {
-        const cellValue = String(row.getVisibleCells()[columnIndex]?.getValue() || '')
-        return Math.max(max, cellValue.length)
-      }, headerLength)
-      
-      // Calculate width based on monospace font (roughly 7px per character for 14px font)
-      const estimatedWidth = Math.max(maxContentLength * 7 + 16, 60)
-      
-      // Constrain to reasonable bounds for VSCode-style tables
-      const finalWidth = Math.min(Math.max(estimatedWidth, 60), 180)
-      
-      // Update column size
-      header.column.columnDef.size = finalWidth
-    })
-  }, [table.getRowModel().rows])
+    if (isResizing) {
+      document.body.classList.add('col-resizing')
+    } else {
+      document.body.classList.remove('col-resizing')
+    }
+    
+    return () => {
+      document.body.classList.remove('col-resizing')
+    }
+  }, [table.getState().columnSizingInfo])
 
   return (
     <DndContext
@@ -153,7 +148,7 @@ export function DataTable<TData, TValue>({
       <div className="w-full h-full flex flex-col">
         <div className="flex-1 min-h-0 rounded-md border overflow-hidden flex flex-col">
           <div ref={scrollContainerRef} className="flex-1 overflow-auto">
-            <Table>
+            <Table style={{ width: table.getTotalSize() }}>
               <TableHeader className="sticky top-0 z-10 bg-background">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
@@ -185,9 +180,7 @@ export function DataTable<TData, TValue>({
                         key={cell.id}
                         className="p-0 border-r border-b border-muted-foreground/40 h-8 align-middle"
                         style={{ 
-                          width: cell.column.getSize(),
-                          minWidth: cell.column.columnDef.minSize,
-                          maxWidth: cell.column.columnDef.maxSize 
+                          width: cell.column.getSize()
                         }}
                       >
                         {flexRender(

@@ -13,6 +13,7 @@ import {
   connectToDatabase,
   loadAndConnectToSavedConnection,
   saveConnection,
+  loadSavedConnections,
   selectActiveConnection,
   selectConnectionStatus,
   selectConnectionError,
@@ -94,6 +95,8 @@ export function ConnectionView() {
     const result = await dispatch(saveConnection({ connectionString: pendingConnectionString, name }))
     if (result.meta.requestStatus === 'fulfilled') {
       dispatch(hideSaveConnectionDialog())
+      // Refresh the saved connections list to show the newly saved connection
+      dispatch(loadSavedConnections())
     }
   }
   

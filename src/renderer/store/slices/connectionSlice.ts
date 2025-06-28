@@ -243,6 +243,9 @@ export const connectionSlice = createSlice({
         if (state.activeConnection && action.meta.arg.connectionString === state.activeConnection.connectionString) {
           state.activeConnection.savedConnectionId = action.payload.connectionId
         }
+        // Note: We don't update savedConnections here because we need to fetch
+        // the full connection details from the backend. This will be done
+        // by dispatching loadSavedConnections after save.
       })
     
     // Delete connection

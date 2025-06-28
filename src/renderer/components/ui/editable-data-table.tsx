@@ -8,6 +8,7 @@ import { DataTable } from "./data-table"
 import { Input } from "./input"
 import { Textarea } from "./textarea"
 import { cn } from "@/lib/utils"
+import { formatCellValue, formatCellTooltip, isJsonValue } from "@/lib/formatters"
 
 interface EditableDataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -79,8 +80,20 @@ function EditableCell({ getValue, row, column, table, onEdit, isEdited, editedVa
 
   const handleBlur = () => {
     setIsEditing(false)
-    if (value !== initialValue) {
-      onEdit(value)
+    let finalValue = value
+    
+    // Try to parse JSON if the initial value was JSON
+    if (isJsonValue(initialValue) && typeof value === 'string') {
+      try {
+        finalValue = JSON.parse(value)
+      } catch (e) {
+        // If parsing fails, keep it as string
+        finalValue = value
+      }
+    }
+    
+    if (finalValue !== initialValue) {
+      onEdit(finalValue)
     }
   }
 
@@ -102,6 +115,7 @@ function EditableCell({ getValue, row, column, table, onEdit, isEdited, editedVa
   }
 
   const displayValue = isEdited ? editedValue : initialValue
+  const isJson = isJsonValue(displayValue)
 
   if (isEditing && cellPosition) {
     // Calculate if we should open upward
@@ -140,7 +154,7 @@ function EditableCell({ getValue, row, column, table, onEdit, isEdited, editedVa
             >
               <Textarea
                 ref={inputRef}
-                value={value}
+                value={isJsonValue(value) ? JSON.stringify(value, null, 2) : value}
                 onChange={handleInput}
                 onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
@@ -164,10 +178,12 @@ function EditableCell({ getValue, row, column, table, onEdit, isEdited, editedVa
     <div 
       ref={cellRef}
       className={cn(
-        "font-mono text-vs-ui truncate py-1 px-2 hover:bg-muted/30 transition-colors w-full h-full cursor-text",
+        `font-mono text-vs-ui py-1 px-2 hover:bg-muted/30 transition-colors w-full h-full cursor-text ${
+          isJson ? 'whitespace-pre-wrap' : 'truncate'
+        }`,
         isEdited && "bg-orange-500/10 relative"
       )}
-      title={displayValue !== null ? String(displayValue) : 'NULL'}
+      title={formatCellTooltip(displayValue)}
       onClick={handleClick}
     >
       {isEdited && (
@@ -175,7 +191,7 @@ function EditableCell({ getValue, row, column, table, onEdit, isEdited, editedVa
       )}
       {displayValue !== null ? (
         <span className="text-foreground">
-          {String(displayValue)}
+          {formatCellValue(displayValue)}
         </span>
       ) : (
         <span className="text-muted-foreground italic font-system text-vs-ui-small">
