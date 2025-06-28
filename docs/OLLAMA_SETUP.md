@@ -95,6 +95,57 @@ The AI model runs entirely on your Mac. For best performance:
 - The first query may be slower as the model loads into memory
 - Subsequent queries will be much faster
 
+### Debug Logging
+
+To troubleshoot Ollama issues, enable debug logging with different verbosity levels:
+
+```bash
+# Basic info logging (errors + key events)
+DEBUG_OLLAMA=true pnpm run dev
+
+# Detailed debug logging (includes memory usage, response bodies)
+DEBUG_OLLAMA=true OLLAMA_LOG_LEVEL=debug pnpm run dev
+
+# Production mode (errors only)
+OLLAMA_LOG_LEVEL=error pnpm run dev
+```
+
+Log levels:
+- **error**: Only errors and failures
+- **info** (default in dev): Errors + basic request/response info
+- **debug**: Everything including memory usage, raw responses, and detailed timings
+
+What gets logged:
+- Request/response times
+- Error details with helpful context
+- Model availability checks
+- Retry attempts
+- Memory usage (debug level only)
+- Raw response bodies (debug level only, truncated to 500 chars)
+
+### Intermittent "Ollama is not running" Errors
+
+If Ollama works sometimes but fails with "not running" errors:
+
+1. **Check Ollama stability**:
+   ```bash
+   # Monitor Ollama logs
+   journalctl -u ollama -f  # Linux
+   brew services info ollama  # macOS with Homebrew
+   ```
+
+2. **Common causes**:
+   - Memory exhaustion (qwen2.5-coder needs ~6GB RAM)
+   - Model unloading after inactivity
+   - macOS putting the service to sleep
+   - Too many concurrent requests
+
+3. **Fixes**:
+   - Restart Ollama: `brew services restart ollama`
+   - Keep models loaded: `ollama run qwen2.5-coder:latest` (keep terminal open)
+   - Increase system resources
+   - Check Activity Monitor for memory usage
+
 ### Uninstalling
 
 To remove Ollama and free up disk space:
