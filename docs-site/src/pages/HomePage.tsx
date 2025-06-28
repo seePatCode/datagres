@@ -643,14 +643,19 @@ export default function HomePage() {
               <Keyboard className="mb-4 h-10 w-10 text-blue-500" />
               <CardTitle>Keyboard First</CardTitle>
               <CardDescription>
-                Built for speed. Quick table search, tab navigation, and smart SQL completion.
+                Built for speed. Quick search for tables AND connections. Switch databases instantly.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-2">
-                <kbd className="rounded bg-secondary px-2 py-1 text-xs">Shift+Shift</kbd>
-                <kbd className="rounded bg-secondary px-2 py-1 text-xs">Cmd+N</kbd>
-                <kbd className="rounded bg-secondary px-2 py-1 text-xs">Cmd+Enter</kbd>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs">
+                  <kbd className="rounded bg-secondary px-2 py-1">Shift+Shift</kbd>
+                  <span className="text-muted-foreground">Search tables & connections</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <kbd className="rounded bg-secondary px-2 py-1">Cmd+1-9</kbd>
+                  <span className="text-muted-foreground">Jump between tabs</span>
+                </div>
               </div>
             </CardContent>
           </Card>

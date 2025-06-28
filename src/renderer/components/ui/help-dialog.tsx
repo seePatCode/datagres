@@ -83,7 +83,7 @@ export function HelpDialog({ open, onOpenChange, trigger }: HelpDialogProps) {
                 Global Shortcuts
               </h3>
               <div className="space-y-1">
-                <ShortcutItem keys={['Shift', 'Shift']} description="Quick table search" icon={<Search className="h-4 w-4" />} />
+                <ShortcutItem keys={['Shift', 'Shift']} description="Quick search (tables & connections)" icon={<Search className="h-4 w-4" />} />
                 <ShortcutItem keys={[cmdKey, 'N']} description="New connection" icon={<Database className="h-4 w-4" />} />
                 <ShortcutItem keys={[cmdKey, 'R']} description="Refresh current view" />
                 <ShortcutItem keys={[cmdKey, '/']} description="Show keyboard shortcuts (this dialog)" icon={<Keyboard className="h-4 w-4" />} />
@@ -127,6 +127,22 @@ export function HelpDialog({ open, onOpenChange, trigger }: HelpDialogProps) {
           </TabsContent>
           
           <TabsContent value="search" className="space-y-4 mt-4">
+            <div>
+              <h3 className="font-semibold mb-3">Quick Search (Shift+Shift)</h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Press Shift twice to open the quick search dialog:
+              </p>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>• <strong>Search Tables:</strong> Find and jump to any table in your database</li>
+                <li>• <strong>Switch Connections:</strong> Quickly switch between saved database connections</li>
+                <li>• <strong>Fuzzy Matching:</strong> Type partial names to filter results</li>
+                <li>• <strong>Keyboard Navigation:</strong> Use arrow keys to select, Enter to confirm</li>
+                <li>• <strong>Multi-Environment:</strong> Perfect for switching between dev/staging/prod</li>
+              </ul>
+            </div>
+            
+            <Separator />
+            
             <div>
               <h3 className="font-semibold mb-3">SQL WHERE Clause Search</h3>
               <p className="text-sm text-muted-foreground mb-3">

@@ -99,7 +99,7 @@ npm run dist
 ## ⌨️ Keyboard Shortcuts
 
 ### Essential
-- `Shift+Shift` - Quick table search
+- `Shift+Shift` - Quick search (tables & connections)
 - `Cmd+N` - New connection
 - `Cmd+/` - Show all shortcuts
 

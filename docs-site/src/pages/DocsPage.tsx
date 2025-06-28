@@ -87,7 +87,7 @@ export default function DocsPage() {
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center justify-between rounded bg-secondary/50 p-3">
-                  <span className="text-sm">Quick table search</span>
+                  <span className="text-sm">Quick search (tables & connections)</span>
                   <kbd className="rounded bg-background px-2 py-1 text-xs">Shift+Shift</kbd>
                 </div>
                 <div className="flex items-center justify-between rounded bg-secondary/50 p-3">
@@ -134,12 +134,13 @@ export default function DocsPage() {
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Quick Table Search</CardTitle>
+                <CardTitle>Quick Search</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Press Shift+Shift to instantly search through all tables in your database. 
-                  This Spotlight-like feature helps you find tables quickly without navigating through the sidebar.
+                  Press Shift+Shift to instantly search through all tables AND saved connections. 
+                  This Spotlight-like feature helps you find tables quickly or switch between databases in seconds.
+                  Perfect for developers working with multiple environments (dev, staging, production).
                 </p>
               </CardContent>
             </Card>
