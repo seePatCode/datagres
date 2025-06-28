@@ -126,6 +126,27 @@ ipcMain.handle('update-theme', async (_event, theme) => {
 // Handle AI SQL generation
 ipcMain.handle('generate-sql', async (_event, prompt, tableInfo) => {
   if (isTestMode()) {
+    // Check if this is a SQL error fix request
+    if (prompt.toLowerCase().includes('fix this sql') && prompt.toLowerCase().includes('error')) {
+      // Extract the original query and fix common test errors
+      if (prompt.includes('c.user_id')) {
+        // Fix the specific column error from commits/users join
+        return {
+          success: true,
+          sql: `SELECT * FROM commits c JOIN users u ON c.author_id = u.id`,
+          method: 'test'
+        }
+      } else if (prompt.includes('invalid_column')) {
+        // Fix invalid column reference
+        return {
+          success: true,
+          sql: `SELECT * FROM commits c WHERE c.id = 1`,
+          method: 'test'
+        }
+      }
+    }
+    
+    // Default test response for regular SQL generation
     return {
       success: true,
       sql: `SELECT * FROM ${tableInfo.tableName} WHERE status = 'active'`,

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/card'
-import { ArrowRight, Zap, Keyboard, Lock, Database, Table, Plus, Loader2, CheckCircle, MousePointer, RefreshCw, MoreHorizontal, Eye, EyeOff, Save, X } from 'lucide-react'
+import { ArrowRight, Zap, Keyboard, Lock, Database, Table, Plus, Loader2, CheckCircle, MousePointer, RefreshCw, MoreHorizontal, Eye, EyeOff, Save, X, Search, FileText } from 'lucide-react'
 import Editor from '@monaco-editor/react'
 import {
   DropdownMenu,
@@ -35,49 +35,131 @@ export default function HomePage() {
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({})
   const [editedCells] = useState(new Map())
   const [isLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState('data')
+  const [activeTab, setActiveTab] = useState<string | null>(null)
+  const [showQuickSearch, setShowQuickSearch] = useState(false)
+  const [currentDatabase, setCurrentDatabase] = useState('sample_db')
+  const [sqlQuery, setSqlQuery] = useState('')
+  const [showSqlGeneration, setShowSqlGeneration] = useState(false)
+  const [openTabs, setOpenTabs] = useState<Array<{id: string, type: 'table' | 'query', name: string, tableName?: string}>>([])
 
-  const tables = [
+  const savedConnections = [
+    { id: '1', name: 'Production DB', database: 'prod_db' },
+    { id: '2', name: 'Staging DB', database: 'staging_db' },
+    { id: '3', name: 'Development DB', database: 'sample_db' }
+  ]
+
+  const tables = currentDatabase === 'sample_db' ? [
     { name: 'users', count: 1847 },
     { name: 'orders', count: 5423 },
     { name: 'products', count: 342 },
     { name: 'customers', count: 892 },
     { name: 'invoices', count: 3251 },
+  ] : currentDatabase === 'prod_db' ? [
+    { name: 'users', count: 28451 },
+    { name: 'orders', count: 142893 },
+    { name: 'products', count: 1248 },
+    { name: 'order_items', count: 523901 },
+    { name: 'categories', count: 47 },
+  ] : [
+    { name: 'users', count: 4521 },
+    { name: 'orders', count: 8934 },
+    { name: 'products', count: 678 },
+    { name: 'test_data', count: 10000 },
   ]
 
-  const mockData = {
-    users: [
-      { id: 1, name: 'Alice Johnson', email: 'alice@example.com', role: 'admin', created_at: '2024-01-15 09:30:00', status: 'active' },
-      { id: 2, name: 'Bob Smith', email: 'bob@example.com', role: 'user', created_at: '2024-01-16 14:22:00', status: 'active' },
-      { id: 3, name: 'Carol Williams', email: 'carol@example.com', role: 'user', created_at: '2024-01-17 11:45:00', status: 'inactive' },
-      { id: 4, name: 'David Brown', email: 'david@example.com', role: 'moderator', created_at: '2024-01-18 16:30:00', status: 'active' },
-      { id: 5, name: 'Emma Davis', email: 'emma@example.com', role: 'user', created_at: '2024-01-19 10:15:00', status: 'pending' },
-    ],
-    orders: [
-      { id: 1001, user_id: 1, total: 299.99, status: 'completed', created_at: '2024-02-01 10:30:00' },
-      { id: 1002, user_id: 2, total: 149.50, status: 'processing', created_at: '2024-02-02 11:45:00' },
-      { id: 1003, user_id: 3, total: 599.00, status: 'completed', created_at: '2024-02-03 09:20:00' },
-      { id: 1004, user_id: 1, total: 79.99, status: 'shipped', created_at: '2024-02-04 14:10:00' },
-      { id: 1005, user_id: 4, total: 450.00, status: 'pending', created_at: '2024-02-05 16:55:00' },
-    ],
-    products: [
-      { id: 101, name: 'Wireless Mouse', price: 29.99, stock: 145, category: 'Electronics' },
-      { id: 102, name: 'Mechanical Keyboard', price: 149.99, stock: 87, category: 'Electronics' },
-      { id: 103, name: 'USB-C Hub', price: 49.99, stock: 203, category: 'Accessories' },
-      { id: 104, name: 'Monitor Stand', price: 79.99, stock: 64, category: 'Furniture' },
-      { id: 105, name: 'Laptop Sleeve', price: 39.99, stock: 189, category: 'Accessories' },
-    ],
-    customers: [
-      { id: 201, company: 'Acme Corp', contact: 'John Smith', email: 'john@acme.com', country: 'USA' },
-      { id: 202, company: 'Tech Solutions', contact: 'Sarah Johnson', email: 'sarah@techsol.com', country: 'Canada' },
-      { id: 203, company: 'Global Imports', contact: 'Mike Chen', email: 'mike@global.com', country: 'China' },
-      { id: 204, company: 'Euro Traders', contact: 'Anna Mueller', email: 'anna@euro.com', country: 'Germany' },
-    ],
-    invoices: [
-      { id: 5001, order_id: 1001, amount: 299.99, due_date: '2024-03-01', status: 'paid' },
-      { id: 5002, order_id: 1002, amount: 149.50, due_date: '2024-03-15', status: 'pending' },
-      { id: 5003, order_id: 1003, amount: 599.00, due_date: '2024-03-10', status: 'paid' },
-    ],
+  const mockDataByDatabase: Record<string, Record<string, any[]>> = {
+    sample_db: {
+      users: [
+        { id: 1, name: 'Alice Johnson', email: 'alice@example.com', role: 'admin', created_at: '2024-01-15 09:30:00', status: 'active' },
+        { id: 2, name: 'Bob Smith', email: 'bob@example.com', role: 'user', created_at: '2024-01-16 14:22:00', status: 'active' },
+        { id: 3, name: 'Carol Williams', email: 'carol@example.com', role: 'user', created_at: '2024-01-17 11:45:00', status: 'inactive' },
+        { id: 4, name: 'David Brown', email: 'david@example.com', role: 'moderator', created_at: '2024-01-18 16:30:00', status: 'active' },
+        { id: 5, name: 'Emma Davis', email: 'emma@example.com', role: 'user', created_at: '2024-01-19 10:15:00', status: 'pending' },
+      ],
+      orders: [
+        { id: 1001, user_id: 1, total: 299.99, status: 'completed', created_at: '2024-02-01 10:30:00' },
+        { id: 1002, user_id: 2, total: 149.50, status: 'processing', created_at: '2024-02-02 11:45:00' },
+        { id: 1003, user_id: 3, total: 599.00, status: 'completed', created_at: '2024-02-03 09:20:00' },
+        { id: 1004, user_id: 1, total: 79.99, status: 'shipped', created_at: '2024-02-04 14:10:00' },
+        { id: 1005, user_id: 4, total: 450.00, status: 'pending', created_at: '2024-02-05 16:55:00' },
+      ],
+      products: [
+        { id: 101, name: 'Wireless Mouse', price: 29.99, stock: 145, category: 'Electronics' },
+        { id: 102, name: 'Mechanical Keyboard', price: 149.99, stock: 87, category: 'Electronics' },
+        { id: 103, name: 'USB-C Hub', price: 49.99, stock: 203, category: 'Accessories' },
+        { id: 104, name: 'Monitor Stand', price: 79.99, stock: 64, category: 'Furniture' },
+        { id: 105, name: 'Laptop Sleeve', price: 39.99, stock: 189, category: 'Accessories' },
+      ],
+      customers: [
+        { id: 201, company: 'Acme Corp', contact: 'John Smith', email: 'john@acme.com', country: 'USA' },
+        { id: 202, company: 'Tech Solutions', contact: 'Sarah Johnson', email: 'sarah@techsol.com', country: 'Canada' },
+        { id: 203, company: 'Global Imports', contact: 'Mike Chen', email: 'mike@global.com', country: 'China' },
+        { id: 204, company: 'Euro Traders', contact: 'Anna Mueller', email: 'anna@euro.com', country: 'Germany' },
+      ],
+      invoices: [
+        { id: 5001, order_id: 1001, amount: 299.99, due_date: '2024-03-01', status: 'paid' },
+        { id: 5002, order_id: 1002, amount: 149.50, due_date: '2024-03-15', status: 'pending' },
+        { id: 5003, order_id: 1003, amount: 599.00, due_date: '2024-03-10', status: 'paid' },
+      ],
+    },
+    prod_db: {
+      users: [
+        { id: 101, name: 'Enterprise User A', email: 'user.a@enterprise.com', department: 'Sales', created_at: '2023-06-15', active: true },
+        { id: 102, name: 'Enterprise User B', email: 'user.b@enterprise.com', department: 'Marketing', created_at: '2023-07-20', active: true },
+        { id: 103, name: 'Enterprise User C', email: 'user.c@enterprise.com', department: 'Engineering', created_at: '2023-08-10', active: true },
+        { id: 104, name: 'Enterprise User D', email: 'user.d@enterprise.com', department: 'Sales', created_at: '2023-09-05', active: false },
+      ],
+      orders: [
+        { id: 20001, user_id: 101, amount: 15999.99, status: 'completed', order_date: '2024-01-15', shipped_date: '2024-01-17' },
+        { id: 20002, user_id: 102, amount: 8500.00, status: 'processing', order_date: '2024-01-20', shipped_date: null },
+        { id: 20003, user_id: 101, amount: 12750.50, status: 'completed', order_date: '2024-01-25', shipped_date: '2024-01-27' },
+      ],
+      order_items: [
+        { id: 1, order_id: 20001, product_id: 501, quantity: 10, unit_price: 999.99 },
+        { id: 2, order_id: 20001, product_id: 502, quantity: 5, unit_price: 1200.00 },
+        { id: 3, order_id: 20002, product_id: 503, quantity: 20, unit_price: 425.00 },
+      ],
+      products: [
+        { id: 501, name: 'Enterprise Server', price: 999.99, category_id: 1 },
+        { id: 502, name: 'Database License', price: 1200.00, category_id: 2 },
+        { id: 503, name: 'Cloud Storage Plan', price: 425.00, category_id: 3 },
+      ],
+      categories: [
+        { id: 1, name: 'Hardware', description: 'Physical computing equipment' },
+        { id: 2, name: 'Software', description: 'Digital products and licenses' },
+        { id: 3, name: 'Services', description: 'Cloud and managed services' },
+      ]
+    }
+  }
+  
+  const mockData = mockDataByDatabase[currentDatabase] || mockDataByDatabase.sample_db
+
+  const handleTableSelect = (tableName: string) => {
+    // Check if tab already exists
+    const existingTab = openTabs.find(tab => tab.type === 'table' && tab.tableName === tableName)
+    if (existingTab) {
+      setActiveTab(existingTab.id)
+    } else {
+      const newTab = {
+        id: `table-${Date.now()}`,
+        type: 'table' as const,
+        name: tableName,
+        tableName: tableName
+      }
+      setOpenTabs([...openTabs, newTab])
+      setActiveTab(newTab.id)
+    }
+    setSelectedTable(tableName)
+  }
+
+  const handleNewQuery = () => {
+    const newTab = {
+      id: `query-${Date.now()}`,
+      type: 'query' as const,
+      name: `Query ${openTabs.filter(t => t.type === 'query').length + 1}`
+    }
+    setOpenTabs([...openTabs, newTab])
+    setActiveTab(newTab.id)
   }
 
   // Update ref when mouse position changes
@@ -89,135 +171,207 @@ export default function HomePage() {
   useEffect(() => {
     if (!showDemo) return
 
-    const sequence = async () => {
-      // Wait a bit before starting
-      await new Promise(resolve => setTimeout(resolve, 500))
+    const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+    
+    const animateMouseTo = async (targetX: number, targetY: number, duration: number = 300) => {
+      const startX = mousePositionRef.current.x
+      const startY = mousePositionRef.current.y
+      const steps = 30
+      const stepDuration = duration / steps
+      
+      for (let i = 0; i <= steps; i++) {
+        const progress = i / steps
+        setMousePosition({
+          x: startX + (targetX - startX) * progress,
+          y: startY + (targetY - startY) * progress
+        })
+        await wait(stepDuration)
+      }
+    }
+    
+    const typeText = async (text: string, setter: (value: string) => void, speed: number = 25) => {
+      for (let i = 0; i <= text.length; i++) {
+        setter(text.substring(0, i))
+        await wait(speed)
+      }
+    }
+    
+    const findButtonByText = (text: string, container: string = 'button') => {
+      const buttons = document.querySelectorAll(container)
+      for (const btn of buttons) {
+        if (btn.textContent?.includes(text)) {
+          return btn as HTMLElement
+        }
+      }
+      return null
+    }
 
-      // Show mouse at input field
-      const inputEl = document.querySelector('input[type="text"]')
+    const runDemoScript = async () => {
+      /**
+       * DEMO SCRIPT: Showcases Datagres' key features in order
+       * 
+       * 1. Connection: Type PostgreSQL connection string and connect
+       * 2. Browse Data: Automatically open users table
+       * 3. Quick Search: Press Shift+Shift to open table/connection switcher
+       * 4. Switch Database: Click on Production DB to switch context
+       * 5. Open Table: Select orders table in production database
+       * 6. New Query: Create a new SQL query tab
+       * 7. AI Generation: Press CMD+K to show AI SQL generation
+       * 8. Execute Query: Show generated complex JOIN query
+       * 9. View Results: Display query results in table format
+       * 10. Loop: Reset and restart demo
+       */
+      
+      // === STEP 1: Initial Setup ===
+      await wait(500) // Let the page settle
+      
+      // === STEP 2: Show Connection Screen ===
+      // Position mouse at connection input
+      const inputEl = document.querySelector('input[type="text"]') as HTMLElement
       if (inputEl) {
         const rect = inputEl.getBoundingClientRect()
         setMousePosition({ x: rect.left + 20, y: rect.top + rect.height / 2 })
         setShowMouse(true)
       }
-
-      // Type connection string
-      const connStr = 'postgresql://user:pass@localhost:5432/sample_db'
-      for (let i = 0; i <= connStr.length; i++) {
-        setConnectionString(connStr.substring(0, i))
-        await new Promise(resolve => setTimeout(resolve, 25))
-      }
-
-      // Move mouse to connect button
-      await new Promise(resolve => setTimeout(resolve, 200))
-      // Find the Connect button by looking for button with "Connect" text
-      const allButtons = document.querySelectorAll('button')
-      let connectBtn = null
-      for (const btn of allButtons) {
-        if (btn.textContent?.includes('Connect') && !btn.textContent?.includes('Connecting')) {
-          connectBtn = btn
-          break
-        }
-      }
       
+      // === STEP 3: Type Connection String ===
+      await wait(300)
+      await typeText('postgresql://user:pass@localhost:5432/sample_db', setConnectionString)
+      
+      // === STEP 4: Click Connect Button ===
+      await wait(200)
+      const connectBtn = findButtonByText('Connect')
       if (connectBtn) {
         const rect = connectBtn.getBoundingClientRect()
-        // Animate mouse movement
-        const startX = mousePositionRef.current.x
-        const startY = mousePositionRef.current.y
-        const endX = rect.left + rect.width / 2
-        const endY = rect.top + rect.height / 2
-        const steps = 30
-        for (let i = 0; i <= steps; i++) {
-          const progress = i / steps
-          setMousePosition({
-            x: startX + (endX - startX) * progress,
-            y: startY + (endY - startY) * progress
-          })
-          await new Promise(resolve => setTimeout(resolve, 10))
-        }
+        await animateMouseTo(rect.left + rect.width / 2, rect.top + rect.height / 2)
       }
-
-      // Click connect
-      await new Promise(resolve => setTimeout(resolve, 200))
-      setIsConnecting(true)
       
-      // Simulate connection
-      await new Promise(resolve => setTimeout(resolve, 800))
+      await wait(200)
+      setIsConnecting(true)
+      await wait(800) // Simulate connection time
       setIsConnecting(false)
       setIsConnected(true)
-
-      // Wait then move to users table
-      await new Promise(resolve => setTimeout(resolve, 500))
       
-      // Animate mouse to users table
-      const usersButton = document.querySelector('[data-table="users"]')
+      // === STEP 5: Browse Initial Data ===
+      await wait(800)
+      
+      // Find and click the users table in sidebar
+      const usersButton = findButtonByText('users', 'button[data-table]')
       if (usersButton) {
         const rect = usersButton.getBoundingClientRect()
-        const startX = mousePositionRef.current.x
-        const startY = mousePositionRef.current.y
-        const endX = rect.left + rect.width / 2
-        const endY = rect.top + rect.height / 2
-        const steps = 40
-        for (let i = 0; i <= steps; i++) {
-          const progress = i / steps
-          setMousePosition({
-            x: startX + (endX - startX) * progress,
-            y: startY + (endY - startY) * progress
-          })
-          await new Promise(resolve => setTimeout(resolve, 8))
-        }
+        await animateMouseTo(rect.left + rect.width / 2, rect.top + rect.height / 2)
+        await wait(200)
+        handleTableSelect('users') // Click to open users table
       }
-
-      // Click users table
-      await new Promise(resolve => setTimeout(resolve, 200))
-      setSelectedTable('users')
-
-      // Wait then move to orders
-      await new Promise(resolve => setTimeout(resolve, 1200))
-      const ordersButton = document.querySelector('[data-table="orders"]')
+      
+      await wait(1500) // Let user see the data
+      
+      // === STEP 6: Demo Quick Search (Shift+Shift) ===
+      setShowMouse(false) // Hide mouse to show keyboard action
+      setShowQuickSearch(true)
+      await wait(600)
+      
+      // === STEP 7: Switch to Production Database ===
+      setShowMouse(true)
+      await wait(300)
+      
+      // Find and click Production DB in quick search
+      const prodButton = findButtonByText('Production DB', '.fixed button')
+      if (prodButton) {
+        const rect = prodButton.getBoundingClientRect()
+        await animateMouseTo(rect.left + rect.width / 2, rect.top + rect.height / 2)
+      }
+      
+      await wait(300)
+      setShowQuickSearch(false)
+      setCurrentDatabase('prod_db')
+      setSelectedTable(null)
+      
+      // === STEP 8: Open Orders Table in Production ===
+      await wait(800)
+      
+      // Find and click the orders table in sidebar
+      const ordersButton = findButtonByText('orders', 'button[data-table]')
       if (ordersButton) {
         const rect = ordersButton.getBoundingClientRect()
-        const startX = mousePositionRef.current.x
-        const startY = mousePositionRef.current.y
-        const endX = rect.left + rect.width / 2
-        const endY = rect.top + rect.height / 2
-        const steps = 30
-        for (let i = 0; i <= steps; i++) {
-          const progress = i / steps
-          setMousePosition({
-            x: startX + (endX - startX) * progress,
-            y: startY + (endY - startY) * progress
-          })
-          await new Promise(resolve => setTimeout(resolve, 8))
-        }
+        await animateMouseTo(rect.left + rect.width / 2, rect.top + rect.height / 2)
+        await wait(200)
+        handleTableSelect('orders') // Click to open orders table
       }
-
-      // Click orders table
-      await new Promise(resolve => setTimeout(resolve, 200))
-      setSelectedTable('orders')
-
-      // Wait then restart
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      await wait(1000)
+      
+      // === STEP 9: Create New Query Tab ===
+      await wait(500)
+      
+      // Find and click the New Query button
+      const newQueryButton = findButtonByText('New Query')
+      if (newQueryButton) {
+        const rect = newQueryButton.getBoundingClientRect()
+        await animateMouseTo(rect.left + rect.width / 2, rect.top + rect.height / 2)
+        await wait(200)
+        handleNewQuery() // Click to create new query tab
+        setSqlQuery('')
+      }
+      
+      await wait(300)
+      
+      // === STEP 10: Demo AI SQL Generation (CMD+K) ===
+      await wait(800)
+      setShowSqlGeneration(true) // Show AI prompt popover
+      await wait(2000) // Simulate user thinking/AI processing
+      
+      // === STEP 11: Generate and Display SQL ===
+      const generatedSql = `SELECT 
+  o.id as order_id,
+  o.user_id,
+  o.amount as total_amount,
+  o.status,
+  oi.quantity,
+  oi.unit_price,
+  p.name as product_name,
+  c.name as category
+FROM orders o
+JOIN order_items oi ON o.id = oi.order_id
+JOIN products p ON oi.product_id = p.id
+JOIN categories c ON p.category_id = c.id
+WHERE o.status = 'completed'
+ORDER BY o.order_date DESC;`
+      
+      // Type out the SQL gradually
+      await typeText(generatedSql, setSqlQuery, 5)
+      
+      // === STEP 12: Show Query Results ===
+      await wait(2500)
+      
+      // === STEP 13: Reset and Loop ===
+      await wait(1500)
       setShowMouse(false)
       setConnectionString('')
       setIsConnected(false)
       setSelectedTable(null)
+      setOpenTabs([])
+      setActiveTab(null)
+      setSqlQuery('')
+      setCurrentDatabase('sample_db')
+      setShowSqlGeneration(false)
       
-      // Restart the sequence
-      setTimeout(() => sequence(), 500)
+      // Restart the demo
+      await wait(1000)
+      runDemoScript()
     }
 
-    sequence()
+    runDemoScript()
   }, [showDemo])
 
-  const getTableData = () => {
-    if (!selectedTable) return []
-    return mockData[selectedTable as keyof typeof mockData] || []
+  const getTableData = (tableName?: string) => {
+    const table = tableName || selectedTable
+    if (!table) return []
+    return mockData[table] || []
   }
 
-  const getTableColumns = () => {
-    const data = getTableData()
+  const getTableColumns = (tableName?: string) => {
+    const data = getTableData(tableName)
     return data.length > 0 ? Object.keys(data[0]) : []
   }
 
@@ -370,11 +524,24 @@ export default function HomePage() {
                   <div className="border-b p-4">
                     <div className="flex items-center gap-2">
                       <Database className="h-4 w-4 text-green-500" />
-                      <span className="text-sm font-medium">sample_db</span>
+                      <span className="text-sm font-medium">{currentDatabase}</span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      postgresql://demo@localhost:5432
+                      {savedConnections.find(c => c.database === currentDatabase)?.name || 'postgresql://demo@localhost:5432'}
                     </p>
+                  </div>
+                  
+                  {/* New Query Button */}
+                  <div className="p-3 border-b">
+                    <Button 
+                      className="w-full justify-start gap-2"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleNewQuery}
+                    >
+                      <FileText className="h-4 w-4" />
+                      New Query
+                    </Button>
                   </div>
                   
                   <div className="p-2">
@@ -386,7 +553,7 @@ export default function HomePage() {
                         <button
                           key={table.name}
                           data-table={table.name}
-                          onClick={() => setSelectedTable(table.name)}
+                          onClick={() => handleTableSelect(table.name)}
                           className={`flex w-full items-center justify-between rounded px-3 py-2 text-sm transition-colors ${
                             selectedTable === table.name
                               ? 'bg-violet-500/20 text-violet-300'
@@ -408,7 +575,48 @@ export default function HomePage() {
                 
                 {/* Main Content */}
                 <div className="flex-1 flex flex-col overflow-hidden">
-                  {selectedTable ? (
+                  {openTabs.length > 0 ? (
+                    <Tabs value={activeTab || ''} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+                      <TabsList className="h-auto p-0 bg-transparent rounded-none w-full justify-start">
+                        {openTabs.map(tab => (
+                          <TabsTrigger 
+                            key={tab.id} 
+                            value={tab.id}
+                            className="rounded-none border-r data-[state=active]:bg-muted data-[state=active]:shadow-none pr-8 relative group"
+                          >
+                            {tab.type === 'table' ? (
+                              <div className="flex items-center gap-1">
+                                <Table className="h-3 w-3" />
+                                <span>{tab.name}</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1">
+                                <FileText className="h-3 w-3" />
+                                <span>{tab.name}</span>
+                              </div>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                const newTabs = openTabs.filter(t => t.id !== tab.id)
+                                setOpenTabs(newTabs)
+                                if (activeTab === tab.id && newTabs.length > 0) {
+                                  setActiveTab(newTabs[newTabs.length - 1].id)
+                                }
+                              }}
+                              className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </TabsTrigger>
+                        ))}
+                      </TabsList>
+                      
+                      {openTabs.map(tab => (
+                        <TabsContent key={tab.id} value={tab.id} className="flex-1 flex flex-col overflow-hidden mt-0">
+                          {tab.type === 'table' ? (
                     <>
                       {/* Table Toolbar */}
                       <div className="flex items-center justify-between border-b bg-background" style={{ overflow: 'visible', zIndex: 100 }}>
@@ -487,7 +695,7 @@ export default function HomePage() {
                                 Column Visibility
                               </DropdownMenuLabel>
                               <DropdownMenuSeparator />
-                              {getTableColumns().map((columnName) => {
+                              {getTableColumns(tab.tableName).map((columnName) => {
                                 const isVisible = columnVisibility[columnName] !== false
                                 return (
                                   <DropdownMenuCheckboxItem
@@ -525,13 +733,13 @@ export default function HomePage() {
                         <DataTable>
                           <TableHeader className="sticky top-0 bg-background z-10">
                             <TableRow>
-                              {getTableColumns().filter(col => columnVisibility[col] !== false).map((col) => (
+                              {getTableColumns(tab.tableName).filter(col => columnVisibility[col] !== false).map((col) => (
                                 <TableHead key={col}>{col}</TableHead>
                               ))}
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {getTableData()
+                            {getTableData(tab.tableName)
                               .filter(row => {
                                 if (!searchQuery) return true;
                                 try {
@@ -566,7 +774,7 @@ export default function HomePage() {
                       <div className="flex items-center justify-between px-3 py-2 border-t bg-muted/20 text-sm text-muted-foreground">
                         <div className="flex items-center gap-4">
                           <span>
-                            {getTableData().filter(row => {
+                            {getTableData(tab.tableName).filter(row => {
                               if (!searchQuery) return true;
                               try {
                                 if (searchQuery.includes('=')) {
@@ -580,10 +788,10 @@ export default function HomePage() {
                               } catch {
                                 return true
                               }
-                            }).length} of {getTableData().length} rows
+                            }).length} of {getTableData(tab.tableName).length} rows
                             {searchQuery && ` WHERE ${searchQuery}`}
                           </span>
-                          <span>{getTableColumns().filter(col => columnVisibility[col] !== false).length} columns</span>
+                          <span>{getTableColumns(tab.tableName).filter(col => columnVisibility[col] !== false).length} columns</span>
                         </div>
                         <div className="flex items-center gap-4">
                           {editedCells.size > 0 && (
@@ -593,7 +801,122 @@ export default function HomePage() {
                           )}
                         </div>
                       </div>
-                    </>
+                      </>
+                          ) : (
+                            // Query Tab (SQL Scratchpad)
+                            <div className="flex-1 flex flex-col">
+                              <div className="border-b bg-muted/20 p-3">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-sm font-medium">SQL Editor</span>
+                                  <kbd className="rounded bg-secondary px-2 py-1 text-xs">Cmd+K</kbd>
+                                  <span className="text-xs text-muted-foreground">Generate SQL with AI</span>
+                                </div>
+                              </div>
+                              
+                              <div className="flex-1 relative">
+                                <Editor
+                                  height="100%"
+                                  defaultLanguage="sql"
+                                  value={sqlQuery}
+                                  onChange={(value) => setSqlQuery(value || '')}
+                                  options={{
+                                    minimap: { enabled: false },
+                                    fontSize: 14,
+                                    lineNumbers: 'on',
+                                    automaticLayout: true,
+                                    wordWrap: 'on',
+                                    fontFamily: "'SF Mono', Monaco, Consolas, 'Courier New', monospace",
+                                  }}
+                                  theme="vs-dark"
+                                />
+                                
+                                {/* AI Prompt Popover */}
+                                {showSqlGeneration && !sqlQuery && (
+                                  <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-50">
+                                    <div className="bg-background border rounded-lg shadow-lg p-4 w-96">
+                                      <div className="flex items-center gap-2 mb-3">
+                                        <Keyboard className="h-4 w-4 text-violet-500" />
+                                        <span className="text-sm font-medium">Generate SQL with AI</span>
+                                      </div>
+                                      <div className="relative">
+                                        <input
+                                          type="text"
+                                          placeholder="Describe what you want in plain English..."
+                                          className="w-full bg-secondary/50 rounded px-3 py-2 text-sm outline-none"
+                                          value="show me all orders with their items and product details"
+                                          readOnly
+                                        />
+                                      </div>
+                                      <div className="mt-3 flex items-center justify-between">
+                                        <span className="text-xs text-muted-foreground">Press Enter to generate</span>
+                                        <div className="flex items-center gap-1">
+                                          <Loader2 className="h-3 w-3 animate-spin" />
+                                          <span className="text-xs">Generating...</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {showSqlGeneration && sqlQuery.includes('SELECT') && (
+                                <div className="border-t p-4">
+                                  <h4 className="text-sm font-medium mb-2">Query Results Preview</h4>
+                                  <div className="overflow-auto max-h-48">
+                                    <DataTable>
+                                      <TableHeader>
+                                        <TableRow>
+                                          <TableHead>order_id</TableHead>
+                                          <TableHead>user_id</TableHead>
+                                          <TableHead>total_amount</TableHead>
+                                          <TableHead>status</TableHead>
+                                          <TableHead>quantity</TableHead>
+                                          <TableHead>unit_price</TableHead>
+                                          <TableHead>product_name</TableHead>
+                                          <TableHead>category</TableHead>
+                                        </TableRow>
+                                      </TableHeader>
+                                      <TableBody>
+                                        <TableRow>
+                                          <TableCell>20001</TableCell>
+                                          <TableCell>101</TableCell>
+                                          <TableCell>$15,999.99</TableCell>
+                                          <TableCell>completed</TableCell>
+                                          <TableCell>10</TableCell>
+                                          <TableCell>$999.99</TableCell>
+                                          <TableCell>Enterprise Server</TableCell>
+                                          <TableCell>Hardware</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                          <TableCell>20001</TableCell>
+                                          <TableCell>101</TableCell>
+                                          <TableCell>$15,999.99</TableCell>
+                                          <TableCell>completed</TableCell>
+                                          <TableCell>5</TableCell>
+                                          <TableCell>$1,200.00</TableCell>
+                                          <TableCell>Database License</TableCell>
+                                          <TableCell>Software</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                          <TableCell>20003</TableCell>
+                                          <TableCell>101</TableCell>
+                                          <TableCell>$12,750.50</TableCell>
+                                          <TableCell>completed</TableCell>
+                                          <TableCell>15</TableCell>
+                                          <TableCell>$850.03</TableCell>
+                                          <TableCell>Cloud Storage Plan</TableCell>
+                                          <TableCell>Services</TableCell>
+                                        </TableRow>
+                                      </TableBody>
+                                    </DataTable>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </TabsContent>
+                      ))}
+                    </Tabs>
                   ) : (
                     <div className="flex h-full items-center justify-center">
                       <div className="text-center">
@@ -616,6 +939,67 @@ export default function HomePage() {
             </p>
           </div>
         </section>
+        
+        {/* Quick Search Modal */}
+        {showQuickSearch && (
+          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
+            <div className="fixed left-[50%] top-[50%] z-50 w-full max-w-2xl translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-0 shadow-lg rounded-lg">
+              <div className="flex items-center border-b px-4 py-3">
+                <Search className="mr-2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search tables and connections..."
+                  className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
+                  autoFocus
+                />
+              </div>
+              <div className="max-h-[400px] overflow-y-auto p-2">
+                <div className="mb-4">
+                  <h3 className="mb-2 px-2 text-xs font-semibold uppercase text-muted-foreground">Connections</h3>
+                  <div className="space-y-1">
+                    {savedConnections.map(conn => (
+                      <button
+                        key={conn.id}
+                        className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent ${
+                          conn.database === currentDatabase ? 'bg-accent' : ''
+                        }`}
+                        onClick={() => {
+                          setCurrentDatabase(conn.database)
+                          setShowQuickSearch(false)
+                        }}
+                      >
+                        <Database className="h-4 w-4" />
+                        <span className="flex-1 text-left">{conn.name}</span>
+                        {conn.database === currentDatabase && (
+                          <span className="text-xs text-muted-foreground">Current</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="mb-2 px-2 text-xs font-semibold uppercase text-muted-foreground">Tables</h3>
+                  <div className="space-y-1">
+                    {tables.map(table => (
+                      <button
+                        key={table.name}
+                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent"
+                        onClick={() => {
+                          handleTableSelect(table.name)
+                          setShowQuickSearch(false)
+                        }}
+                      >
+                        <Table className="h-4 w-4" />
+                        <span className="flex-1 text-left">{table.name}</span>
+                        <span className="text-xs text-muted-foreground">{table.count.toLocaleString()} rows</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
       {/* Features Grid */}
       <section className="container py-24">

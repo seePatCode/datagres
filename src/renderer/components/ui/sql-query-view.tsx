@@ -10,7 +10,7 @@ import { SQLEditor, SQLEditorHandle } from '@/components/ui/sql-editor'
 import { SqlAiPrompt } from '@/components/ui/sql-ai-prompt'
 import { useSqlSettings } from '@/hooks/useSettings'
 import { useDebounce } from '@/hooks/useDebounce'
-import { Play, Loader2, AlertCircle, Clock, Eye } from 'lucide-react'
+import { Play, Loader2, AlertCircle, Clock, Eye, Sparkles, Check } from 'lucide-react'
 import { ColumnDef } from '@tanstack/react-table'
 import type { TableSchema, TableInfo } from '@shared/types'
 
@@ -58,6 +58,9 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
   const [schemas, setSchemas] = useState<TableSchema[]>([])
   const [showAiPrompt, setShowAiPrompt] = useState(false)
   const [aiPromptPosition, setAiPromptPosition] = useState<{ top: number; left: number } | undefined>()
+  const [isFixingError, setIsFixingError] = useState(false)
+  const [lastExecutedQuery, setLastExecutedQuery] = useState<string>('')
+  const [fixSuccessMessage, setFixSuccessMessage] = useState<{ before: string; after: string } | null>(null)
   
   // Only debounce when live preview is on
   const debouncedQuery = useDebounce(query, livePreview ? 500 : 0)
@@ -117,6 +120,8 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
     const queryToExecute = selectedText.trim() ? selectedText : query
     
     if (queryToExecute.trim()) {
+      setLastExecutedQuery(queryToExecute)
+      setFixSuccessMessage(null) // Clear any success message
       executeMutation.mutate(queryToExecute)
     }
   }
@@ -181,6 +186,8 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
                        trimmedQuery.startsWith('explain')
     
     if (isSafeQuery) {
+      setLastExecutedQuery(debouncedQuery)
+      setFixSuccessMessage(null) // Clear any success message
       executeMutation.mutate(debouncedQuery)
     }
   }, [debouncedQuery, livePreview])
@@ -246,7 +253,7 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
               )}
             </Button>
           </div>
-          <div className="flex-1">
+          <div className="flex-1" data-testid="sql-editor">
             <SQLEditor
               ref={editorRef}
               value={query}
@@ -261,10 +268,147 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
       {/* Results */}
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         {executeMutation.error && (
-          <Alert variant="destructive" className="m-2">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{executeMutation.error.message}</AlertDescription>
-          </Alert>
+          <div className="flex justify-center p-2">
+            <Alert variant="destructive" className="w-auto max-w-2xl" data-testid="sql-error">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <AlertDescription className="text-sm">{executeMutation.error.message}</AlertDescription>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-shrink-0"
+                        onClick={async () => {
+                        setIsFixingError(true);
+                        try {
+                          // Get the query that failed (use the last executed query)
+                          const failedQuery = lastExecutedQuery || query.trim();
+                          const errorMessage = executeMutation.error.message;
+                          
+                          // Generate a prompt for fixing the SQL
+                          const fixPrompt = `Fix this SQL error by finding the correct column name.
+
+Error: ${errorMessage}
+
+Failed query:
+${failedQuery}
+
+IMPORTANT: The error says a column doesn't exist. Look at the available columns in the schema and find the correct column name to use instead. For example:
+- If "user_id" doesn't exist, look for "author_id", "committer_id", "created_by", etc.
+- If "created_at" doesn't exist, look for "created", "timestamp", "date_created", etc.
+
+Return ONLY the corrected SQL query.`;
+                          
+                          const result = await window.electronAPI.generateSQL(fixPrompt, {
+                            prompt: fixPrompt,
+                            tableName: tables[0]?.name || '',
+                            columns: schemas[0]?.columns.map(c => c.name) || [],
+                            allSchemas: schemas
+                          });
+                          
+                          if (result.success && result.sql) {
+                            console.log('AI fixed SQL:', result.sql);
+                            console.log('Original failed SQL:', failedQuery);
+                            
+                            // Check if the AI actually changed the query
+                            if (result.sql.trim() === failedQuery.trim()) {
+                              console.warn('AI returned the same query without fixing it');
+                              alert('The AI could not fix this error. The column name might not exist in any table. Please check your database schema.');
+                              return;
+                            }
+                            
+                            // Replace only the failed query part in the editor
+                            const currentEditorContent = query;
+                            const failedQueryIndex = currentEditorContent.indexOf(failedQuery);
+                            
+                            if (failedQueryIndex !== -1) {
+                              // Replace the specific failed query
+                              const newContent = 
+                                currentEditorContent.substring(0, failedQueryIndex) +
+                                result.sql +
+                                currentEditorContent.substring(failedQueryIndex + failedQuery.length);
+                              handleQueryChange(newContent);
+                            } else {
+                              // If we can't find the exact query, just replace the whole content
+                              handleQueryChange(result.sql);
+                            }
+                            
+                            // Clear the error by resetting the mutation
+                            executeMutation.reset();
+                            // Show success message with before/after
+                            setFixSuccessMessage({
+                              before: failedQuery,
+                              after: result.sql
+                            });
+                            // Don't auto-hide - message stays until next query
+                          } else {
+                            console.error('Failed to fix SQL:', result.error);
+                            // Show error in alert if AI fails
+                            alert(result.error || 'Failed to fix SQL query. Please check if Ollama is running.');
+                          }
+                        } catch (error) {
+                          console.error('Error calling AI to fix SQL:', error);
+                          alert('Failed to connect to AI service. Please ensure Ollama is running.');
+                        } finally {
+                          setIsFixingError(false);
+                        }
+                      }}
+                      disabled={isFixingError}
+                      className="gap-1 flex-shrink-0"
+                    >
+                      {isFixingError ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Fixing...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-3 w-3" />
+                          Fix with AI
+                        </>
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Use AI to analyze and fix the SQL error</p>
+                  </TooltipContent>
+                </Tooltip>
+                </TooltipProvider>
+              </div>
+            </Alert>
+          </div>
+        )}
+
+        {/* Success message after fixing */}
+        {fixSuccessMessage && !executeMutation.error && (
+          <div className="flex justify-center p-2">
+            <Alert className="w-auto max-w-4xl border-green-500/50 bg-green-50/10" data-testid="sql-fix-success">
+              <div className="flex items-start gap-3">
+                <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                <div className="space-y-2 flex-1">
+                  <AlertDescription className="text-sm font-medium text-green-700">
+                    Query fixed! Review the changes and press Execute when ready.
+                  </AlertDescription>
+                  <div className="space-y-2">
+                    <div>
+                      <span className="text-xs text-muted-foreground font-medium">Before:</span>
+                      <pre className="mt-1 p-2 bg-muted/30 rounded border text-xs font-mono overflow-x-auto">
+                        <code>{fixSuccessMessage.before}</code>
+                      </pre>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground font-medium">After:</span>
+                      <pre className="mt-1 p-2 bg-muted/30 rounded border text-xs font-mono overflow-x-auto">
+                        <code>{fixSuccessMessage.after}</code>
+                      </pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Alert>
+          </div>
         )}
 
         {executeMutation.data && (
@@ -281,7 +425,7 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
             </div>
 
             {/* Results table with its own scroll container */}
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0" data-testid="query-results">
               {executeMutation.data.data && executeMutation.data.data.columns.length > 0 && (
                 <DataTable
                   columns={createColumns(executeMutation.data.data.columns)}

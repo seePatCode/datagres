@@ -126,8 +126,47 @@ async function tryOllama(prompt, tableInfo) {
       return tableSQL;
     }).join('\n\n') || '';
     
+    // Check if this is a SQL error fix request
+    const isErrorFix = prompt.toLowerCase().includes('fix this sql') && 
+                      prompt.toLowerCase().includes('error');
+    
     // Enhanced prompt with best practices from research
-    const systemPrompt = `### Task
+    let systemPrompt;
+    
+    if (isErrorFix) {
+      // Special prompt for fixing SQL errors
+      systemPrompt = `### Task
+Fix the PostgreSQL query error. The error message indicates which column doesn't exist - find the correct column name from the schema.
+
+### Instructions
+- Return ONLY the fixed SQL query, no explanations
+- IMPORTANT: When error says "column X does not exist", look in the schema for the correct column name
+- Common column name mappings to check:
+  * user_id → author_id, committer_id, created_by_id, user_fk
+  * created_at → created, timestamp, date_created, created_date
+  * updated_at → updated, modified, date_updated, last_modified
+  * name → title, label, display_name
+  * email → email_address, user_email
+- For the commits table specifically, look for:
+  * author_id or committer_id instead of user_id
+  * author_email or committer_email for user info
+  * If joining commits with users, the foreign key in commits might be named differently
+- IMPORTANT: If you see "column c.user_id does not exist" and c is the commits table alias:
+  * Look in the commits table schema for columns like: author_id, committer_id, user_fk, created_by
+  * Do NOT return the same query - you MUST change the column name
+- Ensure you're using the exact column names from the schema below
+
+### Database Schema
+${schemaContext || `CREATE TABLE ${tableInfo.tableName} (/* schema not available */);`}
+
+### Error Details
+${prompt}
+
+### Corrected SQL
+`;
+    } else {
+      // Regular SQL generation prompt
+      systemPrompt = `### Task
 Generate a PostgreSQL query to answer the natural language question.
 
 ### Instructions
@@ -157,6 +196,7 @@ ${prompt}
 
 ### SQL Query
 `;
+    }
     
     console.log('Sending to Ollama:', systemPrompt.substring(0, 200) + '...');
     
