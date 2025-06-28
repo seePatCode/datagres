@@ -5,353 +5,150 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ### Development
-- `npm run dev` - Start development server with hot reload
-- `npm start` - Build and start the Electron app in preview mode  
-- `npm run build` - Build for production
+- `pnpm run dev` - Start development server with hot reload
+- `pnpm start` - Start the Electron app (never run in Claude Code - user only)
+- `pnpm run typecheck` or `pnpm run lint` - Check TypeScript compilation
 
 ### Testing
-- `npm test` - Run Playwright e2e tests
-- `npm test:headed` - Run tests with visible browser (for debugging)
-- `npm run test:unit` - Run unit tests with Vitest
-- `npm run test:unit:ui` - Run unit tests with UI interface
-- `npm run test:unit:coverage` - Run unit tests with coverage report
+- `pnpm test` - Run Playwright e2e tests
+- `pnpm test:headed` - Run tests with visible browser
+- `pnpm run test:unit` - Run unit tests with Vitest
+- `pnpm run test:unit:coverage` - Run unit tests with coverage
 
 ### Distribution
-- `npm run preview` - Preview built application
-- `npm run dist` - Build and package for all platforms
-- `npm run dist:mac` - Build for macOS
-- `npm run dist:win` - Build for Windows
-- `npm run dist:linux` - Build for Linux
+- `pnpm run dist` - Build and package for all platforms
+- `pnpm run dist:mac` - Build for macOS only
+- `pnpm run dist:win` - Build for Windows only
+- `pnpm run dist:linux` - Build for Linux only
 
 ## Architecture Overview
 
-**Datagres** is an Electron-based PostgreSQL database explorer built for speed and simplicity. The app follows Electron's three-process architecture with a modular design for scalability:
+Datagres is an Electron-based PostgreSQL database explorer using Electron Forge as the build system. The app follows Electron's three-process architecture:
 
 ### Main Process (`src/main/`)
-- **Entry Point** (`index.js`): IPC handlers and application lifecycle (147 lines, reduced from 766)
-- **Services** (`services/`):
-  - `connectionStore.js`: Secure storage for database connections using `electron-store` (encrypted) + `keytar` (OS keychain)
-  - `databaseService.js`: PostgreSQL operations and test mocking
-  - `menuBuilder.js`: Application menu construction
-  - `windowManager.js`: Window creation and control
-- **Module Bundling**: All services are bundled into a single file during build via electron-vite configuration
+- **Entry Point** (`index.js`): Handles all IPC communication and app lifecycle
+- **Services** (`services/`): Modular services auto-bundled during build
+  - `connectionStore.js`: Secure credential storage (electron-store + keytar)
+  - `databaseService.js`: PostgreSQL operations with cloud SSL auto-detection
+  - `aiService.js`: Local AI SQL generation via Ollama
+  - `windowManager.js`: Window lifecycle management
+  - `menuBuilder.js`: Native menu construction
 
 ### Preload Script (`src/preload/index.js`)
-- **Security Bridge**: Exposes safe database API via `contextBridge`
-- **API Surface**: Connection management, table data fetching, saved connections
+Exposes limited API via `contextBridge` for security. All database operations go through this layer.
 
 ### Renderer Process (`src/renderer/`)
-- **React + TypeScript**: Modern React with hooks and strict typing
-- **TanStack Query**: Server state management with caching and mutations
-- **TanStack Table**: Advanced data grid with virtual scrolling
-- **Tailwind + shadcn/ui**: Component library built on Radix UI primitives
+- **React 19** with TypeScript and Redux Toolkit
+- **TanStack Query**: Server state with intelligent caching
+- **TanStack Table**: Virtual scrolling for millions of rows
+- **Monaco Editor**: SQL editor with schema-aware autocomplete
+- **Tailwind + shadcn/ui**: Component library (never create manually)
 
-### Shared Types (`src/shared/types.ts`)
-- **Type Definitions**: Centralized TypeScript types for IPC communication
-- **API Contracts**: Ensures type safety between main and renderer processes
-- **Data Models**: SavedConnection, TableInfo, API responses
+### Build System (Electron Forge + Webpack)
+- Three separate Webpack configs for main/preload/renderer
+- TypeScript in renderer, JavaScript in main/preload
+- Path aliases: `@/` (renderer), `@shared/`, `@services/`, `@utils/`
+- All internal services bundled via webpack configuration
 
-## Key Technical Patterns
+## Critical Patterns
 
-### Connection Management
-- **Storage**: Connection metadata encrypted in electron-store, passwords in OS keychain
-- **Auto-reconnect**: App automatically connects to most recently used database on startup
-- **Connection String Parsing**: Robust PostgreSQL URL validation and parsing
-- **Security**: Graceful degradation when security libraries unavailable
-
-### Data Flow
+### IPC Communication Flow
 ```
-User Action → React Query Mutation → IPC Call → Main Process → PostgreSQL → Response → UI Update
+User Action → Redux Action → IPC Call → Main Process → PostgreSQL → Response → Redux Update
 ```
+All IPC responses follow: `{success: boolean, error?: string, ...data}`
 
-### Component Architecture
-- **App.tsx**: Central state manager with view routing (`connect` | `tables` | `tableData`)
-- **ConnectionManager**: Persistent CRUD operations for saved connections
-- **DataTable**: Virtual scrolling grid with advanced features
-- **TableView**: Infinite scroll implementation for seamless data browsing
-  - Uses intersection observer to detect when user nears bottom
-  - Automatically loads next page of data (100 rows at a time)
-  - Maintains all previously loaded data in view
+### Adding New Database Operations
+1. Add handler in `src/main/index.js` with test mode mock
+2. Expose in `src/preload/index.js`
+3. Add TypeScript types in `src/shared/types.ts`
+4. Use in renderer via Redux actions/React Query
 
-### Error Handling
-- All IPC operations return `{success: boolean, error?: string, ...data}` pattern
-- Graceful fallbacks when optional dependencies (keytar) unavailable
-- User-friendly error messages with technical details in console
+### Connection Security
+- Passwords stored in OS keychain (keytar)
+- Connection metadata encrypted (electron-store)
+- Cloud providers (AWS, Heroku, Azure) auto-detected for SSL config
+- Graceful fallback when security libs unavailable
+
+### State Management
+- **Redux Store**: Persistent app state (current connection, schema cache)
+- **React Query**: Server state (table data, query results)
+- **Local State**: UI-only state (modals, selections)
 
 ## Development Guidelines
 
-### Adding Database Operations
-1. Add IPC handler in main process (`src/main/index.js`)
-2. Add mock response for test mode
-3. Expose via preload script (`src/preload/index.js`) 
-4. Add TypeScript declaration in App.tsx global interface
-5. Use React Query mutation/query in components
-
-### Adding New Services/Modules
-1. Create module in `src/main/services/` or `src/main/utils/`
-2. Add module path to `externalizeDepsPlugin` exclude list in `electron.vite.config.mjs`
-3. Import and use in main process
-4. Module will be automatically bundled during build
+### Package Management
+**Always use pnpm** with `--shamefully-hoist` for Electron:
+```bash
+pnpm add -D electron --shamefully-hoist
+```
 
 ### Component Development
-- Follow existing shadcn/ui patterns for new components
-- **NEVER manually create shadcn components** - always use `pnpm dlx shadcn@latest add [component]`
-- Use `pnpm` instead of `npx` for better peer dependency management with React 19
-- If you have trouble installing a shadcn component, check with the user instead of creating it manually
-- Use Tailwind utilities, avoid custom CSS
-- Implement proper loading states and error handling
-- Add data-testid attributes for e2e testing
+- **NEVER manually create shadcn components** - use: `pnpm dlx shadcn@latest add [component]`
+- Follow existing patterns in `src/renderer/components/`
+- Use TypeScript strictly - run `pnpm run typecheck` before claiming completion
 
-### Package Management
-- **Always use pnpm** for this project
-- **For Electron and other packages with post-install scripts**, use the `--shamefully-hoist` flag:
-  ```bash
-  pnpm add -D electron --shamefully-hoist
-  ```
-- This prevents issues where post-install scripts create files in wrong locations
-- If you encounter "module not found" errors after installing, try reinstalling with `--shamefully-hoist`
+### Testing Without Running
+Before implementation is complete, verify:
+1. TypeScript compilation: `pnpm run typecheck`
+2. Module resolution: `node -e "require('./path/to/file')"`
+3. Integration points: `grep -n "handler-name" src/main/index.js`
+4. Component imports: Check all imports resolve
 
-### Monaco Editor Integration
-- **Async Loading Pattern**: Schema data often loads after Monaco editor mounts
-  - Track both editor ready state and data availability with separate state/refs
-  - Use `useEffect` with both dependencies to setup features when both are ready
-  - Don't rely on data being available in the `onMount` callback
-- **React Hooks Closures**: Callbacks may capture stale state values
-  - Use refs (`useRef`) to access current values in callbacks
-  - Sync state changes to refs with `useEffect` 
-  - Use `useCallback` with empty deps array when using refs
-- **Context-Aware Completions**: Analyze text before cursor to provide smart suggestions
-  - Parse current position in SQL syntax (after column, operator, keyword, etc.)
-  - Provide contextually appropriate suggestions (columns vs operators vs values)
-  - Use `model.getValueInRange()` to get text before cursor position
+### Monaco Editor Gotchas
+- Schema data loads asynchronously - use refs to access current values
+- Don't rely on data in `onMount` - use `useEffect` with dependencies
+- Callbacks capture stale state - sync state to refs
 
-### Testing Strategy
-- **Always implement in a TDD approach**
-- **E2E Tests**: Playwright tests in `tests/e2e/` cover complete user journeys
-- **Test Mode**: Set `NODE_ENV=test` for consistent mocking
-- **Mock Data**: Deterministic test database responses in main process
-- **IMPORTANT**: Never run `npm start` in Claude Code - only the user should run it. Find alternative verification methods or ask the user to test
+### Unit Testing Focus (80/20 Rule)
+Test critical business logic only:
+- Connection string parsing/validation
+- Query builders (WHERE clauses)
+- Error handling paths
+- State transformations
 
-### Pre-Implementation Verification Checklist
-Before claiming an implementation is complete, verify the following without running `npm start`:
+## Product Features
 
-1. **TypeScript Compilation**
-   ```bash
-   npx tsc --noEmit
-   ```
-   - Should complete without errors
-   - Fix any type errors before proceeding
+### Keyboard Navigation
+- `Shift+Shift`: Quick table search (Spotlight-style)
+- `Cmd+K`: AI SQL generation (requires Ollama)
+- `Cmd+N`: New connection
+- `Cmd+1-9`: Tab switching
 
-2. **Module Dependencies**
-   ```bash
-   # Check if all imports resolve correctly
-   node -e "require('./path/to/new/file')"
-   
-   # For Electron-specific issues
-   node -e "require('electron')"
-   ```
-   - Verify new files can be loaded
-   - Check for missing dependencies
+### Performance Features
+- Virtual scrolling with intersection observer
+- Infinite scroll (100 rows per page)
+- Schema caching for instant search
+- Connection auto-reconnect on startup
 
-3. **Component Structure Verification**
-   ```bash
-   # Verify component exports and imports
-   node -e "
-   const fs = require('fs');
-   const content = fs.readFileSync('path/to/component.tsx', 'utf8');
-   console.log('✓ Imports:', content.includes('import'));
-   console.log('✓ Export:', content.includes('export'));
-   console.log('✓ Props:', content.includes('Props'));
-   "
-   ```
-
-4. **Integration Points**
-   ```bash
-   # Check that new code is properly integrated
-   grep -n "NewComponent" src/renderer/App.tsx
-   grep -n "new-handler" src/main/index.js
-   ```
-
-5. **Build Process**
-   ```bash
-   # Quick build check (faster than full start)
-   timeout 10s npm run build || echo "Build check complete"
-   ```
-
-6. **Common Error Patterns**
-   - Missing shadcn/ui components: Install with `pnpm dlx shadcn@latest add [component]`
-   - Electron not found: Check with `node -e "require('electron')"`
-   - Import path errors: Verify `@/` aliases and relative paths
-   - Missing IPC handlers: Check main/preload/renderer integration
-
-7. **Logic Testing**
-   ```bash
-   # Test specific functions in isolation
-   node -e "
-   // Copy and test logic functions
-   function myFunction() { ... }
-   console.log(myFunction(testInput));
-   "
-   ```
-
-8. **Unit Test Coverage (80/20 Rule)**
-   Focus on testing the 20% of code that provides 80% of the value:
-   
-   **Core Features to Test:**
-   - Connection string parsing and validation
-   - Save/load connection logic
-   - Database query builders (WHERE clause construction)
-   - Error handling and edge cases
-   - State management logic
-   
-   **Example Unit Test Implementation:**
-   ```javascript
-   // src/shared/__tests__/validation.test.ts
-   describe('validateConnectionString', () => {
-     test('accepts valid PostgreSQL URLs', () => {
-       expect(validateConnectionString('postgresql://user:pass@localhost/db')).toBe(true);
-     });
-     test('rejects invalid URLs', () => {
-       expect(validateConnectionString('not-a-url')).toBe(false);
-     });
-   });
-   ```
-   
-   **Run Unit Tests:**
-   ```bash
-   npm run test:unit
-   npm run test:unit:coverage
-   ```
-   
-   **What to Test:**
-   - Pure functions (parsers, validators, formatters)
-   - Critical business logic (connection management, query building)
-   - Error paths and edge cases
-   - Data transformations
-   
-   **What NOT to Test:**
-   - UI components (covered by e2e tests)
-   - Simple getters/setters
-   - Framework code
-   - External library integrations
-
-### Build Configuration
-- **electron-vite**: Separate builds for main/preload (CommonJS) and renderer (ES modules)
-- **Path Aliases**: 
-  - Renderer: `@/` maps to `src/renderer/`
-  - Shared: `@shared/` maps to `src/shared/`
-  - Main: `@services` maps to `src/main/services/`, `@utils` maps to `src/main/utils/`
-- **Module Bundling**: Internal modules excluded from externalization and bundled via `inlineDynamicImports`
-- **TypeScript**: Full type checking in renderer, JavaScript in main/preload
-- **ESM Handling**: Dynamic imports for ESM-only packages (e.g., electron-store v10)
-- **Distribution**: Electron Builder configured for cross-platform packaging (App ID: `com.datagres.app`)
-
-## Important Files
-
-### Main Process
-- `src/main/index.js` - IPC handlers and app lifecycle
-- `src/main/services/connectionStore.js` - Connection storage logic
-
-### Renderer Process  
-- `src/renderer/App.tsx` - Central application state and routing
-- `src/renderer/components/ui/connection-manager.tsx` - Connection CRUD operations
-- `src/renderer/components/ui/data-table.tsx` - Advanced data grid
-
-### Configuration
-- `electron.vite.config.mjs` - Multi-process build configuration with module bundling
-- `tests/e2e/app.spec.js` - Complete user journey tests
-
-## Product Vision
-
-Datagres aims to be "the world's fastest database exploration tool" with a focus on:
-- **Speed**: Connection to data view in under 15 seconds
-- **Keyboard-driven**: Cmd+K navigation, minimal mouse usage
-  - **Shift+Shift**: Quick table search (like Spotlight on macOS)
-- **Zero configuration**: Paste connection string and start exploring
-- **Safe editing**: Preview SQL before execution, transaction safety
-
-The app currently supports PostgreSQL with plans for MySQL, SQLite, and MongoDB support in future versions.
-
-### Project Resources
-- **License**: The Unlicense (public domain)
-- **Knowledge Base**: `kb/` directory contains:
-  - `app_goals.md` - Full Product Requirements Document
-  - `implementation_todos.md` - TDD-based development tracking
-
-### AI-Powered SQL Generation (CMD+K)
-Datagres includes AI-powered SQL generation using Ollama:
-- **Model**: qwen2.5-coder:latest (4.7GB)
-- **Implementation**: `src/main/services/aiService.js`
-- **Setup Guide**: `docs/OLLAMA_SETUP.md`
-- **How it works**: Sends full database schema context to local AI model
-- **Privacy**: All processing happens locally, no data leaves the machine
-
-To modify the AI model, change the model name in `aiService.js`. Popular alternatives:
-- codellama:7b-instruct (better for pure SQL)
-- mistral:7b-instruct (general purpose)
-- llama2:7b (requires different prompt format)
+### AI Integration
+- Local Ollama model (qwen2.5-coder by default)
+- Full schema context sent to model
+- Privacy-first: all processing local
+- Model configurable in `aiService.js`
 
 ## Common Issues and Solutions
 
-### Issue Log
-Document issues encountered during development to help future debugging.
+### 1. pnpm + Electron Post-Install
+**Issue**: "Electron failed to install correctly"
+**Fix**: Always install with `pnpm add -D electron --shamefully-hoist`
 
-#### 1. Electron Failed to Install Correctly (pnpm)
-**What Broke:** `npm start` failed with "Electron failed to install correctly" error
-**Why It Broke:** When using pnpm, Electron's post-install script creates files in `node_modules/.ignored/electron/` instead of the expected pnpm location `node_modules/.pnpm/electron@VERSION/node_modules/electron/`
-**How We Detected:** 
-- Running `node -e "require('electron')"` threw the error
-- `path.txt` file was missing from the pnpm electron directory
-- Found the files existed in `.ignored` directory instead
-**How We Fixed (Temporary):**
-```bash
-# Manual copy (not ideal)
-cp node_modules/.ignored/electron/path.txt node_modules/.pnpm/electron@36.4.0/node_modules/electron/
-cp -r node_modules/.ignored/electron/dist node_modules/.pnpm/electron@36.4.0/node_modules/electron/
-```
-**Proper Fix:**
-```bash
-# Re-install electron with proper flags
-pnpm remove electron
-pnpm add -D electron --shamefully-hoist
-```
-**Prevention:** Always use `pnpm add -D electron --shamefully-hoist` when installing Electron. This is documented in the Package Management section.
+### 2. Missing shadcn Components
+**Issue**: Import errors for UI components
+**Fix**: `pnpm dlx shadcn@latest add [component-name]`
 
-#### 2. Missing shadcn/ui Components
-**What Broke:** Import errors for shadcn components (e.g., Label)
-**Why It Broke:** Manually created components or forgot to install them
-**How We Detected:** Vite build errors showing missing imports
-**How We Fixed:** 
-```bash
-pnpm dlx shadcn@latest add [component-name]
-```
+### 3. Cloud Database SSL Errors
+**Issue**: Heroku/AWS connection failures
+**Fix**: App auto-detects cloud providers and configures SSL - check `createClient()` in databaseService.js
 
-#### 3. Connection String Validation Too Strict
-**What Broke:** Valid PostgreSQL connection strings were rejected
-**Why It Broke:** Initial validation required specific URL format
-**How We Detected:** User feedback that valid strings were rejected
-**How We Fixed:** Made validation permissive - only check for non-empty string, let PostgreSQL handle validation
+### 4. Connection String Issues
+**Issue**: Valid strings rejected or modified
+**Fix**: App preserves `originalConnectionString` to maintain exact user input
 
-#### 4. UI Flash When Switching Connections
-**What Broke:** Connection screen briefly appeared when switching between saved connections
-**Why It Broke:** Explorer view required `connectionMutation.isSuccess` which became false during switches
-**How We Detected:** Visual glitch during testing
-**How We Fixed:** Removed success check from explorer view condition, added `isSwitchingConnection` state
+## Important Notes
 
-#### 5. Database Switching Shows Same Tables
-**What Broke:** Clicking different databases in sidebar showed same tables
-**Why It Broke:** Connection strings were parsed and rebuilt, losing original parameters
-**How We Detected:** User reported all connections showing same data
-**How We Fixed:** Added `originalConnectionString` field to preserve exact user input
-
-#### 6. Heroku PostgreSQL SSL Connection Error
-**What Broke:** Connection to Heroku PostgreSQL failed with "no pg_hba.conf entry...no encryption" error, then "self signed certificate" error
-**Why It Broke:** 
-1. First: Heroku requires SSL connections but the app wasn't using SSL
-2. Then: Heroku uses self-signed certificates which Node.js rejects by default
-**How We Detected:** User reported connection errors with Heroku database
-**How We Fixed:** 
-- Created `createClient()` helper function that detects cloud providers (amazonaws, heroku, azure, googlecloud)
-- For cloud providers, configures SSL with `rejectUnauthorized: false` to accept self-signed certificates
-- Also honors explicit `sslmode=require` in connection strings
-- Applied fix to all database operations (connect, fetch, update, execute)
+- **NEVER run `npm start` in Claude Code** - only users should run it
+- Test mode activated with `NODE_ENV=test` for consistent mocking
+- All services in `src/main/services/` are bundled automatically
+- Distribution configured for macOS (DMG), Windows (Squirrel), Linux (DEB)
+- App ID: `com.datagres.app` for all platforms
