@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from 'react'
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import { Search, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -30,10 +30,13 @@ export function SQLWhereEditorSimple({
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [cursorPosition, setCursorPosition] = useState(0)
+  const [internalValue, setInternalValue] = useState(value)
   
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const suggestionTimerRef = useRef<NodeJS.Timeout | null>(null)
   
   // Generate suggestions based on input
   const generateSuggestions = useCallback((input: string, position: number) => {
@@ -127,36 +130,78 @@ export function SQLWhereEditorSimple({
     return suggestions.slice(0, 10) // Limit suggestions
   }, [schema])
   
-  // Handle input change
+  // Sync internal value with prop
+  useEffect(() => {
+    setInternalValue(value)
+  }, [value])
+  
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
+      if (suggestionTimerRef.current) clearTimeout(suggestionTimerRef.current)
+    }
+  }, [])
+  
+  // Handle input change with debouncing
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value
     const position = e.target.selectionStart || 0
     
-    onChange(newValue)
+    // Update internal value immediately for responsive UI
+    setInternalValue(newValue)
     setCursorPosition(position)
     
-    // Generate and show suggestions
-    const newSuggestions = generateSuggestions(newValue, position)
-    setSuggestions(newSuggestions)
-    setIsOpen(newSuggestions.length > 0)
-    setSelectedIndex(0)
+    // Debounce the onChange callback
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+    
+    debounceTimerRef.current = setTimeout(() => {
+      onChange(newValue)
+    }, 50) // 50ms debounce
+    
+    // Debounce suggestion generation
+    if (suggestionTimerRef.current) {
+      clearTimeout(suggestionTimerRef.current)
+    }
+    
+    // Show suggestions after a short delay
+    suggestionTimerRef.current = setTimeout(() => {
+      // Don't show suggestions for empty input
+      if (newValue.trim() === '') {
+        setSuggestions([])
+        setIsOpen(false)
+      } else {
+        const newSuggestions = generateSuggestions(newValue, position)
+        setSuggestions(newSuggestions)
+        setIsOpen(newSuggestions.length > 0)
+        setSelectedIndex(0)
+      }
+    }, 150) // 150ms delay for suggestions
   }, [onChange, generateSuggestions])
   
   // Handle keyboard navigation
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!isOpen || suggestions.length === 0) {
+    // Always handle Cmd/Ctrl+K for AI prompt
+    if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault()
+      if (onAiPrompt && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect()
+        onAiPrompt({
+          top: rect.bottom + 5,
+          left: rect.left
+        })
+      }
+      return
+    }
+    
+    // If dropdown is not open or empty input, Enter should commit
+    if (!isOpen || suggestions.length === 0 || internalValue.trim() === '') {
       if (e.key === 'Enter') {
         e.preventDefault()
+        setIsOpen(false)
         onCommit()
-      } else if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault()
-        if (onAiPrompt && containerRef.current) {
-          const rect = containerRef.current.getBoundingClientRect()
-          onAiPrompt({
-            top: rect.bottom + 5,
-            left: rect.left
-          })
-        }
       }
       return
     }
@@ -173,6 +218,19 @@ export function SQLWhereEditorSimple({
         break
         
       case 'Enter':
+        e.preventDefault()
+        // Only insert suggestion if Shift is held or if there's actual input
+        if (e.shiftKey || internalValue.trim() !== '') {
+          if (suggestions[selectedIndex]) {
+            insertSuggestion(suggestions[selectedIndex])
+          }
+        } else {
+          // Empty input + Enter = commit search
+          setIsOpen(false)
+          onCommit()
+        }
+        break
+        
       case 'Tab':
         e.preventDefault()
         if (suggestions[selectedIndex]) {
@@ -185,7 +243,7 @@ export function SQLWhereEditorSimple({
         setIsOpen(false)
         break
     }
-  }, [isOpen, suggestions, selectedIndex, onCommit, onAiPrompt])
+  }, [isOpen, suggestions, selectedIndex, onCommit, onAiPrompt, internalValue])
   
   // Insert suggestion at cursor position
   const insertSuggestion = useCallback((suggestion: Suggestion) => {
@@ -261,14 +319,20 @@ export function SQLWhereEditorSimple({
   
   // Handle focus
   const handleFocus = useCallback(() => {
+    // Don't show suggestions for empty input
+    if (internalValue.trim() === '') {
+      setIsOpen(false)
+      return
+    }
+    
     const position = inputRef.current?.selectionStart || 0
-    const newSuggestions = generateSuggestions(value, position)
+    const newSuggestions = generateSuggestions(internalValue, position)
     setSuggestions(newSuggestions)
     if (newSuggestions.length > 0) {
       setIsOpen(true)
       setSelectedIndex(0)
     }
-  }, [value, generateSuggestions])
+  }, [internalValue, generateSuggestions])
   
   return (
     <div ref={containerRef} className="relative flex items-center gap-2 px-3 py-2 border rounded-md bg-background">
@@ -284,7 +348,7 @@ export function SQLWhereEditorSimple({
       <input
         ref={inputRef}
         type="text"
-        value={value}
+        value={internalValue}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
         onFocus={handleFocus}
@@ -316,37 +380,13 @@ export function SQLWhereEditorSimple({
           className="absolute top-full left-0 right-0 mt-1 max-h-64 overflow-auto rounded-md border bg-popover text-popover-foreground shadow-md z-50"
         >
           {suggestions.map((suggestion, index) => (
-            <div
-              key={index}
-              className={cn(
-                "flex items-center justify-between px-3 py-2 text-sm cursor-pointer transition-colors",
-                index === selectedIndex
-                  ? "bg-accent text-accent-foreground"
-                  : "hover:bg-accent/50"
-              )}
+            <SuggestionItem
+              key={`${suggestion.type}-${suggestion.value}-${index}`}
+              suggestion={suggestion}
+              isSelected={index === selectedIndex}
               onMouseEnter={() => setSelectedIndex(index)}
               onClick={() => insertSuggestion(suggestion)}
-            >
-              <div className="flex items-center gap-2">
-                <span className="font-medium">{suggestion.label}</span>
-                {suggestion.detail && (
-                  <span className="text-xs text-muted-foreground">
-                    {suggestion.detail}
-                  </span>
-                )}
-              </div>
-              <span
-                className={cn(
-                  "text-xs px-1.5 py-0.5 rounded",
-                  suggestion.type === 'column' && "bg-blue-500/20 text-blue-500",
-                  suggestion.type === 'operator' && "bg-green-500/20 text-green-500",
-                  suggestion.type === 'keyword' && "bg-purple-500/20 text-purple-500",
-                  suggestion.type === 'value' && "bg-orange-500/20 text-orange-500"
-                )}
-              >
-                {suggestion.type}
-              </span>
-            </div>
+            />
           ))}
           
           <div className="px-3 py-2 text-xs text-muted-foreground border-t">
@@ -357,3 +397,49 @@ export function SQLWhereEditorSimple({
     </div>
   )
 }
+
+// Memoized suggestion item component for better performance
+const SuggestionItem = React.memo(({ 
+  suggestion, 
+  isSelected, 
+  onMouseEnter, 
+  onClick 
+}: {
+  suggestion: Suggestion
+  isSelected: boolean
+  onMouseEnter: () => void
+  onClick: () => void
+}) => {
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between px-3 py-2 text-sm cursor-pointer transition-colors",
+        isSelected
+          ? "bg-accent text-accent-foreground"
+          : "hover:bg-accent/50"
+      )}
+      onMouseEnter={onMouseEnter}
+      onClick={onClick}
+    >
+      <div className="flex items-center gap-2">
+        <span className="font-medium">{suggestion.label}</span>
+        {suggestion.detail && (
+          <span className="text-xs text-muted-foreground">
+            {suggestion.detail}
+          </span>
+        )}
+      </div>
+      <span
+        className={cn(
+          "text-xs px-1.5 py-0.5 rounded",
+          suggestion.type === 'column' && "bg-blue-500/20 text-blue-500",
+          suggestion.type === 'operator' && "bg-green-500/20 text-green-500",
+          suggestion.type === 'keyword' && "bg-purple-500/20 text-purple-500",
+          suggestion.type === 'value' && "bg-orange-500/20 text-orange-500"
+        )}
+      >
+        {suggestion.type}
+      </span>
+    </div>
+  )
+})
