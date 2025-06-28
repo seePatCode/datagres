@@ -38,6 +38,16 @@ export function SQLWhereEditorSimple({
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
   const suggestionTimerRef = useRef<NodeJS.Timeout | null>(null)
   
+  // Memoize schema columns for faster access
+  const schemaColumns = useMemo(() => {
+    if (!schema?.columns) return []
+    // Pre-process columns with lowercase names for faster filtering
+    return schema.columns.map((col: any) => ({
+      ...col,
+      nameLower: col.name.toLowerCase()
+    }))
+  }, [schema])
+  
   // Generate suggestions based on input
   const generateSuggestions = useCallback((input: string, position: number) => {
     const suggestions: Suggestion[] = []
@@ -56,9 +66,9 @@ export function SQLWhereEditorSimple({
     const afterConnector = /\s(and|or)\s+$/i.test(beforeCursor)
     
     // Suggest columns
-    if ((atStart || afterConnector) && schema?.columns && !needsValue) {
-      schema.columns.forEach((col: any) => {
-        if (!currentWord || col.name.toLowerCase().startsWith(currentWord)) {
+    if ((atStart || afterConnector) && schemaColumns.length > 0 && !needsValue) {
+      for (const col of schemaColumns) {
+        if (!currentWord || col.nameLower.startsWith(currentWord)) {
           suggestions.push({
             label: col.name,
             value: col.name,
@@ -66,7 +76,7 @@ export function SQLWhereEditorSimple({
             detail: col.dataType
           })
         }
-      })
+      }
     }
     
     // Suggest operators
@@ -128,7 +138,7 @@ export function SQLWhereEditorSimple({
     }
     
     return suggestions.slice(0, 10) // Limit suggestions
-  }, [schema])
+  }, [schemaColumns])
   
   // Sync internal value with prop
   useEffect(() => {
@@ -159,7 +169,7 @@ export function SQLWhereEditorSimple({
     
     debounceTimerRef.current = setTimeout(() => {
       onChange(newValue)
-    }, 50) // 50ms debounce
+    }, 30) // 30ms debounce - reduced for better responsiveness
     
     // Debounce suggestion generation
     if (suggestionTimerRef.current) {
@@ -178,7 +188,7 @@ export function SQLWhereEditorSimple({
         setIsOpen(newSuggestions.length > 0)
         setSelectedIndex(0)
       }
-    }, 150) // 150ms delay for suggestions
+    }, 100) // 100ms delay for suggestions - reduced for better UX
   }, [onChange, generateSuggestions])
   
   // Handle keyboard navigation
