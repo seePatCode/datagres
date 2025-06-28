@@ -1,5 +1,6 @@
 // Preload script for exposing APIs to renderer process
 const { contextBridge, ipcRenderer } = require('electron')
+const { parseConnectionString, sanitizeConnectionString, getConnectionDisplayInfo } = require('../main/utils/connectionStringUtils')
 
 contextBridge.exposeInMainWorld('electronAPI', {
   connectDatabase: (connectionString) => ipcRenderer.invoke('connect-database', connectionString),
@@ -32,5 +33,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => {
       ipcRenderer.removeListener('menu-action', handler)
     }
+  },
+  // Connection string utilities (sync, no IPC needed)
+  connectionStringUtils: {
+    parse: parseConnectionString,
+    sanitize: sanitizeConnectionString,
+    getDisplayInfo: getConnectionDisplayInfo
   }
 })

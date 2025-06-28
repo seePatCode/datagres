@@ -5,6 +5,7 @@ import { Provider } from 'react-redux'
 import { store } from './store/store'
 import { hydrateTabsState } from './store/slices/tabsSlice'
 import { ThemeInitializer } from './components/ThemeInitializer'
+import { Toaster } from './components/ui/toaster'
 import './index.css'
 import App from './App'
 
@@ -38,6 +39,7 @@ createRoot(document.getElementById('root')!).render(
       <ThemeInitializer>
         <QueryClientProvider client={queryClient}>
           <App />
+          <Toaster />
         </QueryClientProvider>
       </ThemeInitializer>
     </Provider>

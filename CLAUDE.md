@@ -131,7 +131,8 @@ Test critical business logic only:
 
 ### 1. Missing shadcn Components
 **Issue**: Import errors for UI components
-**Fix**: `npx shadcn@latest add [component-name]`
+**Fix**: `npx --legacy-peer-deps shadcn@latest add [component-name]`
+**Note**: Use `--legacy-peer-deps` flag due to React 19 peer dependency conflicts
 
 ### 3. Cloud Database SSL Errors
 **Issue**: Heroku/AWS connection failures

@@ -1,4 +1,5 @@
 const crypto = require('crypto')
+const { parseConnectionString: parseConnectionStringUtil, buildConnectionString: buildConnectionStringUtil } = require('../utils/connectionStringUtils')
 
 // Service name for keychain storage
 const SERVICE_NAME = 'datagres-db-connections'
@@ -73,22 +74,27 @@ function generateConnectionId() {
 
 function parseConnectionString(connectionString) {
   try {
-    const url = new URL(connectionString)
+    const parsed = parseConnectionStringUtil(connectionString)
     return {
-      host: url.hostname,
-      port: parseInt(url.port) || 5432,
-      database: url.pathname.substring(1),
-      username: url.username,
-      password: url.password || null
+      host: parsed.host,
+      port: parsed.port,
+      database: parsed.database,
+      username: parsed.username,
+      password: parsed.password
     }
   } catch (error) {
-    throw new Error('Invalid connection string format')
+    throw new Error(`Invalid connection string format: ${error.message}`)
   }
 }
 
 function buildConnectionString(connection, password = null) {
-  const passwordPart = password ? `:${password}` : ''
-  return `postgresql://${connection.username}${passwordPart}@${connection.host}:${connection.port}/${connection.database}`
+  return buildConnectionStringUtil({
+    username: connection.username,
+    password: password,
+    host: connection.host,
+    port: connection.port,
+    database: connection.database
+  }, 'url')
 }
 
 // Public API functions
@@ -201,11 +207,11 @@ async function loadConnection(connectionId) {
       if (connection.hasPassword && password) {
         // Parse the original connection string and inject the password
         try {
-          const url = new URL(connection.originalConnectionString)
-          url.password = password
-          connectionString = url.toString()
+          const parsed = parseConnectionStringUtil(connection.originalConnectionString)
+          parsed.password = password
+          connectionString = buildConnectionStringUtil(parsed, parsed.originalFormat || 'url')
         } catch (error) {
-          // Fallback to building from components if URL parsing fails
+          // Fallback to building from components if parsing fails
           connectionString = buildConnectionString(connection, password)
         }
       } else {

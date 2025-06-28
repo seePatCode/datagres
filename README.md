@@ -85,6 +85,9 @@ npm run dev
 # Build for your platform
 npm run make
 npm run dist
+
+# Adding shadcn/ui components (use npx with --legacy-peer-deps due to React 19)
+npx --legacy-peer-deps shadcn@latest add [component-name]
 ```
 
 ## 🚀 Quick Start

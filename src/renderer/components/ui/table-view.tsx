@@ -12,6 +12,7 @@ import { useInfiniteTableData } from '@/hooks/useInfiniteTableData'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { DEFAULT_PAGE_SIZE, DEFAULT_COLUMN_WIDTH, MIN_COLUMN_WIDTH, MAX_COLUMN_WIDTH, INFINITE_SCROLL_THRESHOLD } from '@/constants'
 import type { TableSchema } from '@shared/types'
+import { toast } from '@/hooks/use-toast'
 
 interface TableViewProps {
   tableName: string
@@ -415,6 +416,28 @@ Return ONLY the corrected WHERE condition.`
                                 })
                                 
                                 if (result.success && result.sql) {
+                                  // Show toast with before/after comparison
+                                  toast({
+                                    title: "WHERE clause fixed!",
+                                    description: (
+                                      <div className="space-y-2 mt-2">
+                                        <div>
+                                          <span className="text-xs font-medium">Before:</span>
+                                          <pre className="mt-1 p-2 bg-muted/30 rounded border text-xs font-mono overflow-x-auto">
+                                            <code>{lastExecutedSearch}</code>
+                                          </pre>
+                                        </div>
+                                        <div>
+                                          <span className="text-xs font-medium">After:</span>
+                                          <pre className="mt-1 p-2 bg-muted/30 rounded border text-xs font-mono overflow-x-auto">
+                                            <code>{result.sql}</code>
+                                          </pre>
+                                        </div>
+                                      </div>
+                                    ),
+                                    duration: 8000, // Show for 8 seconds to give time to review
+                                  })
+                                  
                                   // Update the search term with the fixed WHERE clause
                                   handleSearchChange(result.sql)
                                   // Clear the error by triggering a new search

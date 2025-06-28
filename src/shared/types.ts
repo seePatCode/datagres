@@ -179,6 +179,29 @@ export interface ElectronAPI {
   
   // Menu actions
   onMenuAction?: (callback: (action: MenuAction) => void) => (() => void)
+  
+  // Connection string utilities
+  connectionStringUtils: {
+    parse: (connectionString: string) => {
+      protocol: string
+      username: string
+      password: string | null
+      host: string
+      port: number
+      database: string
+      params: Record<string, string>
+      originalFormat: 'url' | 'keyvalue'
+    }
+    sanitize: (connectionString: string) => string
+    getDisplayInfo: (connectionString: string) => {
+      host: string
+      port: number
+      database: string
+      username: string
+      hasPassword: boolean
+      ssl: boolean
+    } | null
+  }
 }
 
 // Menu action types

@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ConnectionManager } from "@/components/ui/connection-manager"
 import { SaveConnectionDialog } from "@/components/ui/save-connection-dialog"
+import { ConnectionStringPreview } from "@/components/ui/connection-string-preview"
 import { TitleBar } from "@/components/ui/title-bar"
 import type { AppDispatch } from '@/store/store'
 import {
@@ -159,6 +160,13 @@ export function ConnectionView() {
                   Example: postgresql://myuser:mypassword@localhost:5432/mydatabase
                 </p>
               </div>
+              
+              {connectionString && (
+                <ConnectionStringPreview 
+                  connectionString={connectionString}
+                  className="mb-4"
+                />
+              )}
               
               <div className="flex items-center gap-2">
                 <Button 

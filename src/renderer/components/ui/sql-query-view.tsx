@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -109,12 +109,12 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
     }
   })
 
-  const handleQueryChange = (newQuery: string) => {
+  const handleQueryChange = useCallback((newQuery: string) => {
     setQuery(newQuery)
     onQueryChange?.(newQuery)
-  }
+  }, [onQueryChange])
 
-  const handleExecute = () => {
+  const handleExecute = useCallback(() => {
     // Get selected text if any, otherwise use the entire query
     const selectedText = editorRef.current?.getSelectedText() || ''
     const queryToExecute = selectedText.trim() ? selectedText : query
@@ -124,9 +124,9 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
       setFixSuccessMessage(null) // Clear any success message
       executeMutation.mutate(queryToExecute)
     }
-  }
+  }, [query, executeMutation])
 
-  const handleInsertSql = (sql: string, replaceSelection: boolean = false) => {
+  const handleInsertSql = useCallback((sql: string, replaceSelection: boolean = false) => {
     if (editorRef.current) {
       if (replaceSelection) {
         // Replace selected text with generated SQL
@@ -138,7 +138,7 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
       // Focus back to editor
       editorRef.current.focus()
     }
-  }
+  }, [])
 
   // Handle Cmd+K for AI prompt
   useEffect(() => {
@@ -254,13 +254,15 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
             </Button>
           </div>
           <div className="flex-1" data-testid="sql-editor">
-            <SQLEditor
-              ref={editorRef}
-              value={query}
-              onChange={handleQueryChange}
-              onExecute={handleExecute}
-              schemas={schemas}
-            />
+            {useMemo(() => (
+              <SQLEditor
+                ref={editorRef}
+                value={query}
+                onChange={handleQueryChange}
+                onExecute={handleExecute}
+                schemas={schemas}
+              />
+            ), [query, handleQueryChange, handleExecute, schemas])}
           </div>
         </div>
       </div>
