@@ -1,4 +1,4 @@
-const { BrowserWindow, ipcMain } = require('electron')
+const { BrowserWindow, ipcMain, app, nativeImage } = require('electron')
 const path = require('path')
 
 // Check if we're in development mode
@@ -22,12 +22,22 @@ function createMainWindow() {
     preloadPath = path.join(__dirname, '../../.webpack/renderer/main_window/preload.js')
   }
   
-  const win = new BrowserWindow({
+  // Determine icon path based on environment
+  let iconPath
+  if (app.isPackaged) {
+    // In production, Electron Forge handles the icon automatically
+    // We don't need to set it manually for packaged apps
+    iconPath = undefined
+  } else {
+    // In development, use the build directory
+    iconPath = path.join(__dirname, '../../../build/icon.png')
+  }
+  
+  const windowOptions = {
     width: 1400,
     height: 900,
     title: 'Datagres - Database Explorer',
     backgroundColor: '#171A1F', // Dark background with navy tint to prevent white flash
-    icon: path.join(__dirname, '../../../build/icon.png'), // Add icon for all platforms
     ...(process.platform === 'darwin' 
       ? { titleBarStyle: 'hidden' } // macOS: Hide title but keep traffic lights
       : { frame: false }), // Windows/Linux: Completely frameless
@@ -41,7 +51,20 @@ function createMainWindow() {
       webSecurity: !isDev,
       allowRunningInsecureContent: false
     }
-  })
+  }
+  
+  // Only set icon if we have a path and the file exists
+  if (iconPath) {
+    try {
+      if (require('fs').existsSync(iconPath)) {
+        windowOptions.icon = iconPath
+      }
+    } catch (e) {
+      console.warn('Could not set window icon:', e.message)
+    }
+  }
+  
+  const win = new BrowserWindow(windowOptions)
 
   // Maximize the window on startup (except during tests)
   if (process.env.NODE_ENV !== 'test') {

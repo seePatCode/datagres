@@ -11,10 +11,17 @@ const aiService = require('./services/aiService')
 // Set app name as early as possible
 app.setName('Datagres')
 
-// Set dock icon for macOS
-if (process.platform === 'darwin' && app.dock) {
+// Set dock icon for macOS (only needed in development)
+if (process.platform === 'darwin' && app.dock && !app.isPackaged) {
   const path = require('path')
-  app.dock.setIcon(path.join(__dirname, '../../build/icon.png'))
+  try {
+    const iconPath = path.join(__dirname, '../../build/icon.png')
+    if (require('fs').existsSync(iconPath)) {
+      app.dock.setIcon(iconPath)
+    }
+  } catch (e) {
+    console.warn('Could not set dock icon:', e.message)
+  }
 }
 
 app.whenReady().then(async () => {
