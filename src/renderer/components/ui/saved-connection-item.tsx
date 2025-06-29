@@ -80,7 +80,7 @@ export function SavedConnectionItem({
         </ContextMenuItem>
         <ContextMenuItem onClick={() => onEdit(connection)}>
           <Edit2 className="mr-2 h-4 w-4" />
-          Rename
+          Edit
         </ContextMenuItem>
         <ContextMenuItem 
           onClick={() => onDelete(connection.id)}

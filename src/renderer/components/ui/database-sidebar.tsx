@@ -139,7 +139,7 @@ export function DatabaseSidebar({
             <ContextMenuContent>
               <ContextMenuItem onClick={() => onEditConnection(currentConnection)}>
                 <Edit2 className="mr-2 h-4 w-4" />
-                Rename Connection
+                Edit
               </ContextMenuItem>
               <ContextMenuItem 
                 onClick={() => onDeleteConnection(currentConnection.id)}
