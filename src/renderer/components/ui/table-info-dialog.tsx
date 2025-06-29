@@ -128,9 +128,9 @@ export function TableInfoDialog({
                     </span>
                   </div>
                   <div className="col-span-2">
-                    <Badge variant={column.nullable ? 'secondary' : 'default'} className="text-xs">
-                      {column.nullable ? 'NULL' : 'NOT NULL'}
-                    </Badge>
+                    <span className="text-sm">
+                      {column.nullable ? 'Yes' : 'No'}
+                    </span>
                   </div>
                   <div className="col-span-2 text-muted-foreground min-w-0">
                     {column.defaultValue ? (
