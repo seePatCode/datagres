@@ -9,8 +9,12 @@ import { LOGO_DATA_URL } from '@/constants/logo'
 export function AboutView() {
   const dispatch = useDispatch<AppDispatch>()
   const [appVersion, setAppVersion] = useState<string>('0.3.4')
+  const [isMacOS, setIsMacOS] = useState(false)
   
   useEffect(() => {
+    // Detect macOS
+    setIsMacOS(navigator.platform.toLowerCase().includes('mac'))
+    
     // Fetch app version
     if (window.electronAPI?.appVersion) {
       window.electronAPI.appVersion.then(version => {
@@ -28,16 +32,21 @@ export function AboutView() {
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Header */}
-      <div className="border-b px-4 py-3 flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleBack}
-          className="h-8 w-8"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h1 className="text-lg font-semibold">About Datagres</h1>
+      <div className="border-b flex items-center h-12">
+        {/* Space for macOS traffic lights */}
+        {isMacOS && <div className="w-[70px]" />}
+        
+        <div className="flex items-center gap-2 px-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleBack}
+            className="h-8 w-8"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="text-lg font-semibold">About Datagres</h1>
+        </div>
       </div>
 
       {/* Content */}
