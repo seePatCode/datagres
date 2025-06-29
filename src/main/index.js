@@ -40,7 +40,7 @@ if (!isTestMode() && app.isPackaged) {
       repo: 'seepatcode/datagres',
       updateInterval: '1 hour',
       logger: log,
-      notifyUser: true
+      notifyUser: false
     })
     log.info('Auto-updater initialized successfully')
   } catch (error) {

@@ -99,21 +99,7 @@ class UpdateService {
       this.updateInfo = info
       this.sendToRenderer('update-downloaded', info)
       
-      // Show a dialog asking if the user wants to restart now
-      const mainWindow = this.windowManager.getMainWindow()
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        dialog.showMessageBox(mainWindow, {
-          type: 'info',
-          title: 'Update Ready',
-          message: 'A new version has been downloaded. Restart the application to apply the update?',
-          buttons: ['Restart Now', 'Later'],
-          defaultId: 0
-        }).then(result => {
-          if (result.response === 0) {
-            autoUpdater.quitAndInstall()
-          }
-        })
-      }
+      // Don't show a dialog here - the UpdateNotification component handles the UI
     })
   }
 
