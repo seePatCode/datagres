@@ -392,11 +392,17 @@ const SQLWhereEditorComponent = memo(function SQLWhereEditor({
         {!isEditorReady && (
           <div className="absolute inset-0 flex items-center">
             <div className="w-full h-6 bg-[#09090b] text-[#fafafa] text-sm px-2 flex items-center">
-              <span className="text-muted-foreground">{value || 'Enter WHERE clause (press Enter to search)'}</span>
+              <span className="text-muted-foreground">{value || 'Enter WHERE clause or press ⌘K for AI (press Enter to search)'}</span>
             </div>
           </div>
         )}
         <div className={!isEditorReady ? 'opacity-0' : ''} style={{ position: 'relative', zIndex: 1001 }}>
+          {/* Show placeholder when editor is ready but empty */}
+          {isEditorReady && !value && (
+            <div className="absolute inset-0 flex items-center pointer-events-none z-10">
+              <span className="text-muted-foreground text-sm px-2">Enter WHERE clause or press ⌘K for AI</span>
+            </div>
+          )}
           <Editor
             height="28px"
             defaultLanguage="sql"

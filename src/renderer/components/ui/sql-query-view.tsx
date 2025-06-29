@@ -257,7 +257,15 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
               )}
             </Button>
           </div>
-          <div className="flex-1" data-testid="sql-editor">
+          <div className="flex-1 relative" data-testid="sql-editor">
+            {/* Show placeholder hint when editor is empty */}
+            {!query.trim() && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                <div className="text-muted-foreground text-sm">
+                  Type a SQL query or press <kbd className="px-2 py-1 mx-1 text-xs bg-muted rounded">⌘K</kbd> to generate with AI
+                </div>
+              </div>
+            )}
             {useMemo(() => (
               <SQLEditor
                 ref={editorRef}

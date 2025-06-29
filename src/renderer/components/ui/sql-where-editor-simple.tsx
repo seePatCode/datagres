@@ -376,7 +376,7 @@ export function SQLWhereEditorSimple({
         onKeyDown={handleKeyDown}
         onFocus={handleFocus}
         disabled={disabled}
-        placeholder="Enter WHERE clause (press Enter to search)"
+        placeholder="Enter WHERE clause or press ⌘K for AI (press Enter to search)"
         className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground"
         spellCheck={false}
         autoComplete="off"
