@@ -21,14 +21,22 @@ export function SavedConnectionItem({
   onEdit, 
   onDelete 
 }: SavedConnectionItemProps) {
+  const handleClick = (e: React.MouseEvent) => {
+    // Only handle left clicks
+    if (e.button === 0) {
+      onLoad(connection.id)
+    }
+  }
+
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <div
-          className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted transition-colors"
+          className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted transition-colors cursor-pointer"
           data-testid="saved-connection-item"
+          onClick={handleClick}
         >
-          <div className="flex-1 min-w-0 cursor-pointer" onClick={() => onLoad(connection.id)}>
+          <div className="flex-1 min-w-0">
             <div className="font-medium truncate" data-testid="connection-name">
               {connection.name}
             </div>
