@@ -56,6 +56,11 @@ export function useMenuActions({
           case 'show-about':
             dispatch(setCurrentView('about'))
             break
+          case 'check-for-updates':
+            if (window.electronAPI?.checkForUpdates) {
+              window.electronAPI.checkForUpdates()
+            }
+            break
         }
       }
 

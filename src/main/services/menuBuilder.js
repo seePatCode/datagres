@@ -145,6 +145,13 @@ function createApplicationMenu(mainWindow, currentTheme = 'dark') {
         },
         { type: 'separator' },
         {
+          label: 'Check for Updates...',
+          click: () => {
+            mainWindow.webContents.send('menu-action', 'check-for-updates')
+          }
+        },
+        { type: 'separator' },
+        {
           label: 'About Datagres',
           click: () => {
             mainWindow.webContents.send('menu-action', 'show-about')

@@ -1,12 +1,37 @@
+// Handle Squirrel events for Windows auto-updater
+// This must be at the very beginning of the main process
+if (require('electron-squirrel-startup')) {
+  require('electron').app.quit();
+}
+
 const { app, ipcMain } = require('electron')
 
 // Import services
 const connectionStore = require('./services/connectionStore')
 const databaseService = require('./services/databaseService')
 const { createApplicationMenu, updateMenuTheme } = require('./services/menuBuilder')
-const { createMainWindow, setupWindowControlHandlers } = require('./services/windowManager')
+const { createMainWindow, setupWindowControlHandlers, getMainWindow } = require('./services/windowManager')
 const { testMocks, isTestMode } = require('./services/testMocks')
 const aiService = require('./services/aiService')
+const UpdateService = require('./services/updateService')
+
+// Initialize auto-updater
+const { updateElectronApp } = require('update-electron-app')
+const log = require('electron-log')
+
+// Configure logging for auto-updater
+log.transports.file.level = 'info'
+log.transports.console.level = 'info'
+
+// Initialize auto-updater with GitHub releases
+if (!isTestMode() && app.isPackaged) {
+  updateElectronApp({
+    repo: 'seepatcode/datagres',
+    updateInterval: '1 hour',
+    logger: log,
+    notifyUser: true
+  })
+}
 
 // Set app name as early as possible
 app.setName('Datagres')
@@ -27,6 +52,9 @@ if (process.platform === 'darwin' && app.dock && !app.isPackaged) {
 app.whenReady().then(async () => {
   await connectionStore.initialize()
   const mainWindow = createMainWindow()
+  
+  // Initialize update service with windowManager
+  const updateService = new UpdateService({ getMainWindow })
   
   // Get current theme from renderer's localStorage when ready
   mainWindow.webContents.once('did-finish-load', () => {

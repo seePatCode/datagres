@@ -5,6 +5,7 @@ import { ConnectionView } from '@/views/ConnectionView'
 import { ExplorerView } from '@/views/ExplorerView'
 import { AboutView } from '@/views/AboutView'
 import { HelpDialog } from '@/components/ui/help-dialog'
+import { UpdateNotification } from '@/components/ui/update-notification'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useMenuActions } from '@/hooks/useMenuActions'
 import { useTabManagement } from '@/hooks/useTabManagement'
@@ -119,6 +120,7 @@ function App() {
         <ConnectionView />
       )}
       <HelpDialog open={showHelp} onOpenChange={setShowHelp} />
+      <UpdateNotification />
     </>
   )
 }

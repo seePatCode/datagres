@@ -3,6 +3,9 @@ const { contextBridge, ipcRenderer } = require('electron')
 const { parseConnectionString, sanitizeConnectionString, getConnectionDisplayInfo } = require('../main/utils/connectionStringUtils')
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  // App info
+  appVersion: process.env.npm_package_version || require('../../package.json').version,
+  // Database operations
   connectDatabase: (connectionString) => ipcRenderer.invoke('connect-database', connectionString),
   fetchTableData: (connectionString, tableName, searchOptions) => ipcRenderer.invoke('fetch-table-data', connectionString, tableName, searchOptions),
   fetchTableSchema: (connectionString, tableName, schemaName) => ipcRenderer.invoke('fetch-table-schema', connectionString, tableName, schemaName),
@@ -39,5 +42,32 @@ contextBridge.exposeInMainWorld('electronAPI', {
     parse: parseConnectionString,
     sanitize: sanitizeConnectionString,
     getDisplayInfo: getConnectionDisplayInfo
+  },
+  // Auto-update API
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  installUpdate: () => ipcRenderer.invoke('install-update'),
+  getUpdateStatus: () => ipcRenderer.invoke('get-update-status'),
+  onUpdateEvent: (callback) => {
+    const channels = [
+      'update-checking',
+      'update-available',
+      'update-not-available',
+      'update-error',
+      'update-download-progress',
+      'update-downloaded'
+    ]
+    
+    const handlers = {}
+    channels.forEach(channel => {
+      handlers[channel] = (event, data) => callback(channel, data)
+      ipcRenderer.on(channel, handlers[channel])
+    })
+    
+    // Return cleanup function
+    return () => {
+      channels.forEach(channel => {
+        ipcRenderer.removeListener(channel, handlers[channel])
+      })
+    }
   }
 })

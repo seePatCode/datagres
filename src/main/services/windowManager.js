@@ -4,6 +4,9 @@ const path = require('path')
 // Check if we're in development mode
 const isDev = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
 
+// Store reference to main window
+let mainWindow = null
+
 
 /**
  * Creates the main application window
@@ -83,6 +86,9 @@ function createMainWindow() {
     win.show()
   }
 
+  // Store reference to main window
+  mainWindow = win
+
   return win
 }
 
@@ -119,7 +125,16 @@ function setupWindowControlHandlers() {
   })
 }
 
+/**
+ * Gets the main application window
+ * @returns {BrowserWindow|null} The main window instance or null
+ */
+function getMainWindow() {
+  return mainWindow
+}
+
 module.exports = {
   createMainWindow,
-  setupWindowControlHandlers
+  setupWindowControlHandlers,
+  getMainWindow
 }

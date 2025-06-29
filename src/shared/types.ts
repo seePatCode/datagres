@@ -151,6 +151,9 @@ export interface ParsedConnectionInfo {
 
 // Complete API interface for window.electronAPI
 export interface ElectronAPI {
+  // App info
+  appVersion?: string
+  
   // Database operations
   connectDatabase: (connectionString: string) => Promise<ConnectDatabaseResponse>
   fetchTableData: (connectionString: string, tableName: string, searchOptions?: SearchOptions) => Promise<FetchTableDataResponse>
@@ -179,6 +182,12 @@ export interface ElectronAPI {
   
   // Menu actions
   onMenuAction?: (callback: (action: MenuAction) => void) => (() => void)
+  
+  // Auto-update API
+  checkForUpdates?: () => Promise<APIResponse>
+  installUpdate?: () => Promise<APIResponse>
+  getUpdateStatus?: () => Promise<APIResponse & { hasUpdate?: boolean; updateInfo?: any; downloadProgress?: any }>
+  onUpdateEvent?: (callback: (channel: string, data: any) => void) => (() => void)
   
   // Connection string utilities
   connectionStringUtils: {
@@ -212,7 +221,9 @@ export type MenuAction =
   | 'set-theme-dark'
   | 'set-theme-light'
   | 'set-theme-system'
+  | 'show-help'
   | 'show-about'
+  | 'check-for-updates'
 
 // View states
 export type AppView = 'connect' | 'explorer' | 'about'
