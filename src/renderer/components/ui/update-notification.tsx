@@ -25,20 +25,28 @@ export function UpdateNotification() {
     const cleanup = window.electronAPI.onUpdateEvent((channel: string, data: any) => {
       switch (channel) {
         case 'update-checking':
-          setUpdateStatus('checking')
-          setShow(true)
+          // Only show notification for automatic checks
+          if (!data?.isManual) {
+            setUpdateStatus('checking')
+            setShow(true)
+          }
           break
         case 'update-available':
           setUpdateStatus('available')
           setUpdateInfo(data)
+          setShow(true) // Always show when update is available
           break
         case 'update-not-available':
           setUpdateStatus('not-available')
-          setTimeout(() => setShow(false), 3000)
+          // Hide immediately since we show a dialog for manual checks
+          // Only show briefly for automatic checks
+          setTimeout(() => setShow(false), 500)
           break
         case 'update-error':
           setUpdateStatus('error')
           setUpdateInfo(data)
+          // Auto-hide error after 5 seconds
+          setTimeout(() => setShow(false), 5000)
           break
         case 'update-download-progress':
           setUpdateStatus('downloading')

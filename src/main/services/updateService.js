@@ -134,8 +134,8 @@ class UpdateService {
         log.info('Manually triggering update check...')
         this.isManualCheck = true
         
-        // Send checking status to renderer
-        this.sendToRenderer('update-checking')
+        // Send checking status to renderer with manual flag
+        this.sendToRenderer('update-checking', { isManual: true })
         
         // Since update-electron-app handles the autoUpdater setup,
         // we can trigger a check by calling checkForUpdates
