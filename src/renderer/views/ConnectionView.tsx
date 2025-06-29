@@ -1,11 +1,12 @@
 import { useState } from 'react'
+import { useToast } from '@/hooks/use-toast'
 import { useSelector, useDispatch } from 'react-redux'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ConnectionManager } from "@/components/ui/connection-manager"
-import { SaveConnectionDialog } from "@/components/ui/save-connection-dialog"
+// SaveConnectionDialog removed - connections are now auto-saved
 import { ConnectionStringPreview } from "@/components/ui/connection-string-preview"
 import { TitleBar } from "@/components/ui/title-bar"
 import type { AppDispatch } from '@/store/store'
@@ -19,20 +20,17 @@ import {
   selectConnectionError,
 } from '@/store/slices/connectionSlice'
 import {
-  selectShowSaveDialog,
-  selectPendingConnectionString,
   selectCanGoBack,
   selectCanGoForward,
-  hideSaveConnectionDialog,
   navigateBack,
   navigateForward,
   setCurrentView,
   pushNavigationEntry,
-  showSaveConnectionDialog,
 } from '@/store/slices/uiSlice'
 
 export function ConnectionView() {
   const dispatch = useDispatch<AppDispatch>()
+  const { toast } = useToast()
   
   // Local state for form
   const [connectionString, setConnectionString] = useState('')
@@ -41,8 +39,7 @@ export function ConnectionView() {
   const activeConnection = useSelector(selectActiveConnection)
   const connectionStatus = useSelector(selectConnectionStatus)
   const connectionError = useSelector(selectConnectionError)
-  const showSaveDialog = useSelector(selectShowSaveDialog)
-  const pendingConnectionString = useSelector(selectPendingConnectionString)
+  // Removed showSaveDialog and pendingConnectionString - connections are now auto-saved
   const canGoBack = useSelector(selectCanGoBack)
   const canGoForward = useSelector(selectCanGoForward)
   
@@ -51,15 +48,27 @@ export function ConnectionView() {
   const isError = connectionStatus === 'error'
   
   const handleConnect = () => {
-    dispatch(connectToDatabase({ connectionString })).then((result) => {
+    dispatch(connectToDatabase({ connectionString })).then(async (result) => {
       if (result.meta.requestStatus === 'fulfilled') {
         dispatch(setCurrentView('explorer'))
         dispatch(pushNavigationEntry({ type: 'view', viewName: 'explorer' }))
         
-        // Show save dialog only if this connection isn't already saved
+        // Auto-save the connection if it isn't already saved
         const savedId = (result.payload as any)?.savedConnectionId
         if (!savedId) {
-          dispatch(showSaveConnectionDialog(connectionString))
+          // Generate default name
+          const defaultName = getDefaultConnectionName(connectionString)
+          // Auto-save with default name
+          const saveResult = await dispatch(saveConnection({ connectionString, name: defaultName }))
+          if (saveResult.meta.requestStatus === 'fulfilled') {
+            // Show subtle notification
+            toast({
+              description: `Connection saved as "${defaultName}"`,
+              duration: 3000,
+            })
+            // Refresh connections list
+            dispatch(loadSavedConnections())
+          }
         }
       }
     })
@@ -68,15 +77,27 @@ export function ConnectionView() {
   const handleConnectionSelect = (connString: string) => {
     setConnectionString(connString)
     // Connect with the new connection string
-    dispatch(connectToDatabase({ connectionString: connString })).then((result) => {
+    dispatch(connectToDatabase({ connectionString: connString })).then(async (result) => {
       if (result.meta.requestStatus === 'fulfilled') {
         dispatch(setCurrentView('explorer'))
         dispatch(pushNavigationEntry({ type: 'view', viewName: 'explorer' }))
         
-        // Show save dialog only if this connection isn't already saved
+        // Auto-save the connection if it isn't already saved
         const savedId = (result.payload as any)?.savedConnectionId
         if (!savedId) {
-          dispatch(showSaveConnectionDialog(connString))
+          // Generate default name
+          const defaultName = getDefaultConnectionName(connString)
+          // Auto-save with default name
+          const saveResult = await dispatch(saveConnection({ connectionString: connString, name: defaultName }))
+          if (saveResult.meta.requestStatus === 'fulfilled') {
+            // Show subtle notification
+            toast({
+              description: `Connection saved as "${defaultName}"`,
+              duration: 3000,
+            })
+            // Refresh connections list
+            dispatch(loadSavedConnections())
+          }
         }
       }
     })
@@ -91,14 +112,7 @@ export function ConnectionView() {
     })
   }
   
-  const handleSaveConnection = async (name: string) => {
-    const result = await dispatch(saveConnection({ connectionString: pendingConnectionString, name }))
-    if (result.meta.requestStatus === 'fulfilled') {
-      dispatch(hideSaveConnectionDialog())
-      // Refresh the saved connections list to show the newly saved connection
-      dispatch(loadSavedConnections())
-    }
-  }
+  // handleSaveConnection removed - connections are now auto-saved
   
   const handleNavigateBack = () => dispatch(navigateBack())
   const handleNavigateForward = () => dispatch(navigateForward())
@@ -116,9 +130,9 @@ export function ConnectionView() {
     return '○ Not connected'
   }
 
-  const getDefaultConnectionName = () => {
+  const getDefaultConnectionName = (connStr: string) => {
     try {
-      const url = new URL(pendingConnectionString)
+      const url = new URL(connStr)
       const username = url.username || 'user'
       const host = url.hostname || 'localhost'
       const database = url.pathname.substring(1) || 'database'
@@ -206,12 +220,7 @@ export function ConnectionView() {
         />
       </div>
       
-      <SaveConnectionDialog
-        open={showSaveDialog}
-        onOpenChange={() => dispatch(hideSaveConnectionDialog())}
-        onSave={handleSaveConnection}
-        defaultName={getDefaultConnectionName()}
-      />
+      {/* SaveConnectionDialog removed - connections are now auto-saved */}
     </div>
   )
 }

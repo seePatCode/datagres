@@ -5,7 +5,7 @@ import { TitleBar } from "@/components/ui/title-bar"
 import { DatabaseSidebar } from "@/components/ui/database-sidebar"
 import { TableView } from "@/components/ui/table-view"
 import { SQLQueryView } from "@/components/ui/sql-query-view"
-import { SaveConnectionDialog } from "@/components/ui/save-connection-dialog"
+// SaveConnectionDialog removed - connections are now auto-saved
 import { QuickSearch } from "@/components/ui/quick-search"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -41,11 +41,8 @@ import {
   addQueryTab,
 } from '@/store/slices/tabsSlice'
 import {
-  selectShowSaveDialog,
-  selectPendingConnectionString,
   selectCanGoBack,
   selectCanGoForward,
-  hideSaveConnectionDialog,
   navigateBack,
   navigateForward,
   pushNavigationEntry,
@@ -71,8 +68,7 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
   const tabs = useSelector(selectTabs(connectionString))
   const activeTabId = useSelector(selectActiveTabId(connectionString))
   const recentTables = useSelector(selectRecentTables(connectionString))
-  const showSaveDialog = useSelector(selectShowSaveDialog)
-  const pendingConnectionString = useSelector(selectPendingConnectionString)
+  // Removed showSaveDialog and pendingConnectionString - connections are now auto-saved
   const canGoBack = useSelector(selectCanGoBack)
   const canGoForward = useSelector(selectCanGoForward)
   
@@ -133,29 +129,12 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
   }
   
   
-  const handleSaveConnection = async (name: string) => {
-    const result = await dispatch(saveConnection({ connectionString: pendingConnectionString, name }))
-    if (result.meta.requestStatus === 'fulfilled') {
-      dispatch(hideSaveConnectionDialog())
-      // Refresh the saved connections list to show the newly saved connection
-      dispatch(loadSavedConnections())
-    }
-  }
+  // handleSaveConnection removed - connections are now auto-saved
   
   const handleNavigateBack = () => dispatch(navigateBack())
   const handleNavigateForward = () => dispatch(navigateForward())
   
-  const getDefaultConnectionName = () => {
-    try {
-      const url = new URL(pendingConnectionString)
-      const username = url.username || 'user'
-      const host = url.hostname || 'localhost'
-      const database = url.pathname.substring(1) || 'database'
-      return `${username}@${host}/${database}`
-    } catch {
-      return 'New Connection'
-    }
-  }
+  // getDefaultConnectionName removed - connections are now auto-saved
 
   return (
     <div className="h-screen bg-background text-foreground flex flex-col">
@@ -300,13 +279,7 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
         </ResizablePanelGroup>
       </div>
       
-      {/* Save Connection Dialog */}
-      <SaveConnectionDialog
-        open={showSaveDialog}
-        onOpenChange={() => dispatch(hideSaveConnectionDialog())}
-        onSave={handleSaveConnection}
-        defaultName={getDefaultConnectionName()}
-      />
+      {/* SaveConnectionDialog removed - connections are now auto-saved */}
       
       {/* Quick Search Dialog */}
       <QuickSearch
