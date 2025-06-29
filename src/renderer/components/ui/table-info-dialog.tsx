@@ -1,5 +1,21 @@
 import { useState, useEffect } from 'react'
-import { Info, Loader2, AlertCircle, Key, Hash, Type, FileText } from 'lucide-react'
+import { 
+  Info, 
+  Loader2, 
+  AlertCircle, 
+  Key, 
+  Hash, 
+  Type, 
+  FileText,
+  Calendar,
+  Search,
+  ToggleLeft,
+  Braces,
+  List,
+  Binary,
+  Globe,
+  Clock
+} from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -56,12 +72,65 @@ export function TableInfoDialog({
   }
 
   const getTypeIcon = (dataType: string) => {
-    if (dataType.includes('int') || dataType.includes('numeric') || dataType.includes('decimal')) {
+    const type = dataType.toLowerCase()
+    
+    // Numeric types
+    if (type.includes('int') || type.includes('serial')) {
       return <Hash className="h-3 w-3" />
     }
-    if (dataType.includes('char') || dataType.includes('text')) {
+    if (type.includes('numeric') || type.includes('decimal') || type.includes('real') || type.includes('double')) {
+      return <Binary className="h-3 w-3" />
+    }
+    
+    // Text types
+    if (type.includes('char') || type.includes('text')) {
       return <Type className="h-3 w-3" />
     }
+    
+    // Date/Time types
+    if (type.includes('time') || type.includes('date')) {
+      return <Calendar className="h-3 w-3" />
+    }
+    if (type.includes('interval')) {
+      return <Clock className="h-3 w-3" />
+    }
+    
+    // Boolean
+    if (type.includes('bool')) {
+      return <ToggleLeft className="h-3 w-3" />
+    }
+    
+    // JSON/JSONB
+    if (type.includes('json')) {
+      return <Braces className="h-3 w-3" />
+    }
+    
+    // Array types
+    if (type.includes('[]') || type.includes('array')) {
+      return <List className="h-3 w-3" />
+    }
+    
+    // Full text search
+    if (type.includes('tsvector') || type.includes('tsquery')) {
+      return <Search className="h-3 w-3" />
+    }
+    
+    // UUID
+    if (type.includes('uuid')) {
+      return <Key className="h-3 w-3" />
+    }
+    
+    // Network types
+    if (type.includes('inet') || type.includes('cidr') || type.includes('macaddr')) {
+      return <Globe className="h-3 w-3" />
+    }
+    
+    // Binary data
+    if (type.includes('bytea')) {
+      return <Binary className="h-3 w-3" />
+    }
+    
+    // Default
     return <FileText className="h-3 w-3" />
   }
 
