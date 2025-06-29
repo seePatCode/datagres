@@ -293,7 +293,6 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex-shrink-0"
                         onClick={async () => {
                         setIsFixingError(true);
                         try {
@@ -347,7 +346,7 @@ Return ONLY the corrected SQL query.`;
                               
                               // Select the fixed query in the editor
                               setTimeout(() => {
-                                editorRef.current?.selectText(failedQueryIndex, failedQueryIndex + result.sql.length);
+                                editorRef.current?.selectText(failedQueryIndex, failedQueryIndex + result.sql!.length);
                               }, 50); // Small delay to ensure editor has updated
                             } else {
                               // If we can't find the exact query, just replace the whole content
@@ -355,7 +354,7 @@ Return ONLY the corrected SQL query.`;
                               
                               // Select all text
                               setTimeout(() => {
-                                editorRef.current?.selectText(0, result.sql.length);
+                                editorRef.current?.selectText(0, result.sql!.length);
                               }, 50);
                             }
                             

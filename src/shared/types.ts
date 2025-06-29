@@ -72,6 +72,7 @@ export interface SavedConnection {
   hasPassword: boolean
   createdAt: string
   lastUsed: string
+  originalConnectionString?: string
 }
 
 export interface TableInfo {

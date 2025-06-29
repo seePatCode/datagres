@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
-import type { SearchOptions, FetchTableDataResponse } from '@/shared/types'
+import type { SearchOptions, FetchTableDataResponse } from '@shared/types'
 
 interface UseInfiniteTableDataOptions {
   connectionString: string

@@ -506,7 +506,7 @@ Return ONLY the corrected WHERE condition.`
             onSortingChange={(updaterOrValue: any) => {
               // Handle both updater function and direct value
               const newSorting = typeof updaterOrValue === 'function' 
-                ? updaterOrValue(orderBy.map((sort: any) => ({
+                ? updaterOrValue((orderBy || []).map((sort: any) => ({
                     id: sort.column,
                     desc: sort.direction === 'desc'
                   })))
@@ -519,7 +519,7 @@ Return ONLY the corrected WHERE condition.`
               }))
               setOrderBy(newOrderBy)
             }}
-            sorting={orderBy.map((sort: any) => ({
+            sorting={(orderBy || []).map((sort: any) => ({
               id: sort.column,
               desc: sort.direction === 'desc'
             }))}

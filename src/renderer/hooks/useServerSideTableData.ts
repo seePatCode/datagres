@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import type { SearchOptions, FetchTableDataResponse } from '@/shared/types'
+import type { SearchOptions, FetchTableDataResponse } from '@shared/types'
 
 interface UseServerSideTableDataOptions {
   connectionString: string

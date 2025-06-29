@@ -20,6 +20,12 @@ export interface ConnectionState {
   
   // Saved connections
   savedConnections: SavedConnection[]
+  savedConnectionsStatus?: 'idle' | 'loading' | 'success' | 'error'
+  savedConnectionsError?: string
+  
+  // Test connection
+  testConnectionStatus?: 'idle' | 'testing' | 'success' | 'error'
+  testConnectionError?: string
 }
 
 const initialState: ConnectionState = {
