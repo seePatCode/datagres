@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react'
-import { Database, Search, Table, Clock, ChevronDown, ChevronRight, FileCode2, ChevronsUpDown } from 'lucide-react'
+import { Database, Search, Table, Clock, ChevronDown, ChevronRight, FileCode2, ChevronsUpDown, Edit2, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu'
 import { cn } from '@/lib/utils'
 import type { SchemaInfo, TableInfo } from '@shared/types'
 
@@ -24,6 +30,8 @@ interface DatabaseSidebarProps {
   selectedTable?: string
   className?: string
   onNewQuery?: () => void
+  onEditConnection?: (connection: any) => void
+  onDeleteConnection?: (connectionId: string) => void
 }
 
 export function DatabaseSidebar({
@@ -37,6 +45,8 @@ export function DatabaseSidebar({
   selectedTable,
   className,
   onNewQuery,
+  onEditConnection,
+  onDeleteConnection,
 }: DatabaseSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [recentExpanded, setRecentExpanded] = useState(true)
@@ -102,24 +112,64 @@ export function DatabaseSidebar({
           <Database className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm font-medium">Database</span>
         </div>
-        <Select 
-          value={currentConnection?.id} 
-          onValueChange={onConnectionChange}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select connection..." />
-          </SelectTrigger>
-          <SelectContent>
-            {connections.map((connection) => (
-              <SelectItem key={connection.id} value={connection.id}>
-                <div className="flex flex-col items-start">
-                  <span className="font-medium">{connection.name}</span>
-                  <span className="text-xs text-muted-foreground">{connection.database}</span>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {currentConnection && onEditConnection && onDeleteConnection ? (
+          <ContextMenu>
+            <ContextMenuTrigger asChild>
+              <div>
+                <Select 
+                  value={currentConnection?.id} 
+                  onValueChange={onConnectionChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select connection..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {connections.map((connection) => (
+                      <SelectItem key={connection.id} value={connection.id}>
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">{connection.name}</span>
+                          <span className="text-xs text-muted-foreground">{connection.database}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </ContextMenuTrigger>
+            <ContextMenuContent>
+              <ContextMenuItem onClick={() => onEditConnection(currentConnection)}>
+                <Edit2 className="mr-2 h-4 w-4" />
+                Rename Connection
+              </ContextMenuItem>
+              <ContextMenuItem 
+                onClick={() => onDeleteConnection(currentConnection.id)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Connection
+              </ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
+        ) : (
+          <Select 
+            value={currentConnection?.id} 
+            onValueChange={onConnectionChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select connection..." />
+            </SelectTrigger>
+            <SelectContent>
+              {connections.map((connection) => (
+                <SelectItem key={connection.id} value={connection.id}>
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium">{connection.name}</span>
+                    <span className="text-xs text-muted-foreground">{connection.database}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {/* Scratchpad Button */}

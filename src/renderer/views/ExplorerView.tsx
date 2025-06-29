@@ -7,6 +7,7 @@ import { TableView } from "@/components/ui/table-view"
 import { SQLQueryView } from "@/components/ui/sql-query-view"
 // SaveConnectionDialog removed - connections are now auto-saved
 import { QuickSearch } from "@/components/ui/quick-search"
+import { EditConnectionDialog } from "@/components/ui/edit-connection-dialog"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { 
@@ -19,6 +20,7 @@ import { X } from 'lucide-react'
 import { useDoubleShift } from '@/hooks/useDoubleShift'
 import { useTabManagement } from '@/hooks/useTabManagement'
 import type { AppDispatch } from '@/store/store'
+import type { SavedConnection } from '@shared/types'
 import { DEFAULT_PAGE_SIZE } from '@/constants'
 import {
   selectActiveConnection,
@@ -29,6 +31,8 @@ import {
   loadAndConnectToSavedConnection,
   saveConnection,
   loadSavedConnections,
+  deleteConnection,
+  updateConnectionName,
 } from '@/store/slices/connectionSlice'
 import {
   selectTabs,
@@ -79,6 +83,8 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
   
   // Local state
   const [quickSearchOpen, setQuickSearchOpen] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editingConnection, setEditingConnection] = useState<SavedConnection | null>(null)
   
   // Set up double-shift keyboard shortcut
   useDoubleShift({
@@ -134,6 +140,25 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
   const handleNavigateBack = () => dispatch(navigateBack())
   const handleNavigateForward = () => dispatch(navigateForward())
   
+  const handleEditConnection = (connection: SavedConnection) => {
+    setEditingConnection(connection)
+    setEditDialogOpen(true)
+  }
+  
+  const handleDeleteConnection = async (connectionId: string) => {
+    await dispatch(deleteConnection(connectionId))
+    dispatch(loadSavedConnections())
+  }
+  
+  const handleSaveEdit = async (newName: string) => {
+    if (editingConnection) {
+      await dispatch(updateConnectionName({ connectionId: editingConnection.id, newName }))
+      dispatch(loadSavedConnections())
+      setEditDialogOpen(false)
+      setEditingConnection(null)
+    }
+  }
+  
   // getDefaultConnectionName removed - connections are now auto-saved
 
   return (
@@ -173,6 +198,8 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
                   return activeTab && activeTab.type === 'table' ? activeTab.tableName : ''
                 })()}
                 onNewQuery={handleNewQueryTab}
+                onEditConnection={handleEditConnection}
+                onDeleteConnection={handleDeleteConnection}
                 className="h-full"
               />
             </div>
@@ -292,6 +319,22 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
         onSelectConnection={handleConnectionChange}
         currentConnectionId={activeConnection?.savedConnectionId}
       />
+      
+      {/* Edit Connection Dialog */}
+      {editingConnection && (
+        <EditConnectionDialog
+          isOpen={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          connectionName={editingConnection.name}
+          connectionString={editingConnection.originalConnectionString || ''}
+          isLoading={false}
+          onSave={handleSaveEdit}
+          onCancel={() => {
+            setEditDialogOpen(false)
+            setEditingConnection(null)
+          }}
+        />
+      )}
     </div>
   )
 }
