@@ -72,6 +72,12 @@ export function EditConnectionDialog({
               value={editingName}
               onChange={(e) => setEditingName(e.target.value)}
               placeholder="Connection name"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && editingName.trim() && !isLoading) {
+                  handleSave()
+                }
+              }}
+              autoFocus
             />
           </div>
           
