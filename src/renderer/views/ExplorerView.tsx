@@ -200,6 +200,7 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
                 onNewQuery={handleNewQueryTab}
                 onEditConnection={handleEditConnection}
                 onDeleteConnection={handleDeleteConnection}
+                connectionString={connectionString}
                 className="h-full"
               />
             </div>

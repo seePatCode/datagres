@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Database, Search, Table, Clock, ChevronDown, ChevronRight, FileCode2, ChevronsUpDown, Edit2, Trash2, Copy } from 'lucide-react'
+import { Database, Search, Table, Clock, ChevronDown, ChevronRight, FileCode2, ChevronsUpDown, Edit2, Trash2, Copy, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/hooks/use-toast'
+import { TableInfoDialog } from '@/components/ui/table-info-dialog'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -33,6 +34,7 @@ interface DatabaseSidebarProps {
   onNewQuery?: () => void
   onEditConnection?: (connection: any) => void
   onDeleteConnection?: (connectionId: string) => void
+  connectionString?: string
 }
 
 export function DatabaseSidebar({
@@ -48,11 +50,17 @@ export function DatabaseSidebar({
   onNewQuery,
   onEditConnection,
   onDeleteConnection,
+  connectionString,
 }: DatabaseSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [recentExpanded, setRecentExpanded] = useState(true)
   const [allTablesExpanded, setAllTablesExpanded] = useState(true)
   const [schemaExpanded, setSchemaExpanded] = useState<Record<string, boolean>>({})
+  const [tableInfoDialog, setTableInfoDialog] = useState<{
+    open: boolean
+    tableName: string
+    schemaName?: string
+  }>({ open: false, tableName: '' })
   
   // Initialize all schemas as expanded when schemas change
   useEffect(() => {
@@ -114,6 +122,14 @@ export function DatabaseSidebar({
       })
     }
   }
+
+  const handleViewTableInfo = (tableName: string, schemaName?: string) => {
+    setTableInfoDialog({
+      open: true,
+      tableName,
+      schemaName,
+    })
+  }
   
   const toggleSchema = (schemaName: string) => {
     setSchemaExpanded(prev => ({
@@ -123,7 +139,8 @@ export function DatabaseSidebar({
   }
 
   return (
-    <div className={cn("flex h-full flex-col border-r bg-sidebar min-w-0 overflow-hidden", className)}>
+    <>
+      <div className={cn("flex h-full flex-col border-r bg-sidebar min-w-0 overflow-hidden", className)}>
       {/* Connection Selector */}
       <div className="p-3 border-b">
         <div className="flex items-center gap-2 mb-2">
@@ -272,6 +289,10 @@ export function DatabaseSidebar({
                           </button>
                         </ContextMenuTrigger>
                         <ContextMenuContent>
+                          <ContextMenuItem onClick={() => handleViewTableInfo(table.name, table.schema)}>
+                            <Info className="mr-2 h-4 w-4" />
+                            View Info
+                          </ContextMenuItem>
                           <ContextMenuItem onClick={() => handleCopyTableName(table.name)}>
                             <Copy className="mr-2 h-4 w-4" />
                             Copy Table Name
@@ -366,6 +387,10 @@ export function DatabaseSidebar({
                               </button>
                             </ContextMenuTrigger>
                             <ContextMenuContent>
+                              <ContextMenuItem onClick={() => handleViewTableInfo(table.name, schema.name)}>
+                                <Info className="mr-2 h-4 w-4" />
+                                View Info
+                              </ContextMenuItem>
                               <ContextMenuItem onClick={() => handleCopyTableName(table.name)}>
                                 <Copy className="mr-2 h-4 w-4" />
                                 Copy Table Name
@@ -423,6 +448,10 @@ export function DatabaseSidebar({
                           </button>
                         </ContextMenuTrigger>
                         <ContextMenuContent>
+                          <ContextMenuItem onClick={() => handleViewTableInfo(table.name, table.schema)}>
+                            <Info className="mr-2 h-4 w-4" />
+                            View Info
+                          </ContextMenuItem>
                           <ContextMenuItem onClick={() => handleCopyTableName(table.name)}>
                             <Copy className="mr-2 h-4 w-4" />
                             Copy Table Name
@@ -444,5 +473,17 @@ export function DatabaseSidebar({
         </div>
       </div>
     </div>
+
+      {/* Table Info Dialog */}
+      {connectionString && (
+        <TableInfoDialog
+          open={tableInfoDialog.open}
+          onOpenChange={(open) => setTableInfoDialog(prev => ({ ...prev, open }))}
+          tableName={tableInfoDialog.tableName}
+          schemaName={tableInfoDialog.schemaName}
+          connectionString={connectionString}
+        />
+      )}
+    </>
   )
 }
