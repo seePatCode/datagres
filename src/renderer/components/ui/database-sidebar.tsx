@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Database, Search, Table, Clock, ChevronDown, ChevronRight, FileCode2, ChevronsUpDown, Edit2, Trash2, Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { toast } from '@/hooks/use-toast'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -100,9 +101,17 @@ export function DatabaseSidebar({
   const handleCopyTableName = async (tableName: string) => {
     try {
       await navigator.clipboard.writeText(tableName)
-      // Could add a toast notification here
+      toast({
+        description: `Copied "${tableName}" to clipboard`,
+        duration: 2000,
+      })
     } catch (err) {
       console.error('Failed to copy table name:', err)
+      toast({
+        variant: "destructive",
+        description: "Failed to copy table name",
+        duration: 3000,
+      })
     }
   }
   
