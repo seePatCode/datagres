@@ -83,9 +83,60 @@ export function DraggableTableHeader({
       <div
         onMouseDown={header.getResizeHandler()}
         onTouchStart={header.getResizeHandler()}
-        className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none transition-colors hover:bg-primary ${
-          header.column.getIsResizing() ? 'bg-primary' : ''
+        onDoubleClick={() => {
+          // Auto-size column to fit content
+          const columnId = header.column.id
+          const allCells = table.getRowModel().rows.map((row: any) => {
+            const cell = row.getAllCells().find((cell: any) => cell.column.id === columnId)
+            const value = cell?.getValue()
+            // Convert value to string for measurement
+            if (value === null) return 'null'
+            if (value === undefined) return ''
+            if (typeof value === 'object') return JSON.stringify(value)
+            return String(value)
+          })
+          
+          // Add the header text to measure
+          const headerText = header.column.columnDef.header as string || columnId || ''
+          allCells.unshift(headerText)
+          
+          // Create a temporary element to measure text width
+          const canvas = document.createElement('canvas')
+          const context = canvas.getContext('2d')
+          if (context) {
+            // Use the same font as the table cells (with normal weight for cells, medium for header)
+            context.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+            
+            // Find the maximum width
+            let maxWidth = 0
+            allCells.forEach((text: string, index: number) => {
+              // Use medium font weight for header (first item)
+              if (index === 0) {
+                context.font = '500 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+              } else {
+                context.font = '400 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+              }
+              const metrics = context.measureText(text)
+              maxWidth = Math.max(maxWidth, metrics.width)
+            })
+            
+            // Add padding and set constraints
+            const padding = 48 // More generous padding for cell margins and comfort
+            const minWidth = 100 // Minimum column width
+            const maxAllowedWidth = 600 // Maximum column width
+            const newWidth = Math.max(minWidth, Math.min(maxWidth + padding, maxAllowedWidth))
+            
+            // Set the new column size
+            table.setColumnSizing((prev: any) => ({
+              ...prev,
+              [columnId]: newWidth
+            }))
+          }
+        }}
+        className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none transition-colors hover:bg-primary hover:w-2 ${
+          header.column.getIsResizing() ? 'bg-primary w-2' : ''
         }`}
+        title="Drag to resize or double-click to auto-fit"
         style={{ opacity: header.column.getIsResizing() ? 1 : undefined }}
       />
     </TableHead>
