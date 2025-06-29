@@ -244,9 +244,7 @@ export function DatabaseSidebar({
                         )}
                       >
                         <Table className="h-3 w-3 flex-shrink-0" />
-                        <div className="flex-1 min-w-0 overflow-hidden">
-                          <div className="truncate">{table.name}</div>
-                        </div>
+                        <span className="truncate flex-1 text-left">{table.name}</span>
                         {table.rowCount && (
                           <span className="text-muted-foreground ml-auto flex-shrink-0">
                             {formatRowCount(table.rowCount)}
@@ -379,9 +377,7 @@ export function DatabaseSidebar({
                         )}
                       >
                         <Table className="h-3 w-3 flex-shrink-0" />
-                        <div className="flex-1 min-w-0 overflow-hidden">
-                          <div className="truncate">{table.name}</div>
-                        </div>
+                        <span className="truncate flex-1 text-left">{table.name}</span>
                         {table.rowCount && (
                           <span className="text-muted-foreground ml-auto flex-shrink-0">
                             {formatRowCount(table.rowCount)}
