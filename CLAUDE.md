@@ -142,6 +142,53 @@ Test critical business logic only:
 **Issue**: Valid strings rejected or modified
 **Fix**: App preserves `originalConnectionString` to maintain exact user input
 
+## Creating a New Release
+
+**IMPORTANT**: The version in package.json MUST match the Git tag for auto-updater to work correctly!
+
+### Simple Release Process
+When the user wants to create a new release (e.g., after saying "commit tag push"):
+
+1. **First, update the version in package.json**:
+   ```bash
+   # Edit package.json and increment the version number
+   # Current version: 0.4.3 → Next version: 0.4.4
+   ```
+
+2. **Create a single commit for the release**:
+   ```bash
+   git add package.json
+   git commit -m "chore: bump version to 0.4.4"
+   ```
+
+3. **Create a matching tag**:
+   ```bash
+   git tag -a v0.4.4 -m "Release v0.4.4"
+   ```
+
+4. **Push everything**:
+   ```bash
+   git push origin main --tags
+   ```
+
+### Version Number Guidelines
+- Use semantic versioning: `MAJOR.MINOR.PATCH`
+- PATCH (0.4.3 → 0.4.4): Bug fixes, minor improvements
+- MINOR (0.4.3 → 0.5.0): New features, significant improvements
+- MAJOR (0.4.3 → 1.0.0): Breaking changes, major milestones
+
+### Common Release Mistakes to Avoid
+- ❌ Creating a tag without updating package.json version
+- ❌ Package.json version not matching the tag version
+- ❌ Forgetting to push tags: `git push` alone won't push tags
+- ✅ Always update package.json version BEFORE creating the tag
+
+### Auto-Updater Notes
+- The app checks for updates every hour automatically
+- It compares the running app version (from package.json) with GitHub releases
+- If versions don't match, users get stuck in update loops
+- The UpdateNotification component only shows when updates are available (not during checks)
+
 ## Important Notes
 
 - **NEVER run `npm start` in Claude Code** - only users should run it
