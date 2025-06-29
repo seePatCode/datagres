@@ -181,20 +181,23 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
         <ResizablePanelGroup direction="horizontal">
           {/* Sidebar Panel */}
           <ResizablePanel defaultSize={25} minSize={5} maxSize={95}>
-            <DatabaseSidebar
-              connections={savedConnections}
-              currentConnection={currentConnection}
-              tables={tables}
-              schemas={schemas}
-              recentTables={recentTables}
-              onConnectionChange={handleConnectionChange}
-              onTableSelect={handleTableSelect}
-              selectedTable={(() => {
-                const activeTab = tabs.find(t => t.id === activeTabId)
-                return activeTab && activeTab.type === 'table' ? activeTab.tableName : ''
-              })()}
-              onNewQuery={handleNewQueryTab}
-            />
+            <div className="h-full w-full overflow-hidden">
+              <DatabaseSidebar
+                connections={savedConnections}
+                currentConnection={currentConnection}
+                tables={tables}
+                schemas={schemas}
+                recentTables={recentTables}
+                onConnectionChange={handleConnectionChange}
+                onTableSelect={handleTableSelect}
+                selectedTable={(() => {
+                  const activeTab = tabs.find(t => t.id === activeTabId)
+                  return activeTab && activeTab.type === 'table' ? activeTab.tableName : ''
+                })()}
+                onNewQuery={handleNewQueryTab}
+                className="h-full"
+              />
+            </div>
           </ResizablePanel>
           
           {/* Resize handle */}

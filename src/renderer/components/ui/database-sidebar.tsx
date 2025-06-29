@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { Database, Search, Table, Clock, ChevronDown, ChevronRight, FileCode2, ChevronsUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
@@ -96,7 +95,7 @@ export function DatabaseSidebar({
   }
 
   return (
-    <div className={cn("flex h-full flex-col border-r bg-sidebar", className)}>
+    <div className={cn("flex h-full flex-col border-r bg-sidebar min-w-0 overflow-hidden", className)}>
       {/* Connection Selector */}
       <div className="p-3 border-b">
         <div className="flex items-center gap-2 mb-2">
@@ -139,7 +138,7 @@ export function DatabaseSidebar({
       )}
 
       {/* Tables Section */}
-      <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
         {/* Search */}
         <div className="p-3 border-b">
           <div className="relative">
@@ -158,8 +157,8 @@ export function DatabaseSidebar({
           )}
         </div>
 
-        <ScrollArea className="flex-1 min-h-0">
-          <div className="p-2 space-y-1">
+        <div className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
+          <div className="p-2 space-y-1 min-w-0">
             {/* Recent Tables */}
             {recentTables.length > 0 && (
               <>
@@ -179,23 +178,31 @@ export function DatabaseSidebar({
                 </Button>
                 
                 {recentExpanded && (
-                  <div className="ml-4 space-y-0.5">
+                  <div className="ml-4 space-y-0.5 overflow-hidden min-w-0 pr-2" style={{ width: 'calc(100% - 1rem)' }}>
                     {recentTables.map((table) => (
-                      <Button
+                      <button
                         key={`recent-${table.name}`}
-                        variant={selectedTable === table.name ? "secondary" : "ghost"}
-                        size="sm"
                         onClick={() => onTableSelect(table.name, table.schema)}
-                        className="w-full justify-start gap-2 h-7 px-2 text-xs"
+                        className={cn(
+                          "w-full h-7 text-xs px-2 rounded-md transition-all",
+                          "flex items-center gap-2 min-w-0 overflow-hidden",
+                          "active:scale-[0.98]",
+                          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                          selectedTable === table.name
+                            ? "bg-muted text-muted-foreground shadow-sm hover:bg-muted/80 hover:text-foreground"
+                            : "hover:bg-accent hover:text-accent-foreground"
+                        )}
                       >
-                        <Table className="h-3 w-3" />
-                        <span className="truncate">{table.name}</span>
+                        <Table className="h-3 w-3 flex-shrink-0" />
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                          <div className="truncate">{table.name}</div>
+                        </div>
                         {table.rowCount && (
-                          <span className="text-muted-foreground ml-auto">
+                          <span className="text-muted-foreground ml-auto flex-shrink-0">
                             {formatRowCount(table.rowCount)}
                           </span>
                         )}
-                      </Button>
+                      </button>
                     ))}
                   </div>
                 )}
@@ -206,9 +213,9 @@ export function DatabaseSidebar({
             {/* All Tables - with schemas or fallback */}
             {schemas && schemas.length > 0 ? (
               <>
-                <div className="flex items-center justify-between px-2 pb-1">
-                  <span className="text-xs font-medium text-muted-foreground">All Tables</span>
-                  <div className="flex gap-1">
+                <div className="flex items-center justify-between px-2 pb-1 min-w-0 overflow-hidden">
+                  <span className="text-xs font-medium text-muted-foreground truncate">All Tables</span>
+                  <div className="flex gap-1 flex-shrink-0">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -232,43 +239,55 @@ export function DatabaseSidebar({
                 
                 {/* Render schemas */}
                 {filteredSchemas?.map((schema) => (
-                  <div key={schema.name}>
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                  <div key={schema.name} className="min-w-0 overflow-hidden">
+                    <button
                       onClick={() => toggleSchema(schema.name)}
-                      className="w-full justify-start gap-1 h-7 px-2 text-muted-foreground hover:text-foreground"
+                      className={cn(
+                        "w-full h-7 px-2 rounded-md transition-all cursor-pointer",
+                        "flex items-center justify-start gap-1 min-w-0 overflow-hidden",
+                        "text-muted-foreground hover:text-foreground hover:bg-accent",
+                        "active:scale-[0.98]",
+                        "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      )}
                     >
                       {schemaExpanded[schema.name] ? (
-                        <ChevronDown className="h-3 w-3" />
+                        <ChevronDown className="h-3 w-3 flex-shrink-0" />
                       ) : (
-                        <ChevronRight className="h-3 w-3" />
+                        <ChevronRight className="h-3 w-3 flex-shrink-0" />
                       )}
-                      <Database className="h-3 w-3" />
-                      <span className="text-xs font-medium">{schema.name}</span>
-                      <span className="text-xs text-muted-foreground ml-auto">
+                      <Database className="h-3 w-3 flex-shrink-0" />
+                      <div className="flex-1 min-w-0 overflow-hidden">
+                        <div className="text-xs font-medium truncate text-left">{schema.name}</div>
+                      </div>
+                      <span className="text-xs text-muted-foreground ml-auto flex-shrink-0">
                         ({schema.tables.length})
                       </span>
-                    </Button>
+                    </button>
                     
                     {schemaExpanded[schema.name] && (
-                      <div className="ml-6 space-y-0.5">
+                      <div className="ml-6 space-y-0.5 overflow-hidden min-w-0 pr-2" style={{ width: 'calc(100% - 1.5rem)' }}>
                         {schema.tables.map((table) => (
-                          <Button
+                          <button
                             key={`${schema.name}.${table.name}`}
-                            variant={selectedTable === table.name ? "secondary" : "ghost"}
-                            size="sm"
                             onClick={() => onTableSelect(table.name, schema.name)}
-                            className="w-full justify-start gap-2 h-7 px-2 text-xs"
+                            className={cn(
+                              "w-full h-7 text-xs px-2 rounded-md transition-all",
+                              "flex items-center gap-2 min-w-0 overflow-hidden",
+                          "active:scale-[0.98]",
+                          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                              selectedTable === table.name
+                                ? "bg-muted text-muted-foreground shadow-sm hover:bg-muted/80 hover:text-foreground"
+                                : "hover:bg-accent hover:text-accent-foreground"
+                            )}
                           >
-                            <Table className="h-3 w-3" />
-                            <span className="truncate">{table.name}</span>
+                            <Table className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate flex-1 text-left">{table.name}</span>
                             {table.rowCount && (
-                              <span className="text-muted-foreground ml-auto">
+                              <span className="text-muted-foreground ml-auto flex-shrink-0">
                                 {formatRowCount(table.rowCount)}
                               </span>
                             )}
-                          </Button>
+                          </button>
                         ))}
                       </div>
                     )}
@@ -294,23 +313,31 @@ export function DatabaseSidebar({
                 </Button>
 
                 {allTablesExpanded && (
-                  <div className="ml-4 space-y-0.5">
+                  <div className="ml-4 space-y-0.5 overflow-hidden min-w-0 pr-2" style={{ width: 'calc(100% - 1rem)' }}>
                     {filteredTables.map((table) => (
-                      <Button
+                      <button
                         key={table.name}
-                        variant={selectedTable === table.name ? "secondary" : "ghost"}
-                        size="sm"
                         onClick={() => onTableSelect(table.name, table.schema)}
-                        className="w-full justify-start gap-2 h-7 px-2 text-xs"
+                        className={cn(
+                          "w-full h-7 text-xs px-2 rounded-md transition-all",
+                          "flex items-center gap-2 min-w-0 overflow-hidden",
+                          "active:scale-[0.98]",
+                          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                          selectedTable === table.name
+                            ? "bg-muted text-muted-foreground shadow-sm hover:bg-muted/80 hover:text-foreground"
+                            : "hover:bg-accent hover:text-accent-foreground"
+                        )}
                       >
-                        <Table className="h-3 w-3" />
-                        <span className="truncate">{table.name}</span>
+                        <Table className="h-3 w-3 flex-shrink-0" />
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                          <div className="truncate">{table.name}</div>
+                        </div>
                         {table.rowCount && (
-                          <span className="text-muted-foreground ml-auto">
+                          <span className="text-muted-foreground ml-auto flex-shrink-0">
                             {formatRowCount(table.rowCount)}
                           </span>
                         )}
-                      </Button>
+                      </button>
                     ))}
                   </div>
                 )}
@@ -318,12 +345,12 @@ export function DatabaseSidebar({
             )}
 
             {searchQuery && filteredTables.length === 0 && (
-              <div className="text-center py-4 text-sm text-muted-foreground">
+              <div className="text-center py-4 text-sm text-muted-foreground px-2">
                 No tables found matching "{searchQuery}"
               </div>
             )}
           </div>
-        </ScrollArea>
+        </div>
       </div>
     </div>
   )
