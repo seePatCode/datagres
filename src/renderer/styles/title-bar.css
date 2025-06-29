@@ -1,0 +1,44 @@
+/* Title bar specific styles */
+.title-bar {
+  -webkit-app-region: drag;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Ensure interactive elements within title bar are not draggable */
+.title-bar button,
+.title-bar a,
+.title-bar input,
+.title-bar .no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Prevent text selection in title bar */
+.title-bar * {
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: default;
+}
+
+/* Allow text selection in specific elements if needed */
+.title-bar input,
+.title-bar textarea {
+  -webkit-user-select: text;
+  user-select: text;
+  cursor: text;
+}
+
+/* Fix for potential hover issues in draggable areas */
+.title-bar-button {
+  -webkit-app-region: no-drag;
+  transition: background-color 0.2s ease;
+}
+
+/* Platform-specific adjustments */
+.title-bar.macos {
+  padding-left: 70px; /* Space for traffic lights */
+}
+
+.title-bar.windows {
+  /* Windows-specific styles if needed */
+}

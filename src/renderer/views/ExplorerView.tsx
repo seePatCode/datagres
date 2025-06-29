@@ -172,7 +172,6 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
           onNavigateForward={handleNavigateForward}
           canGoBack={!!canGoBack}
           canGoForward={!!canGoForward}
-          onShowHelp={onShowHelp}
         />
       </div>
       
