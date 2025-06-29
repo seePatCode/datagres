@@ -78,8 +78,6 @@ function createApplicationMenu(mainWindow, currentTheme = 'dark') {
           }
         },
         { type: 'separator' },
-        { label: 'Reload', role: 'reload' },
-        { label: 'Force Reload', role: 'forceReload' },
         { label: 'Toggle Developer Tools', role: 'toggleDevTools' },
         { type: 'separator' },
         { label: 'Actual Size', role: 'resetZoom' },
