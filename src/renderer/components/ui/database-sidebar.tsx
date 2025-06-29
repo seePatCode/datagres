@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Database, Search, Table, Clock, ChevronDown, ChevronRight, FileCode2, ChevronsUpDown, Edit2, Trash2 } from 'lucide-react'
+import { Database, Search, Table, Clock, ChevronDown, ChevronRight, FileCode2, ChevronsUpDown, Edit2, Trash2, Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
@@ -95,6 +95,15 @@ export function DatabaseSidebar({
   
   const handleCollapseAll = () => {
     setSchemaExpanded({})
+  }
+
+  const handleCopyTableName = async (tableName: string) => {
+    try {
+      await navigator.clipboard.writeText(tableName)
+      // Could add a toast notification here
+    } catch (err) {
+      console.error('Failed to copy table name:', err)
+    }
   }
   
   const toggleSchema = (schemaName: string) => {
@@ -230,27 +239,36 @@ export function DatabaseSidebar({
                 {recentExpanded && (
                   <div className="ml-4 space-y-0.5 overflow-hidden min-w-0 pr-2" style={{ width: 'calc(100% - 1rem)' }}>
                     {recentTables.map((table) => (
-                      <button
-                        key={`recent-${table.name}`}
-                        onClick={() => onTableSelect(table.name, table.schema)}
-                        className={cn(
-                          "w-full h-7 text-xs px-2 rounded-md transition-all",
-                          "flex items-center gap-2 min-w-0 overflow-hidden",
-                          "active:scale-[0.98]",
-                          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-                          selectedTable === table.name
-                            ? "bg-muted text-muted-foreground shadow-sm hover:bg-muted/80 hover:text-foreground"
-                            : "hover:bg-accent hover:text-accent-foreground"
-                        )}
-                      >
-                        <Table className="h-3 w-3 flex-shrink-0" />
-                        <span className="truncate flex-1 text-left">{table.name}</span>
-                        {table.rowCount && (
-                          <span className="text-muted-foreground ml-auto flex-shrink-0">
-                            {formatRowCount(table.rowCount)}
-                          </span>
-                        )}
-                      </button>
+                      <ContextMenu key={`recent-${table.name}`}>
+                        <ContextMenuTrigger>
+                          <button
+                            onClick={() => onTableSelect(table.name, table.schema)}
+                            className={cn(
+                              "w-full h-7 text-xs px-2 rounded-md transition-all",
+                              "flex items-center gap-2 min-w-0 overflow-hidden",
+                              "active:scale-[0.98]",
+                              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                              selectedTable === table.name
+                                ? "bg-muted text-muted-foreground shadow-sm hover:bg-muted/80 hover:text-foreground"
+                                : "hover:bg-accent hover:text-accent-foreground"
+                            )}
+                          >
+                            <Table className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate flex-1 text-left">{table.name}</span>
+                            {table.rowCount && (
+                              <span className="text-muted-foreground ml-auto flex-shrink-0">
+                                {formatRowCount(table.rowCount)}
+                              </span>
+                            )}
+                          </button>
+                        </ContextMenuTrigger>
+                        <ContextMenuContent>
+                          <ContextMenuItem onClick={() => handleCopyTableName(table.name)}>
+                            <Copy className="mr-2 h-4 w-4" />
+                            Copy Table Name
+                          </ContextMenuItem>
+                        </ContextMenuContent>
+                      </ContextMenu>
                     ))}
                   </div>
                 )}
@@ -315,27 +333,36 @@ export function DatabaseSidebar({
                     {schemaExpanded[schema.name] && (
                       <div className="ml-6 space-y-0.5 overflow-hidden min-w-0 pr-2" style={{ width: 'calc(100% - 1.5rem)' }}>
                         {schema.tables.map((table) => (
-                          <button
-                            key={`${schema.name}.${table.name}`}
-                            onClick={() => onTableSelect(table.name, schema.name)}
-                            className={cn(
-                              "w-full h-7 text-xs px-2 rounded-md transition-all",
-                              "flex items-center gap-2 min-w-0 overflow-hidden",
-                          "active:scale-[0.98]",
-                          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-                              selectedTable === table.name
-                                ? "bg-muted text-muted-foreground shadow-sm hover:bg-muted/80 hover:text-foreground"
-                                : "hover:bg-accent hover:text-accent-foreground"
-                            )}
-                          >
-                            <Table className="h-3 w-3 flex-shrink-0" />
-                            <span className="truncate flex-1 text-left">{table.name}</span>
-                            {table.rowCount && (
-                              <span className="text-muted-foreground ml-auto flex-shrink-0">
-                                {formatRowCount(table.rowCount)}
-                              </span>
-                            )}
-                          </button>
+                          <ContextMenu key={`${schema.name}.${table.name}`}>
+                            <ContextMenuTrigger>
+                              <button
+                                onClick={() => onTableSelect(table.name, schema.name)}
+                                className={cn(
+                                  "w-full h-7 text-xs px-2 rounded-md transition-all",
+                                  "flex items-center gap-2 min-w-0 overflow-hidden",
+                                  "active:scale-[0.98]",
+                                  "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                                  selectedTable === table.name
+                                    ? "bg-muted text-muted-foreground shadow-sm hover:bg-muted/80 hover:text-foreground"
+                                    : "hover:bg-accent hover:text-accent-foreground"
+                                )}
+                              >
+                                <Table className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate flex-1 text-left">{table.name}</span>
+                                {table.rowCount && (
+                                  <span className="text-muted-foreground ml-auto flex-shrink-0">
+                                    {formatRowCount(table.rowCount)}
+                                  </span>
+                                )}
+                              </button>
+                            </ContextMenuTrigger>
+                            <ContextMenuContent>
+                              <ContextMenuItem onClick={() => handleCopyTableName(table.name)}>
+                                <Copy className="mr-2 h-4 w-4" />
+                                Copy Table Name
+                              </ContextMenuItem>
+                            </ContextMenuContent>
+                          </ContextMenu>
                         ))}
                       </div>
                     )}
@@ -363,27 +390,36 @@ export function DatabaseSidebar({
                 {allTablesExpanded && (
                   <div className="ml-4 space-y-0.5 overflow-hidden min-w-0 pr-2" style={{ width: 'calc(100% - 1rem)' }}>
                     {filteredTables.map((table) => (
-                      <button
-                        key={table.name}
-                        onClick={() => onTableSelect(table.name, table.schema)}
-                        className={cn(
-                          "w-full h-7 text-xs px-2 rounded-md transition-all",
-                          "flex items-center gap-2 min-w-0 overflow-hidden",
-                          "active:scale-[0.98]",
-                          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-                          selectedTable === table.name
-                            ? "bg-muted text-muted-foreground shadow-sm hover:bg-muted/80 hover:text-foreground"
-                            : "hover:bg-accent hover:text-accent-foreground"
-                        )}
-                      >
-                        <Table className="h-3 w-3 flex-shrink-0" />
-                        <span className="truncate flex-1 text-left">{table.name}</span>
-                        {table.rowCount && (
-                          <span className="text-muted-foreground ml-auto flex-shrink-0">
-                            {formatRowCount(table.rowCount)}
-                          </span>
-                        )}
-                      </button>
+                      <ContextMenu key={table.name}>
+                        <ContextMenuTrigger>
+                          <button
+                            onClick={() => onTableSelect(table.name, table.schema)}
+                            className={cn(
+                              "w-full h-7 text-xs px-2 rounded-md transition-all",
+                              "flex items-center gap-2 min-w-0 overflow-hidden",
+                              "active:scale-[0.98]",
+                              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                              selectedTable === table.name
+                                ? "bg-muted text-muted-foreground shadow-sm hover:bg-muted/80 hover:text-foreground"
+                                : "hover:bg-accent hover:text-accent-foreground"
+                            )}
+                          >
+                            <Table className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate flex-1 text-left">{table.name}</span>
+                            {table.rowCount && (
+                              <span className="text-muted-foreground ml-auto flex-shrink-0">
+                                {formatRowCount(table.rowCount)}
+                              </span>
+                            )}
+                          </button>
+                        </ContextMenuTrigger>
+                        <ContextMenuContent>
+                          <ContextMenuItem onClick={() => handleCopyTableName(table.name)}>
+                            <Copy className="mr-2 h-4 w-4" />
+                            Copy Table Name
+                          </ContextMenuItem>
+                        </ContextMenuContent>
+                      </ContextMenu>
                     ))}
                   </div>
                 )}
