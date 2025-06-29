@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useToast } from '@/hooks/use-toast'
+import { generateUniqueConnectionName } from '@/utils/connectionNameGenerator'
 import { useSelector, useDispatch } from 'react-redux'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -131,15 +132,7 @@ export function ConnectionView() {
   }
 
   const getDefaultConnectionName = (connStr: string) => {
-    try {
-      const url = new URL(connStr)
-      const username = url.username || 'user'
-      const host = url.hostname || 'localhost'
-      const database = url.pathname.substring(1) || 'database'
-      return `${username}@${host}/${database}`
-    } catch {
-      return 'New Connection'
-    }
+    return generateUniqueConnectionName(connStr)
   }
 
   return (
