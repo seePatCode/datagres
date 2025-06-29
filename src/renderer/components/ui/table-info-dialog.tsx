@@ -67,7 +67,7 @@ export function TableInfoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh]">
+      <DialogContent className="max-w-4xl max-h-[80vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Info className="h-5 w-5" />
@@ -113,24 +113,28 @@ export function TableInfoDialog({
                     index % 2 === 0 ? 'bg-muted/20' : ''
                   }`}
                 >
-                  <div className="col-span-3 font-mono flex items-center gap-2">
+                  <div className="col-span-3 font-mono flex items-center gap-2 min-w-0">
                     {column.isPrimaryKey && (
-                      <Key className="h-3 w-3 text-yellow-600 dark:text-yellow-500" />
+                      <Key className="h-3 w-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
                     )}
-                    {column.name}
+                    <span className="truncate" title={column.name}>
+                      {column.name}
+                    </span>
                   </div>
-                  <div className="col-span-3 flex items-center gap-2 text-muted-foreground">
-                    {getTypeIcon(column.dataType)}
-                    <span className="font-mono text-xs">{column.dataType}</span>
+                  <div className="col-span-3 flex items-center gap-2 text-muted-foreground min-w-0">
+                    <span className="flex-shrink-0">{getTypeIcon(column.dataType)}</span>
+                    <span className="font-mono text-xs truncate" title={column.dataType}>
+                      {column.dataType}
+                    </span>
                   </div>
                   <div className="col-span-2">
                     <Badge variant={column.nullable ? 'secondary' : 'default'} className="text-xs">
                       {column.nullable ? 'NULL' : 'NOT NULL'}
                     </Badge>
                   </div>
-                  <div className="col-span-2 text-muted-foreground">
+                  <div className="col-span-2 text-muted-foreground min-w-0">
                     {column.defaultValue ? (
-                      <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                      <code className="text-xs bg-muted px-1 py-0.5 rounded inline-block max-w-full truncate" title={column.defaultValue}>
                         {column.defaultValue}
                       </code>
                     ) : (
