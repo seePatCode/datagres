@@ -7,6 +7,7 @@ class UpdateService {
     this.windowManager = windowManager
     this.updateInfo = null
     this.downloadProgress = null
+    this.isManualCheck = false
     
     log.info('UpdateService initialized. App packaged:', app.isPackaged)
     log.info('App version:', app.getVersion())
@@ -36,11 +37,43 @@ class UpdateService {
     autoUpdater.on('update-not-available', (info) => {
       log.info('Update not available:', info)
       this.sendToRenderer('update-not-available', info)
+      
+      // Show dialog when manually checking for updates
+      if (this.isManualCheck) {
+        const { dialog } = require('electron')
+        const mainWindow = this.windowManager.getMainWindow()
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          dialog.showMessageBox(mainWindow, {
+            type: 'info',
+            title: 'No Updates Available',
+            message: `You're running the latest version of Datagres!`,
+            detail: `Current version: ${app.getVersion()}`,
+            buttons: ['OK']
+          })
+        }
+        this.isManualCheck = false
+      }
     })
 
     autoUpdater.on('error', (err) => {
       log.error('Update error:', err)
       this.sendToRenderer('update-error', err.message)
+      
+      // Reset manual check flag and show error dialog if manual
+      if (this.isManualCheck) {
+        const { dialog } = require('electron')
+        const mainWindow = this.windowManager.getMainWindow()
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          dialog.showMessageBox(mainWindow, {
+            type: 'error',
+            title: 'Update Check Failed',
+            message: 'Unable to check for updates',
+            detail: err.message,
+            buttons: ['OK']
+          })
+        }
+        this.isManualCheck = false
+      }
     })
 
     autoUpdater.on('download-progress', (progressObj) => {
@@ -97,24 +130,44 @@ class UpdateService {
           }
         }
         
-        // For update-electron-app, we can't manually trigger checks
-        // But we can show a dialog to inform the user
-        const { dialog } = require('electron')
-        const mainWindow = this.windowManager.getMainWindow()
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          dialog.showMessageBox(mainWindow, {
-            type: 'info',
-            title: 'Update Check',
-            message: 'Datagres automatically checks for updates every hour. If an update is available, you will be notified.',
-            detail: `Current version: ${app.getVersion()}`,
-            buttons: ['OK']
-          })
-        }
+        // Manually trigger an update check
+        log.info('Manually triggering update check...')
+        this.isManualCheck = true
         
-        log.info('Update check dialog shown to user')
-        return { 
-          success: true, 
-          message: 'Update check initiated. You will be notified if an update is available.' 
+        // Send checking status to renderer
+        this.sendToRenderer('update-checking')
+        
+        // Since update-electron-app handles the autoUpdater setup,
+        // we can trigger a check by calling checkForUpdates
+        try {
+          autoUpdater.checkForUpdates()
+          log.info('Update check triggered successfully')
+          
+          // The result will come through the event handlers
+          return { 
+            success: true, 
+            message: 'Checking for updates...' 
+          }
+        } catch (checkError) {
+          log.error('Failed to trigger update check:', checkError)
+          
+          // If manual check fails, show informational dialog
+          const { dialog } = require('electron')
+          const mainWindow = this.windowManager.getMainWindow()
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            dialog.showMessageBox(mainWindow, {
+              type: 'info',
+              title: 'Update Check',
+              message: 'Unable to check for updates right now.',
+              detail: `Current version: ${app.getVersion()}\n\nDatagres automatically checks for updates every hour.`,
+              buttons: ['OK']
+            })
+          }
+          
+          return { 
+            success: false, 
+            error: 'Update check failed' 
+          }
         }
       } catch (error) {
         log.error('Manual update check failed:', error)
