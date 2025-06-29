@@ -26,7 +26,8 @@ export function UpdateNotification() {
       switch (channel) {
         case 'update-checking':
           setUpdateStatus('checking')
-          setShow(true)
+          // Don't show the toast for checking - too annoying
+          setShow(false)
           break
         case 'update-available':
           setUpdateStatus('available')
@@ -35,15 +36,14 @@ export function UpdateNotification() {
           break
         case 'update-not-available':
           setUpdateStatus('not-available')
-          // Hide immediately since we show a dialog for manual checks
-          // Only show briefly for automatic checks
-          setTimeout(() => setShow(false), 500)
+          // Don't show anything when no update is available
+          setShow(false)
           break
         case 'update-error':
           setUpdateStatus('error')
           setUpdateInfo(data)
-          // Auto-hide error after 5 seconds
-          setTimeout(() => setShow(false), 5000)
+          // Don't show error toasts for automatic checks
+          setShow(false)
           break
         case 'update-download-progress':
           setUpdateStatus('downloading')
@@ -83,13 +83,6 @@ export function UpdateNotification() {
           <X className="h-4 w-4" />
         </Button>
 
-        {updateStatus === 'checking' && (
-          <AlertDescription className="flex items-center gap-2 pr-8">
-            <RefreshCw className="h-4 w-4 animate-spin" />
-            Checking for updates...
-          </AlertDescription>
-        )}
-
         {updateStatus === 'available' && (
           <AlertDescription className="pr-8">
             <div className="flex items-center gap-2 mb-2">
@@ -127,17 +120,6 @@ export function UpdateNotification() {
           </AlertDescription>
         )}
 
-        {updateStatus === 'not-available' && (
-          <AlertDescription className="text-muted-foreground pr-8">
-            You're running the latest version!
-          </AlertDescription>
-        )}
-
-        {updateStatus === 'error' && (
-          <AlertDescription className="text-destructive pr-8">
-            Update error: {updateInfo}
-          </AlertDescription>
-        )}
       </Alert>
     </div>
   )
