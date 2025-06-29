@@ -20,7 +20,11 @@
     "test:unit:coverage": "vitest run --coverage",
     "test:unit:ui": "vitest --ui",
     "typecheck": "tsc --noEmit",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "release:patch": "npm version patch -m \"Release v%s\" && git push origin main --tags",
+    "release:minor": "npm version minor -m \"Release v%s\" && git push origin main --tags",
+    "release:major": "npm version major -m \"Release v%s\" && git push origin main --tags",
+    "postversion": "echo \"✅ Released version $(node -p \"require('./package.json').version\")\""
   },
   "keywords": [],
   "author": "",

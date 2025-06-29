@@ -144,32 +144,32 @@ Test critical business logic only:
 
 ## Creating a New Release
 
-**IMPORTANT**: The version in package.json MUST match the Git tag for auto-updater to work correctly!
+### One-Step Release Process
+When the user wants to create a new release, use ONE of these commands:
 
-### Simple Release Process
-When the user wants to create a new release (e.g., after saying "commit tag push"):
+```bash
+# For bug fixes and minor improvements (0.4.3 → 0.4.4)
+npm run release:patch
 
-1. **First, update the version in package.json**:
-   ```bash
-   # Edit package.json and increment the version number
-   # Current version: 0.4.3 → Next version: 0.4.4
-   ```
+# For new features (0.4.3 → 0.5.0)
+npm run release:minor
 
-2. **Create a single commit for the release**:
-   ```bash
-   git add package.json
-   git commit -m "chore: bump version to 0.4.4"
-   ```
+# For breaking changes (0.4.3 → 1.0.0)
+npm run release:major
+```
 
-3. **Create a matching tag**:
-   ```bash
-   git tag -a v0.4.4 -m "Release v0.4.4"
-   ```
+**That's it!** These commands automatically:
+- ✅ Update version in package.json
+- ✅ Create a git commit with message "Release vX.X.X"
+- ✅ Create a matching git tag
+- ✅ Push both commit and tag to GitHub
 
-4. **Push everything**:
-   ```bash
-   git push origin main --tags
-   ```
+### What Happens Behind the Scenes
+The npm scripts use the built-in `npm version` command which:
+1. Updates package.json version
+2. Creates commit: "Release vX.X.X"
+3. Creates tag: "vX.X.X"
+4. Pushes everything with `git push origin main --tags`
 
 ### Version Number Guidelines
 - Use semantic versioning: `MAJOR.MINOR.PATCH`
