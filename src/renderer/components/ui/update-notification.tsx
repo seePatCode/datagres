@@ -25,11 +25,8 @@ export function UpdateNotification() {
     const cleanup = window.electronAPI.onUpdateEvent((channel: string, data: any) => {
       switch (channel) {
         case 'update-checking':
-          // Only show notification for automatic checks
-          if (!data?.isManual) {
-            setUpdateStatus('checking')
-            setShow(true)
-          }
+          setUpdateStatus('checking')
+          setShow(true)
           break
         case 'update-available':
           setUpdateStatus('available')

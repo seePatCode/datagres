@@ -25,7 +25,10 @@ class UpdateService {
   setupEventHandlers() {
     autoUpdater.on('checking-for-update', () => {
       log.info('Checking for updates...')
-      this.sendToRenderer('update-checking')
+      // Only send to renderer for automatic checks (not manual)
+      if (!this.isManualCheck) {
+        this.sendToRenderer('update-checking')
+      }
     })
 
     autoUpdater.on('update-available', (info) => {
@@ -36,7 +39,11 @@ class UpdateService {
 
     autoUpdater.on('update-not-available', (info) => {
       log.info('Update not available:', info)
-      this.sendToRenderer('update-not-available', info)
+      
+      // Only send to renderer for automatic checks
+      if (!this.isManualCheck) {
+        this.sendToRenderer('update-not-available', info)
+      }
       
       // Show dialog when manually checking for updates
       if (this.isManualCheck) {
@@ -57,9 +64,13 @@ class UpdateService {
 
     autoUpdater.on('error', (err) => {
       log.error('Update error:', err)
-      this.sendToRenderer('update-error', err.message)
       
-      // Reset manual check flag and show error dialog if manual
+      // Only send to renderer for automatic checks
+      if (!this.isManualCheck) {
+        this.sendToRenderer('update-error', err.message)
+      }
+      
+      // Show error dialog if manual check
       if (this.isManualCheck) {
         const { dialog } = require('electron')
         const mainWindow = this.windowManager.getMainWindow()
@@ -134,8 +145,7 @@ class UpdateService {
         log.info('Manually triggering update check...')
         this.isManualCheck = true
         
-        // Send checking status to renderer with manual flag
-        this.sendToRenderer('update-checking', { isManual: true })
+        // Don't send checking status for manual checks - dialog only
         
         // Since update-electron-app handles the autoUpdater setup,
         // we can trigger a check by calling checkForUpdates
