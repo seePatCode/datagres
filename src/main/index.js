@@ -83,6 +83,11 @@ app.on('window-all-closed', () => {
   }
 })
 
+// Handle app version request
+ipcMain.handle('get-app-version', async () => {
+  return app.getVersion()
+})
+
 // Handle database connection requests
 ipcMain.handle('connect-database', async (_event, connectionString) => {
   return await databaseService.connectDatabase(connectionString)

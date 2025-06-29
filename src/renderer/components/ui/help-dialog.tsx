@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Keyboard, Search, Database, Table, FileText, Command } from 'lucide-react'
 import {
   Dialog,
@@ -47,6 +47,7 @@ interface HelpDialogProps {
 
 export function HelpDialog({ open, onOpenChange, trigger }: HelpDialogProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [appVersion, setAppVersion] = useState<string>('0.3.4')
   
   // Use controlled state if provided, otherwise use internal state
   const dialogOpen = open !== undefined ? open : isOpen
@@ -54,6 +55,17 @@ export function HelpDialog({ open, onOpenChange, trigger }: HelpDialogProps) {
 
   const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
   const cmdKey = isMac ? '⌘' : 'Ctrl'
+
+  useEffect(() => {
+    // Fetch app version when dialog opens
+    if (dialogOpen && window.electronAPI?.appVersion) {
+      window.electronAPI.appVersion.then(version => {
+        setAppVersion(version)
+      }).catch(() => {
+        setAppVersion('0.3.4')
+      })
+    }
+  }, [dialogOpen])
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -214,7 +226,7 @@ export function HelpDialog({ open, onOpenChange, trigger }: HelpDialogProps) {
         
         <div className="mt-6 flex justify-between items-center text-xs text-muted-foreground">
           <span>Press <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded">{cmdKey}+/</kbd> anytime to show this help</span>
-          <span>Datagres v{window.electronAPI?.appVersion || '1.0.0'}</span>
+          <span>Datagres v{appVersion}</span>
         </div>
       </DialogContent>
     </Dialog>

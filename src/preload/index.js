@@ -4,7 +4,7 @@ const { parseConnectionString, sanitizeConnectionString, getConnectionDisplayInf
 
 contextBridge.exposeInMainWorld('electronAPI', {
   // App info
-  appVersion: process.env.npm_package_version || require('../../package.json').version,
+  appVersion: ipcRenderer.invoke('get-app-version'),
   // Database operations
   connectDatabase: (connectionString) => ipcRenderer.invoke('connect-database', connectionString),
   fetchTableData: (connectionString, tableName, searchOptions) => ipcRenderer.invoke('fetch-table-data', connectionString, tableName, searchOptions),

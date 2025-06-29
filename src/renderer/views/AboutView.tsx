@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { ArrowLeft, Github, Zap, Command, Shield, MousePointer2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useDispatch } from 'react-redux'
@@ -7,6 +8,18 @@ import { LOGO_DATA_URL } from '@/constants/logo'
 
 export function AboutView() {
   const dispatch = useDispatch<AppDispatch>()
+  const [appVersion, setAppVersion] = useState<string>('0.3.4')
+  
+  useEffect(() => {
+    // Fetch app version
+    if (window.electronAPI?.appVersion) {
+      window.electronAPI.appVersion.then(version => {
+        setAppVersion(version)
+      }).catch(() => {
+        setAppVersion('0.3.4')
+      })
+    }
+  }, [])
   
   const handleBack = () => {
     dispatch(setCurrentView('explorer'))
@@ -143,7 +156,7 @@ export function AboutView() {
 
           {/* Version */}
           <div className="text-center text-sm text-muted-foreground pt-4 border-t">
-            <p>Version 1.0.0</p>
+            <p>Version {appVersion}</p>
             <p className="mt-1">Made with ❤️ by someone who just wanted fewer clicks</p>
           </div>
         </div>

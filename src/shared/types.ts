@@ -152,7 +152,7 @@ export interface ParsedConnectionInfo {
 // Complete API interface for window.electronAPI
 export interface ElectronAPI {
   // App info
-  appVersion?: string
+  appVersion?: Promise<string>
   
   // Database operations
   connectDatabase: (connectionString: string) => Promise<ConnectDatabaseResponse>
