@@ -8,9 +8,15 @@ class UpdateService {
     this.updateInfo = null
     this.downloadProgress = null
     
+    log.info('UpdateService initialized. App packaged:', app.isPackaged)
+    log.info('App version:', app.getVersion())
+    
     // Only initialize if we're in a packaged app
     if (app.isPackaged) {
       this.setupEventHandlers()
+      this.setupIpcHandlers()
+    } else {
+      // Still setup IPC handlers for development
       this.setupIpcHandlers()
     }
   }
@@ -70,15 +76,42 @@ class UpdateService {
   setupIpcHandlers() {
     ipcMain.handle('check-for-updates', async () => {
       try {
+        log.info('Manual update check requested')
+        
         if (!app.isPackaged) {
+          log.info('Update check skipped - app not packaged')
+          // Show a dialog in development mode
+          const { dialog } = require('electron')
+          const mainWindow = this.windowManager.getMainWindow()
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            dialog.showMessageBox(mainWindow, {
+              type: 'info',
+              title: 'Development Mode',
+              message: 'Auto-update is only available in production builds.',
+              buttons: ['OK']
+            })
+          }
           return { 
             success: false, 
             error: 'Auto-update is only available in production builds' 
           }
         }
         
-        // For update-electron-app, we can't manually check for updates
-        // It handles everything automatically
+        // For update-electron-app, we can't manually trigger checks
+        // But we can show a dialog to inform the user
+        const { dialog } = require('electron')
+        const mainWindow = this.windowManager.getMainWindow()
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          dialog.showMessageBox(mainWindow, {
+            type: 'info',
+            title: 'Update Check',
+            message: 'Datagres automatically checks for updates every hour. If an update is available, you will be notified.',
+            detail: `Current version: ${app.getVersion()}`,
+            buttons: ['OK']
+          })
+        }
+        
+        log.info('Update check dialog shown to user')
         return { 
           success: true, 
           message: 'Update check initiated. You will be notified if an update is available.' 

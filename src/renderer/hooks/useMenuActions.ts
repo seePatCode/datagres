@@ -58,7 +58,13 @@ export function useMenuActions({
             break
           case 'check-for-updates':
             if (window.electronAPI?.checkForUpdates) {
-              window.electronAPI.checkForUpdates()
+              window.electronAPI.checkForUpdates().then((result) => {
+                if (!result.success && result.error) {
+                  console.error('Update check failed:', result.error)
+                }
+              }).catch((error) => {
+                console.error('Update check error:', error)
+              })
             }
             break
         }
