@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Card } from '@/components/card'
 import { Button } from '@/components/button'
-import { Database, Table, Loader2, MousePointer, Search, FileText } from 'lucide-react'
+import { Database, Table, Loader2, MousePointer, Search, FileCode2 } from 'lucide-react'
 import Editor from '@monaco-editor/react'
 import { DemoCallout, DemoTimer } from '@/components/ui/demo-callout'
 import { 
@@ -29,73 +29,45 @@ export function DemoSection() {
   const [isLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<string | null>(null)
   const [showQuickSearch, setShowQuickSearch] = useState(false)
-  const [currentDatabase, setCurrentDatabase] = useState('sample_db')
+  
   const [sqlQuery, setSqlQuery] = useState('')
   const [showSqlGeneration, setShowSqlGeneration] = useState(false)
+  const [showQueryResults, setShowQueryResults] = useState(false)
+  const [quickSearchQuery, setQuickSearchQuery] = useState('')
+  const [highlightScratchpad, setHighlightScratchpad] = useState(false)
   const [openTabs, setOpenTabs] = useState<Array<{id: string, type: 'table' | 'query', name: string, tableName?: string}>>([])
   
-  // Timer and callout states
-  const [timerStartTime, setTimerStartTime] = useState<number | null>(null)
-  const [isTimerRunning, setIsTimerRunning] = useState(false)
+  // Callout state
   const [currentCallout, setCurrentCallout] = useState<{ message: string; position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' } | null>(null)
 
   const savedConnections = [
-    { id: '1', name: 'Production DB', database: 'prod_db' },
-    { id: '2', name: 'Staging DB', database: 'staging_db' },
-    { id: '3', name: 'Development DB', database: 'sample_db' }
+    { id: '1', name: 'Sample DB', database: 'sample_db' }
   ]
 
-  const tables = currentDatabase === 'sample_db' ? [
+  const tables = [
     { name: 'users', count: 1847 },
     { name: 'orders', count: 5423 },
     { name: 'products', count: 342 },
     { name: 'customers', count: 892 },
     { name: 'invoices', count: 3251 },
-  ] : currentDatabase === 'prod_db' ? [
-    { name: 'users', count: 28451 },
-    { name: 'orders', count: 142893 },
-    { name: 'products', count: 1248 },
-    { name: 'order_items', count: 523901 },
-    { name: 'categories', count: 47 },
-  ] : [
-    { name: 'users', count: 4521 },
-    { name: 'orders', count: 8934 },
-    { name: 'products', count: 678 },
-    { name: 'test_data', count: 10000 },
   ]
 
-  const mockDataByDatabase: Record<string, Record<string, any[]>> = {
-    sample_db: {
-      users: [
-        { id: 1, name: 'Alice Johnson', email: 'alice@example.com', role: 'admin', created_at: '2024-01-15 09:30:00', status: 'active' },
-        { id: 2, name: 'Bob Smith', email: 'bob@example.com', role: 'user', created_at: '2024-01-16 14:22:00', status: 'active' },
-        { id: 3, name: 'Carol Williams', email: 'carol@example.com', role: 'user', created_at: '2024-01-17 11:45:00', status: 'inactive' },
-        { id: 4, name: 'David Brown', email: 'david@example.com', role: 'moderator', created_at: '2024-01-18 16:30:00', status: 'active' },
-        { id: 5, name: 'Emma Davis', email: 'emma@example.com', role: 'user', created_at: '2024-01-19 10:15:00', status: 'pending' },
-      ],
-      orders: [
-        { id: 1001, user_id: 1, total: 299.99, status: 'completed', created_at: '2024-02-01 10:30:00' },
-        { id: 1002, user_id: 2, total: 149.50, status: 'processing', created_at: '2024-02-02 11:45:00' },
-        { id: 1003, user_id: 3, total: 599.00, status: 'completed', created_at: '2024-02-03 09:20:00' },
-        { id: 1004, user_id: 1, total: 79.99, status: 'shipped', created_at: '2024-02-04 14:10:00' },
-        { id: 1005, user_id: 4, total: 450.00, status: 'pending', created_at: '2024-02-05 16:55:00' },
-      ],
-    },
-    prod_db: {
-      users: [
-        { id: 101, name: 'Enterprise User A', email: 'user.a@enterprise.com', department: 'Sales', created_at: '2023-06-15', active: true },
-        { id: 102, name: 'Enterprise User B', email: 'user.b@enterprise.com', department: 'Marketing', created_at: '2023-07-20', active: true },
-        { id: 103, name: 'Enterprise User C', email: 'user.c@enterprise.com', department: 'Engineering', created_at: '2023-08-10', active: true },
-      ],
-      orders: [
-        { id: 20001, user_id: 101, amount: 15999.99, status: 'completed', order_date: '2024-01-15', shipped_date: '2024-01-17' },
-        { id: 20002, user_id: 102, amount: 8500.00, status: 'processing', order_date: '2024-01-20', shipped_date: null },
-        { id: 20003, user_id: 101, amount: 12750.50, status: 'completed', order_date: '2024-01-25', shipped_date: '2024-01-27' },
-      ],
-    }
+  const mockData = {
+    users: [
+      { id: 1, name: 'Alice Johnson', email: 'alice@example.com', role: 'admin', created_at: '2024-01-15 09:30:00', status: 'active' },
+      { id: 2, name: 'Bob Smith', email: 'bob@example.com', role: 'user', created_at: '2024-01-16 14:22:00', status: 'active' },
+      { id: 3, name: 'Carol Williams', email: 'carol@example.com', role: 'user', created_at: '2024-01-17 11:45:00', status: 'inactive' },
+      { id: 4, name: 'David Brown', email: 'david@example.com', role: 'moderator', created_at: '2024-01-18 16:30:00', status: 'active' },
+      { id: 5, name: 'Emma Davis', email: 'emma@example.com', role: 'user', created_at: '2024-01-19 10:15:00', status: 'pending' },
+    ],
+    orders: [
+      { id: 1001, user_id: 1, total: 299.99, status: 'completed', created_at: '2024-02-01 10:30:00' },
+      { id: 1002, user_id: 2, total: 149.50, status: 'processing', created_at: '2024-02-02 11:45:00' },
+      { id: 1003, user_id: 3, total: 599.00, status: 'completed', created_at: '2024-02-03 09:20:00' },
+      { id: 1004, user_id: 1, total: 79.99, status: 'shipped', created_at: '2024-02-04 14:10:00' },
+      { id: 1005, user_id: 4, total: 450.00, status: 'pending', created_at: '2024-02-05 16:55:00' },
+    ],
   }
-  
-  const mockData = mockDataByDatabase[currentDatabase] || mockDataByDatabase.sample_db
 
   const handleTableSelect = (tableName: string) => {
     const existingTab = openTabs.find(tab => tab.type === 'table' && tab.tableName === tableName)
@@ -118,7 +90,7 @@ export function DemoSection() {
     const newTab = {
       id: `query-${Date.now()}`,
       type: 'query' as const,
-      name: `Query ${openTabs.filter(t => t.type === 'query').length + 1}`
+      name: openTabs.filter(t => t.type === 'query').length === 0 ? 'Scratchpad' : `Query ${openTabs.filter(t => t.type === 'query').length + 1}`
     }
     setOpenTabs([...openTabs, newTab])
     setActiveTab(newTab.id)
@@ -181,7 +153,7 @@ export function DemoSection() {
       }
       
       // Show callout for connection
-      setCurrentCallout({ message: "Just paste your connection string", position: "top-right" })
+      setCurrentCallout({ message: "Paste any PostgreSQL URL and connect instantly", position: "top-right" })
       
       // Type Connection String
       await wait(300)
@@ -195,23 +167,40 @@ export function DemoSection() {
         await animateMouseTo(rect.left + rect.width / 2, rect.top + rect.height / 2)
       }
       
-      // Start timer and hide callout
+      // Hide callout and start connecting
       await wait(200)
       setCurrentCallout(null)
       setIsConnecting(true)
-      setTimerStartTime(Date.now())
-      setIsTimerRunning(true)
       await wait(800)
       setIsConnecting(false)
       setIsConnected(true)
       
       // Show success callout
-      setCurrentCallout({ message: "Connected! Browse your data instantly", position: "bottom-right" })
+      setCurrentCallout({ message: "Connected! Let's explore your data", position: "top-right" })
       
       // Browse Initial Data
-      await wait(800)
+      await wait(1200)
       setCurrentCallout(null)
       
+      // Show Shift+Shift hint
+      await wait(800)
+      setCurrentCallout({ message: "Press Shift+Shift for lightning-fast table search", position: "top-right" })
+      await wait(800)
+      
+      // Actually show the quick search modal
+      setShowMouse(false)
+      setShowQuickSearch(true)
+      await wait(600)
+      
+      // Type in the quick search
+      await typeText('user', setQuickSearchQuery, 50)
+      await wait(1000)
+      
+      setShowQuickSearch(false)
+      setQuickSearchQuery('')
+      setCurrentCallout(null)
+      
+      // Select users table
       const usersButton = findButtonByText('users', 'button[data-table]')
       if (usersButton) {
         const rect = usersButton.getBoundingClientRect()
@@ -222,93 +211,65 @@ export function DemoSection() {
       
       await wait(1500)
       
-      // Demo Quick Search
-      setShowMouse(false)
-      setShowQuickSearch(true)
-      setCurrentCallout({ message: "Quick table and connection search", position: "top-left" })
-      await wait(600)
-      
-      // Switch to Production Database
-      setShowMouse(true)
-      await wait(300)
-      
-      const prodButton = findButtonByText('Production DB', '.fixed button')
-      if (prodButton) {
-        const rect = prodButton.getBoundingClientRect()
-        await animateMouseTo(rect.left + rect.width / 2, rect.top + rect.height / 2)
-      }
-      
-      await wait(300)
-      setShowQuickSearch(false)
-      setCurrentCallout(null)
-      setCurrentDatabase('prod_db')
-      setSelectedTable(null)
-      
-      // Open Orders Table in Production
-      await wait(800)
-      
-      const ordersButton = findButtonByText('orders', 'button[data-table]')
-      if (ordersButton) {
-        const rect = ordersButton.getBoundingClientRect()
-        await animateMouseTo(rect.left + rect.width / 2, rect.top + rect.height / 2)
-        await wait(200)
-        handleTableSelect('orders')
-      }
-      
-      await wait(1000)
-      
-      // Create New Query Tab
+      // Open SQL Scratchpad
       await wait(500)
+      setCurrentCallout({ message: "Open a SQL scratchpad for ad-hoc queries", position: "top-right" })
       
-      const newQueryButton = findButtonByText('New Query')
+      // Blink the Scratchpad button multiple times
+      for (let i = 0; i < 3; i++) {
+        setHighlightScratchpad(true)
+        await wait(200)
+        setHighlightScratchpad(false)
+        await wait(200)
+      }
+      setHighlightScratchpad(true)
+      await wait(300)
+      
+      const newQueryButton = findButtonByText('Scratchpad')
       if (newQueryButton) {
         const rect = newQueryButton.getBoundingClientRect()
         await animateMouseTo(rect.left + rect.width / 2, rect.top + rect.height / 2)
         await wait(200)
         handleNewQuery()
+        setHighlightScratchpad(false)
         setSqlQuery('')
       }
       
       await wait(300)
+      setCurrentCallout(null)
       
       // Demo AI SQL Generation
       await wait(800)
-      setCurrentCallout({ message: "Press Cmd+K to generate SQL with AI", position: "bottom-left" })
+      setCurrentCallout({ message: "Press Cmd+K to generate SQL with local AI", position: "top-right" })
       setShowSqlGeneration(true)
       await wait(2000)
       
       // Generate and Display SQL
-      const generatedSql = `SELECT 
-  o.id as order_id,
-  o.user_id,
-  o.amount as total_amount,
-  o.status,
-  oi.quantity,
-  oi.unit_price,
-  p.name as product_name,
-  c.name as category
-FROM orders o
-JOIN order_items oi ON o.id = oi.order_id
-JOIN products p ON oi.product_id = p.id
-JOIN categories c ON p.category_id = c.id
-WHERE o.status = 'completed'
-ORDER BY o.order_date DESC;`
+      const generatedSql = `SELECT name, email, role, status 
+FROM users 
+WHERE status = 'active' 
+ORDER BY created_at DESC
+LIMIT 10;`
       
       await typeText(generatedSql, setSqlQuery, 5)
       setCurrentCallout(null)
       
-      // Show Query Results
-      await wait(2500)
+      // Execute Query
+      await wait(1000)
+      setCurrentCallout({ message: "Execute to see results instantly", position: "top-right" })
+      await wait(800)
+      setShowQueryResults(true)
+      await wait(1200)
+      setCurrentCallout(null)
       
-      // Stop timer and show final callout
-      setIsTimerRunning(false)
-      setCurrentCallout({ message: "15 seconds to browse your data!", position: "top-right" })
-      await wait(2000)
+      // Show final callout
+      setCurrentCallout({ message: "From connection to insights in under 15 seconds!", position: "top-right" })
+      await wait(3000)
       
       // Reset and Loop
       await wait(1500)
       setCurrentCallout(null)
-      setTimerStartTime(null)
+      
       setShowMouse(false)
       setConnectionString('')
       setIsConnected(false)
@@ -316,8 +277,10 @@ ORDER BY o.order_date DESC;`
       setOpenTabs([])
       setActiveTab(null)
       setSqlQuery('')
-      setCurrentDatabase('sample_db')
       setShowSqlGeneration(false)
+      setShowQueryResults(false)
+      setQuickSearchQuery('')
+      setHighlightScratchpad(false)
       
       // Restart the demo
       await wait(1000)
@@ -364,8 +327,7 @@ ORDER BY o.order_date DESC;`
           className="max-w-6xl mx-auto"
         >
           <Card className="overflow-hidden bg-gray-950/50 backdrop-blur border-gray-800 relative">
-            {/* Timer Display */}
-            <DemoTimer startTime={timerStartTime} isRunning={isTimerRunning} />
+            
             
             {/* Callout Display */}
             {currentCallout && (
@@ -459,20 +421,22 @@ ORDER BY o.order_date DESC;`
                     <div className="border-b p-4">
                       <div className="flex items-center gap-2">
                         <Database className="h-4 w-4 text-green-500" />
-                        <span className="text-sm font-medium">{currentDatabase}</span>
+                        <span className="text-sm font-medium">sample_db</span>
                       </div>
                     </div>
                     
                     {/* New Query Button */}
                     <div className="p-3 border-b">
                       <Button 
-                        className="w-full justify-start gap-2"
-                        variant="outline"
+                        className={`w-full justify-start gap-2 transition-all ${
+                          highlightScratchpad ? 'bg-violet-500 text-white shadow-lg scale-105' : ''
+                        }`}
+                        variant={highlightScratchpad ? "default" : "outline"}
                         size="sm"
                         onClick={handleNewQuery}
                       >
-                        <FileText className="h-4 w-4" />
-                        New Query
+                        <FileCode2 className="h-4 w-4" />
+                        Scratchpad
                       </Button>
                     </div>
                     
@@ -523,13 +487,11 @@ ORDER BY o.order_date DESC;`
                                 </div>
                               ) : (
                                 <div className="flex items-center gap-1">
-                                  <FileText className="h-3 w-3" />
+                                  <FileCode2 className="h-3 w-3" />
                                   <span>{tab.name}</span>
                                 </div>
                               )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
+                              <div
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   const newTabs = openTabs.filter(t => t.id !== tab.id)
@@ -538,10 +500,10 @@ ORDER BY o.order_date DESC;`
                                     setActiveTab(newTabs[newTabs.length - 1].id)
                                   }
                                 }}
-                                className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-accent rounded flex items-center justify-center"
                               >
                                 <X className="h-3 w-3" />
-                              </Button>
+                              </div>
                             </TabsTrigger>
                           ))}
                         </TabsList>
@@ -602,13 +564,13 @@ ORDER BY o.order_date DESC;`
                               <div className="flex-1 flex flex-col">
                                 <div className="border-b bg-muted/20 p-3">
                                   <div className="flex items-center gap-2 mb-2">
-                                    <span className="text-sm font-medium">SQL Editor</span>
+                                    <span className="text-sm font-medium">SQL Scratchpad</span>
                                     <kbd className="rounded bg-secondary px-2 py-1 text-xs">Cmd+K</kbd>
                                     <span className="text-xs text-muted-foreground">Generate SQL with AI</span>
                                   </div>
                                 </div>
                                 
-                                <div className="flex-1 relative">
+                                <div className={`${showQueryResults ? 'h-1/3' : 'flex-1'} relative transition-all duration-300`}>
                                   <Editor
                                     height="100%"
                                     defaultLanguage="sql"
@@ -636,7 +598,7 @@ ORDER BY o.order_date DESC;`
                                             type="text"
                                             placeholder="Describe what you want in plain English..."
                                             className="w-full bg-secondary/50 rounded px-3 py-2 text-sm outline-none"
-                                            value="show me all orders with their items and product details"
+                                            value="show me active users"
                                             readOnly
                                           />
                                         </div>
@@ -651,6 +613,47 @@ ORDER BY o.order_date DESC;`
                                     </div>
                                   )}
                                 </div>
+                                
+                                {/* Query Results */}
+                                {showQueryResults && (
+                                  <div className="flex-1 border-t">
+                                    <div className="bg-muted/20 p-2 border-b">
+                                      <span className="text-xs text-muted-foreground">Query Results (3 rows)</span>
+                                    </div>
+                                    <div className="overflow-auto h-full">
+                                      <DataTable>
+                                        <TableHeader className="sticky top-0 bg-background z-10">
+                                          <TableRow>
+                                            <TableHead>name</TableHead>
+                                            <TableHead>email</TableHead>
+                                            <TableHead>role</TableHead>
+                                            <TableHead>status</TableHead>
+                                          </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                          <TableRow>
+                                            <TableCell className="font-mono text-xs">David Brown</TableCell>
+                                            <TableCell className="font-mono text-xs">david@example.com</TableCell>
+                                            <TableCell className="font-mono text-xs">moderator</TableCell>
+                                            <TableCell className="font-mono text-xs">active</TableCell>
+                                          </TableRow>
+                                          <TableRow>
+                                            <TableCell className="font-mono text-xs">Bob Smith</TableCell>
+                                            <TableCell className="font-mono text-xs">bob@example.com</TableCell>
+                                            <TableCell className="font-mono text-xs">user</TableCell>
+                                            <TableCell className="font-mono text-xs">active</TableCell>
+                                          </TableRow>
+                                          <TableRow>
+                                            <TableCell className="font-mono text-xs">Alice Johnson</TableCell>
+                                            <TableCell className="font-mono text-xs">alice@example.com</TableCell>
+                                            <TableCell className="font-mono text-xs">admin</TableCell>
+                                            <TableCell className="font-mono text-xs">active</TableCell>
+                                          </TableRow>
+                                        </TableBody>
+                                      </DataTable>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </TabsContent>
@@ -680,6 +683,8 @@ ORDER BY o.order_date DESC;`
                       <input
                         type="text"
                         placeholder="Search tables and connections..."
+                        value={quickSearchQuery}
+                        onChange={(e) => setQuickSearchQuery(e.target.value)}
                         className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
                       />
                     </div>
@@ -687,33 +692,35 @@ ORDER BY o.order_date DESC;`
                       <div className="mb-4">
                         <h3 className="mb-2 px-2 text-xs font-semibold uppercase text-muted-foreground">Connections</h3>
                         <div className="space-y-1">
-                          {savedConnections.map(conn => (
+                          {savedConnections.filter(conn => 
+                            conn.name.toLowerCase().includes(quickSearchQuery.toLowerCase()) ||
+                            conn.database.toLowerCase().includes(quickSearchQuery.toLowerCase())
+                          ).map(conn => (
                             <button
                               key={conn.id}
-                              className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent ${
-                                conn.database === currentDatabase ? 'bg-accent' : ''
-                              }`}
-                              onClick={() => {
-                                setCurrentDatabase(conn.database)
-                                setShowQuickSearch(false)
-                              }}
+                              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent bg-accent"
+                              onClick={() => setShowQuickSearch(false)}
                             >
                               <Database className="h-4 w-4" />
                               <span className="flex-1 text-left">{conn.name}</span>
-                              {conn.database === currentDatabase && (
-                                <span className="text-xs text-muted-foreground">Current</span>
-                              )}
+                              <span className="text-xs text-muted-foreground">Current</span>
                             </button>
                           ))}
                         </div>
                       </div>
                       <div>
-                        <h3 className="mb-2 px-2 text-xs font-semibold uppercase text-muted-foreground">Tables</h3>
+                        <h3 className="mb-2 px-2 text-xs font-semibold uppercase text-muted-foreground">
+                          Tables ({tables.filter(t => t.name.toLowerCase().includes(quickSearchQuery.toLowerCase())).length})
+                        </h3>
                         <div className="space-y-1">
-                          {tables.map(table => (
+                          {tables.filter(table => 
+                            table.name.toLowerCase().includes(quickSearchQuery.toLowerCase())
+                          ).map(table => (
                             <button
                               key={table.name}
-                              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent"
+                              className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent ${
+                                table.name === 'users' && quickSearchQuery === 'user' ? 'bg-violet-500/20 text-violet-300' : ''
+                              }`}
                               onClick={() => {
                                 handleTableSelect(table.name)
                                 setShowQuickSearch(false)
