@@ -477,6 +477,17 @@ async function tryClaudeCode(prompt, tableInfo) {
   devLog('Starting Claude Code CLI request');
   
   try {
+    // First check if Claude CLI is available
+    try {
+      await execAsync('which claude');
+    } catch (error) {
+      devLog('Claude CLI not found in PATH');
+      return {
+        success: false,
+        error: 'Claude CLI not found. Please install Claude Code from claude.ai/code and ensure it\'s in your PATH.'
+      };
+    }
+    
     // Build schema context similar to Ollama
     const schemaContext = tableInfo.allSchemas?.map(schema => {
       const columnDetails = schema.columns.map(col => {
@@ -494,34 +505,111 @@ async function tryClaudeCode(prompt, tableInfo) {
       return `CREATE TABLE ${tableName} (\n  ${columnDetails}\n);`;
     }).join('\n\n') || '';
     
+    // Check if this is a WHERE clause request
+    const isWhereClause = prompt.toLowerCase().includes('[where-clause-only]');
+    
+    // Check if this is a SQL error fix request
+    const isErrorFix = prompt.toLowerCase().includes('fix this sql') && 
+                      prompt.toLowerCase().includes('error');
+    
     // Create a prompt for Claude Code CLI
-    const fullPrompt = `Generate a PostgreSQL query for the following request. Return ONLY the SQL query, no explanations.
+    let fullPrompt;
+    if (isErrorFix) {
+      fullPrompt = `Fix this PostgreSQL query error. Return ONLY the corrected SQL query, no explanations.
 
 Database Schema:
 ${schemaContext}
 
-Request: ${prompt}
+${prompt}`;
+    } else if (isWhereClause) {
+      const userPrompt = prompt.replace('[where-clause-only]', '').trim();
+      const tableColumns = tableInfo.allSchemas?.[0]?.columns?.map(c => `${c.name} (${c.dataType})`).join(', ') || 'unknown columns';
+      
+      fullPrompt = `Convert this natural language filter into a PostgreSQL WHERE condition.
+Return ONLY the condition (e.g., "status = 'active'"), no SQL keywords, no explanations.
 
-SQL Query:`;
+Table columns: ${tableColumns}
+
+Examples:
+"status is active" → status = 'active'
+"title contains recovery" → title ILIKE '%recovery%'
+
+Convert: "${userPrompt}"`;
+    } else {
+      fullPrompt = `Generate a PostgreSQL query for the following request. Return ONLY the SQL query, no explanations, no markdown formatting.
+
+Database Schema:
+${schemaContext}
+
+Request: ${prompt}`;
+    }
     
-    // Execute claude code CLI command
-    // Note: This is a placeholder - actual implementation would need proper CLI integration
-    devLog('Claude Code CLI integration not yet implemented');
+    devLog('Executing Claude CLI command', { promptLength: fullPrompt.length });
+    
+    // Execute claude CLI command with proper escaping
+    const escapedPrompt = fullPrompt.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`');
+    const command = `claude -p "${escapedPrompt}" --output-format text`;
+    
+    const { stdout, stderr } = await execAsync(command, {
+      maxBuffer: 1024 * 1024 * 10 // 10MB buffer for large responses
+    });
+    
+    if (stderr) {
+      devLog('Claude CLI stderr output', { stderr });
+    }
+    
+    let sql = stdout.trim();
+    
+    // Remove any markdown code blocks if present
+    sql = sql.replace(/```sql\n?/gi, '').replace(/```\n?/g, '').trim();
+    
+    // For WHERE clauses, clean up the response
+    if (isWhereClause) {
+      sql = sql.replace(/^WHERE\s+/i, ''); // Remove WHERE if included
+      sql = sql.replace(/;\s*$/, ''); // Remove trailing semicolon
+      
+      // Validate it's just a condition
+      if (sql.match(/\b(SELECT|FROM|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP)\b/i)) {
+        devLog('Claude returned full SQL instead of WHERE clause', { sql });
+        // Try to extract WHERE clause
+        const whereMatch = sql.match(/WHERE\s+(.+?)(?:ORDER BY|GROUP BY|LIMIT|;|$)/i);
+        if (whereMatch && whereMatch[1]) {
+          sql = whereMatch[1].trim();
+        }
+      }
+    }
+    
+    if (!sql) {
+      throw new Error('Claude returned empty response');
+    }
+    
+    devLog('Claude CLI generated SQL', { sqlLength: sql.length });
     
     return {
-      success: false,
-      error: 'Claude Code CLI integration is coming soon. Please use Ollama for now.'
+      success: true,
+      sql,
+      method: 'claude-code'
     };
-    
-    // Future implementation would look like:
-    // const { stdout, stderr } = await execAsync(`claude-code --prompt "${fullPrompt.replace(/"/g, '\\"')}"`)
-    // return { success: true, sql: stdout.trim(), method: 'claude-code' }
     
   } catch (error) {
     devLog('Claude Code CLI error', { error: error.message }, 'error');
+    
+    // Provide more specific error messages
+    if (error.code === 'ENOENT' || error.message.includes('command not found')) {
+      return {
+        success: false,
+        error: 'Claude CLI not found. Please install Claude Code from claude.ai/code'
+      };
+    } else if (error.message.includes('not authenticated')) {
+      return {
+        success: false,
+        error: 'Claude CLI not authenticated. Please run "claude login" in your terminal'
+      };
+    }
+    
     return {
       success: false,
-      error: `Claude Code CLI error: ${error.message}`
+      error: `Claude CLI error: ${error.message}`
     };
   }
 }

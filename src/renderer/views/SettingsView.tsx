@@ -27,6 +27,7 @@ export function SettingsView() {
   
   const [ollamaModel, setOllamaModel] = useState(aiSettings.ollamaConfig?.model || 'qwen2.5-coder:latest')
   const [ollamaUrl, setOllamaUrl] = useState(aiSettings.ollamaConfig?.url || 'http://localhost:11434')
+  const [claudeStatus, setClaudeStatus] = useState<'checking' | 'installed' | 'not-installed'>('checking')
 
   // Sync settings with main process on mount and when they change
   useEffect(() => {
@@ -42,6 +43,19 @@ export function SettingsView() {
   useEffect(() => {
     window.electronAPI.setAISettings(aiSettings)
   }, [aiSettings])
+
+  // Check Claude CLI availability
+  useEffect(() => {
+    window.electronAPI.executeShellCommand('which claude').then((result) => {
+      if (result.success && result.output) {
+        setClaudeStatus('installed')
+      } else {
+        setClaudeStatus('not-installed')
+      }
+    }).catch(() => {
+      setClaudeStatus('not-installed')
+    })
+  }, [])
 
   const handleProviderChange = (provider: AIProvider) => {
     dispatch(setAIProvider(provider))
@@ -179,19 +193,36 @@ export function SettingsView() {
             {/* Claude Code Configuration */}
             {aiSettings.provider === 'claude-code' && (
               <div className="space-y-4 pt-4 border-t">
-                <div className="flex items-start gap-2">
-                  <Info className="h-4 w-4 text-muted-foreground mt-0.5" />
-                  <div className="space-y-2 text-sm text-muted-foreground">
-                    <p>
-                      Claude Code CLI integration is coming soon. To use Claude Code:
+                <h4 className="text-sm font-medium">Claude Code Configuration</h4>
+                
+                {claudeStatus === 'checking' ? (
+                  <p className="text-sm text-muted-foreground">Checking Claude CLI installation...</p>
+                ) : claudeStatus === 'installed' ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 bg-green-500 rounded-full" />
+                      <p className="text-sm text-green-600">Claude CLI is installed and ready to use</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Claude will use your existing authentication. If not authenticated, run "claude login" in your terminal.
                     </p>
-                    <ol className="list-decimal list-inside space-y-1 ml-2">
-                      <li>Install Claude Code CLI from claude.ai/code</li>
-                      <li>Ensure it's available in your PATH</li>
-                      <li>The integration will use your existing Claude Code authentication</li>
-                    </ol>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 bg-orange-500 rounded-full" />
+                      <p className="text-sm text-orange-600">Claude CLI not found</p>
+                    </div>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <p>To use Claude Code CLI:</p>
+                      <ol className="list-decimal list-inside space-y-1 ml-2">
+                        <li>Install Claude Code from <a href="https://claude.ai/code" className="text-primary underline" onClick={(e) => { e.preventDefault(); window.electronAPI.executeShellCommand('open https://claude.ai/code') }}>claude.ai/code</a></li>
+                        <li>Ensure the "claude" command is available in your PATH</li>
+                        <li>Run "claude login" in your terminal to authenticate</li>
+                      </ol>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>

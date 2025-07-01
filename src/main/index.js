@@ -255,12 +255,14 @@ ipcMain.handle('execute-shell-command', async (_event, command) => {
   const execAsync = promisify(exec)
   
   try {
-    // Only allow specific Ollama-related commands for security
+    // Only allow specific commands for security
     const allowedCommands = [
       'brew install ollama',
       'brew services start ollama',
       'ollama pull qwen2.5-coder:latest',
-      'open https://ollama.com/download'
+      'open https://ollama.com/download',
+      'which claude',
+      'open https://claude.ai/code'
     ]
     
     if (!allowedCommands.includes(command)) {
