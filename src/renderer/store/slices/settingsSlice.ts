@@ -23,12 +23,14 @@ const loadInitialState = (): SettingsState => {
       ollamaConfig: {
         model: 'qwen2.5-coder:latest',
         url: 'http://localhost:11434'
-      }
+      },
+      claudeCodeConfig: {}
     }
     
     if (savedAISettings) {
       try {
         ai = JSON.parse(savedAISettings)
+        console.log('Loaded AI settings from localStorage:', ai)
       } catch (e) {
         console.error('Failed to parse AI settings:', e)
       }
@@ -50,7 +52,8 @@ const loadInitialState = (): SettingsState => {
       ollamaConfig: {
         model: 'qwen2.5-coder:latest',
         url: 'http://localhost:11434'
-      }
+      },
+      claudeCodeConfig: {}
     }
   }
 }

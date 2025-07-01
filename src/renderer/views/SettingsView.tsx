@@ -27,21 +27,22 @@ export function SettingsView() {
   
   const [ollamaModel, setOllamaModel] = useState(aiSettings.ollamaConfig?.model || 'qwen2.5-coder:latest')
   const [ollamaUrl, setOllamaUrl] = useState(aiSettings.ollamaConfig?.url || 'http://localhost:11434')
-  const [claudeStatus, setClaudeStatus] = useState<'checking' | 'installed' | 'not-installed'>('checking')
-
-  // Sync settings with main process on mount and when they change
+  
+  // Update local state when aiSettings change (e.g., from localStorage)
   useEffect(() => {
-    // Load settings from main process
-    window.electronAPI.getAISettings().then((result: { success: boolean; settings?: AISettings; error?: string }) => {
-      if (result.success && result.settings) {
-        dispatch(setAISettings(result.settings))
-      }
-    })
-  }, [dispatch])
+    if (aiSettings.ollamaConfig) {
+      setOllamaModel(aiSettings.ollamaConfig.model || 'qwen2.5-coder:latest')
+      setOllamaUrl(aiSettings.ollamaConfig.url || 'http://localhost:11434')
+    }
+  }, [aiSettings.ollamaConfig])
+  const [claudeStatus, setClaudeStatus] = useState<'checking' | 'installed' | 'not-installed'>('checking')
 
   // Sync AI settings to main process whenever they change
   useEffect(() => {
-    window.electronAPI.setAISettings(aiSettings)
+    // Skip initial sync to avoid overriding localStorage settings
+    if (aiSettings) {
+      window.electronAPI.setAISettings(aiSettings)
+    }
   }, [aiSettings])
 
   // Check Claude CLI availability
