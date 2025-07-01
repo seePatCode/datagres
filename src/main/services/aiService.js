@@ -548,17 +548,64 @@ Request: ${prompt}`;
     
     // Execute claude CLI command with proper escaping
     const escapedPrompt = fullPrompt.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`');
-    const command = `claude -p "${escapedPrompt}" --output-format text`;
     
-    const { stdout, stderr } = await execAsync(command, {
-      maxBuffer: 1024 * 1024 * 10 // 10MB buffer for large responses
+    // Try simpler command format first
+    const command = `claude -p "${escapedPrompt}"`;
+    
+    devLog('Full command to execute', { 
+      command: command.substring(0, 200) + '...', 
+      escapedPromptLength: escapedPrompt.length 
+    });
+    
+    const startTime = Date.now();
+    devLog('Starting command execution...');
+    
+    let stdout, stderr;
+    try {
+      const result = await execAsync(command, {
+        maxBuffer: 1024 * 1024 * 10, // 10MB buffer for large responses
+        timeout: 60000, // 60 second timeout
+        encoding: 'utf8'
+      });
+      stdout = result.stdout;
+      stderr = result.stderr;
+      devLog('execAsync completed successfully');
+    } catch (execError) {
+      devLog('execAsync failed', { 
+        error: execError.message,
+        code: execError.code,
+        stdout: execError.stdout,
+        stderr: execError.stderr
+      });
+      // Re-throw with more context
+      throw execError;
+    }
+    
+    const executionTime = Date.now() - startTime;
+    devLog('Command execution completed', { 
+      executionTime: `${executionTime}ms`,
+      stdoutLength: stdout?.length || 0,
+      stderrLength: stderr?.length || 0
     });
     
     if (stderr) {
       devLog('Claude CLI stderr output', { stderr });
     }
     
-    let sql = stdout.trim();
+    if (!stdout && !stderr) {
+      devLog('Claude CLI returned no output at all');
+      throw new Error('Claude CLI returned no output');
+    }
+    
+    // Some CLI tools output to stderr instead of stdout
+    const output = stdout || stderr || '';
+    
+    devLog('Raw output from Claude', { 
+      output: output.length > 500 ? output.substring(0, 500) + '...' : output,
+      fromStderr: !stdout && !!stderr
+    });
+    
+    let sql = output.trim();
     
     // Remove any markdown code blocks if present
     sql = sql.replace(/```sql\n?/gi, '').replace(/```\n?/g, '').trim();
@@ -592,7 +639,11 @@ Request: ${prompt}`;
     };
     
   } catch (error) {
-    devLog('Claude Code CLI error', { error: error.message }, 'error');
+    devLog('Claude Code CLI error', { 
+      error: error.message,
+      code: error.code,
+      stack: error.stack
+    }, 'error');
     
     // Provide more specific error messages
     if (error.code === 'ENOENT' || error.message.includes('command not found')) {
@@ -604,6 +655,16 @@ Request: ${prompt}`;
       return {
         success: false,
         error: 'Claude CLI not authenticated. Please run "claude login" in your terminal'
+      };
+    } else if (error.code === 'ETIMEDOUT' || error.message.includes('timed out')) {
+      return {
+        success: false,
+        error: 'Claude CLI request timed out after 60 seconds. Please try again.'
+      };
+    } else if (error.message.includes('maxBuffer')) {
+      return {
+        success: false,
+        error: 'Claude CLI response too large. Please try a simpler query.'
       };
     }
     
