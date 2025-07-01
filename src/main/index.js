@@ -248,6 +248,24 @@ ipcMain.handle('set-ai-settings', async (_event, settings) => {
   }
 })
 
+ipcMain.handle('get-setting', async (_event, key) => {
+  try {
+    const value = await settingsStore.getSetting(key)
+    return value
+  } catch (error) {
+    return null
+  }
+})
+
+ipcMain.handle('set-setting', async (_event, key, value) => {
+  try {
+    await settingsStore.setSetting(key, value)
+    return { success: true }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+})
+
 // Handle shell command execution for Ollama setup
 ipcMain.handle('execute-shell-command', async (_event, command) => {
   const { exec } = require('child_process')

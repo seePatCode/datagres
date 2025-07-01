@@ -37,13 +37,7 @@ export function SettingsView() {
   }, [aiSettings.ollamaConfig])
   const [claudeStatus, setClaudeStatus] = useState<'checking' | 'installed' | 'not-installed'>('checking')
 
-  // Sync AI settings to main process whenever they change
-  useEffect(() => {
-    // Skip initial sync to avoid overriding localStorage settings
-    if (aiSettings) {
-      window.electronAPI.setAISettings(aiSettings)
-    }
-  }, [aiSettings])
+  // No need to sync here - it's now handled in the Redux slice
 
   // Check Claude CLI availability
   useEffect(() => {

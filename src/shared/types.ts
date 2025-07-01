@@ -177,6 +177,10 @@ export interface ElectronAPI {
   getAISettings: () => Promise<{ success: boolean; settings?: AISettings; error?: string }>
   setAISettings: (settings: AISettings) => Promise<{ success: boolean; error?: string }>
   
+  // General settings
+  getSetting: (key: string) => Promise<any>
+  setSetting: (key: string, value: any) => Promise<{ success: boolean; error?: string }>
+  
   // Theme updates
   updateTheme?: (theme: 'dark' | 'light' | 'system') => Promise<APIResponse>
   

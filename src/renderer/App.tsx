@@ -33,6 +33,7 @@ import {
   selectCanGoBack,
   selectCanGoForward,
 } from '@/store/slices/uiSlice'
+import { loadSettings } from '@/store/slices/settingsSlice'
 
 declare global {
   interface Window {
@@ -43,9 +44,30 @@ declare global {
 function App() {
   const dispatch = useDispatch<AppDispatch>()
   
-  // Load saved connections on app startup
+  // Load saved connections and settings on app startup
   useEffect(() => {
     dispatch(loadSavedConnections())
+    
+    // Load all settings from main process
+    Promise.all([
+      window.electronAPI.getAISettings(),
+      window.electronAPI.getSetting('theme'),
+      window.electronAPI.getSetting('sqlLivePreview')
+    ]).then(([aiResult, theme, sqlLivePreview]) => {
+      const settings: any = {
+        theme: theme || 'dark',
+        sqlLivePreview: sqlLivePreview === true,
+        ai: aiResult.success && aiResult.settings ? aiResult.settings : {
+          provider: 'ollama' as const,
+          ollamaConfig: {
+            model: 'qwen2.5-coder:latest',
+            url: 'http://localhost:11434'
+          },
+          claudeCodeConfig: {}
+        }
+      }
+      dispatch(loadSettings(settings))
+    })
   }, [dispatch])
   
   // UI state

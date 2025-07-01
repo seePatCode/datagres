@@ -21,6 +21,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // AI Settings
   getAISettings: () => ipcRenderer.invoke('get-ai-settings'),
   setAISettings: (settings) => ipcRenderer.invoke('set-ai-settings', settings),
+  // General settings
+  getSetting: (key) => ipcRenderer.invoke('get-setting', key),
+  setSetting: (key, value) => ipcRenderer.invoke('set-setting', key, value),
   // Execute shell command for setup
   executeShellCommand: (command) => ipcRenderer.invoke('execute-shell-command', command),
   // Theme updates

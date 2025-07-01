@@ -9,41 +9,8 @@ export interface SettingsState {
   ai: AISettings
 }
 
-// Load initial state from localStorage to match current behavior
-const loadInitialState = (): SettingsState => {
-  // Check if we're in browser environment
-  if (typeof window !== 'undefined' && window.localStorage) {
-    const theme = (localStorage.getItem('datagres-ui-theme') as 'dark' | 'light' | 'system') || 'dark'
-    const sqlLivePreview = localStorage.getItem('sql-live-preview') === 'true'
-    
-    // Load AI settings
-    const savedAISettings = localStorage.getItem('datagres-ai-settings')
-    let ai: AISettings = {
-      provider: 'ollama',
-      ollamaConfig: {
-        model: 'qwen2.5-coder:latest',
-        url: 'http://localhost:11434'
-      },
-      claudeCodeConfig: {}
-    }
-    
-    if (savedAISettings) {
-      try {
-        ai = JSON.parse(savedAISettings)
-        console.log('Loaded AI settings from localStorage:', ai)
-      } catch (e) {
-        console.error('Failed to parse AI settings:', e)
-      }
-    }
-    
-    return {
-      theme,
-      sqlLivePreview,
-      ai,
-    }
-  }
-  
-  // Default state for tests or non-browser environments
+// Default initial state - will be replaced by settings from main process
+const getDefaultState = (): SettingsState => {
   return {
     theme: 'dark',
     sqlLivePreview: false,
@@ -58,7 +25,7 @@ const loadInitialState = (): SettingsState => {
   }
 }
 
-const initialState: SettingsState = loadInitialState()
+const initialState: SettingsState = getDefaultState()
 
 export const settingsSlice = createSlice({
   name: 'settings',
@@ -66,8 +33,6 @@ export const settingsSlice = createSlice({
   reducers: {
     setTheme: (state, action: PayloadAction<SettingsState['theme']>) => {
       state.theme = action.payload
-      // Persist to localStorage to maintain compatibility
-      localStorage.setItem('datagres-ui-theme', action.payload)
       
       // Apply theme to document immediately (only in browser environment)
       if (typeof window !== 'undefined') {
@@ -80,27 +45,66 @@ export const settingsSlice = createSlice({
         } else {
           root.classList.add(action.payload)
         }
+        
+        // Sync to main process
+        window.electronAPI.setSetting('theme', action.payload)
       }
     },
     setSqlLivePreview: (state, action: PayloadAction<boolean>) => {
       state.sqlLivePreview = action.payload
-      // Persist to localStorage to maintain compatibility
-      localStorage.setItem('sql-live-preview', String(action.payload))
+      
+      // Sync to main process
+      if (typeof window !== 'undefined') {
+        window.electronAPI.setSetting('sqlLivePreview', action.payload)
+      }
     },
     setAIProvider: (state, action: PayloadAction<AIProvider>) => {
       state.ai.provider = action.payload
-      // Persist to localStorage
-      localStorage.setItem('datagres-ai-settings', JSON.stringify(state.ai))
+      
+      // Sync to main process - create a plain object to avoid serialization issues
+      if (typeof window !== 'undefined') {
+        const plainAISettings: AISettings = {
+          provider: state.ai.provider,
+          ollamaConfig: state.ai.ollamaConfig ? { ...state.ai.ollamaConfig } : undefined,
+          claudeCodeConfig: state.ai.claudeCodeConfig ? { ...state.ai.claudeCodeConfig } : undefined
+        }
+        window.electronAPI.setAISettings(plainAISettings)
+      }
     },
     setAISettings: (state, action: PayloadAction<AISettings>) => {
       state.ai = action.payload
-      // Persist to localStorage
-      localStorage.setItem('datagres-ai-settings', JSON.stringify(state.ai))
+      
+      // Sync to main process - create a plain object to avoid serialization issues
+      if (typeof window !== 'undefined') {
+        const plainAISettings: AISettings = {
+          provider: action.payload.provider,
+          ollamaConfig: action.payload.ollamaConfig ? { ...action.payload.ollamaConfig } : undefined,
+          claudeCodeConfig: action.payload.claudeCodeConfig ? { ...action.payload.claudeCodeConfig } : undefined
+        }
+        window.electronAPI.setAISettings(plainAISettings)
+      }
+    },
+    // Add a new action to load all settings at once
+    loadSettings: (state, action: PayloadAction<SettingsState>) => {
+      Object.assign(state, action.payload)
+      
+      // Apply theme immediately
+      if (typeof window !== 'undefined') {
+        const root = window.document.documentElement
+        root.classList.remove('light', 'dark')
+        
+        if (state.theme === 'system') {
+          const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+          root.classList.add(systemTheme)
+        } else {
+          root.classList.add(state.theme)
+        }
+      }
     },
   },
 })
 
-export const { setTheme, setSqlLivePreview, setAIProvider, setAISettings } = settingsSlice.actions
+export const { setTheme, setSqlLivePreview, setAIProvider, setAISettings, loadSettings } = settingsSlice.actions
 
 // Selectors
 export const selectTheme = (state: RootState) => state.settings.theme
