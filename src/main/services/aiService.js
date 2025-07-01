@@ -591,103 +591,60 @@ Request: ${prompt}`;
     let stderr = '';
     
     try {
-      const output = await new Promise((resolve, reject) => {
-        // Use the user's default shell
-        let shellCommand;
-        let shellArgs;
-        
-        if (process.platform === 'win32') {
-          shellCommand = 'cmd.exe';
-          shellArgs = ['/c'];
-        } else {
-          // Get user's default shell from environment or default to zsh on macOS, bash on Linux
-          shellCommand = process.env.SHELL || (process.platform === 'darwin' ? '/bin/zsh' : '/bin/bash');
-          shellArgs = ['-l', '-c']; // -l for login shell to load user's profile
+      // Write prompt to a file and pass the filename to claude
+      const tmpFile = path.join(os.tmpdir(), `claude-prompt-${Date.now()}.txt`);
+      fs.writeFileSync(tmpFile, fullPrompt, 'utf8');
+      devLog('Created temp prompt file:', { tmpFile, length: fullPrompt.length });
+      
+      // Try different approaches based on what works
+      let command;
+      
+      // Use printf to properly handle newlines and pass to claude
+      // The -p flag might be for "prompt" mode
+      const escapedPrompt = fullPrompt
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"')
+        .replace(/\$/g, '\\$')
+        .replace(/`/g, '\\`')
+        .replace(/%/g, '%%'); // Escape % for printf
+      
+      command = `printf "${escapedPrompt}" | claude -p`;
+      
+      devLog('Running command:', { command: command.substring(0, 200) + '...' });
+      
+      const result = await execAsync(command, {
+        maxBuffer: 1024 * 1024 * 10, // 10MB
+        timeout: 60000, // 1 minute
+        encoding: 'utf8',
+        shell: true,
+        env: {
+          ...process.env,
+          SHELL: process.env.SHELL || '/bin/zsh'
         }
-        
-        devLog('Using shell:', { shell: shellCommand });
-        
-        // Create a temporary file for the prompt to avoid escaping issues
-        const tmpFile = path.join(os.tmpdir(), `claude-prompt-${Date.now()}.txt`);
-        fs.writeFileSync(tmpFile, fullPrompt, 'utf8');
-        devLog('Created temp prompt file:', { tmpFile, length: fullPrompt.length });
-        
-        // Use cat to pipe the prompt to claude
-        const command = `cat "${tmpFile}" | claude -p`;
-        shellArgs.push(command);
-        
-        devLog('Running shell command', { shell: shellCommand, command });
-        
-        const claudeProcess = spawn(shellCommand, shellArgs, {
-          encoding: 'utf8',
-          timeout: 60000,
-          env: { 
-            ...process.env, 
-            NO_COLOR: '1',
-            CLAUDE_NO_INTERACTIVE: '1' // Try to force non-interactive mode
-          },
-          shell: true
-        });
-        
-        let stdoutData = '';
-        let stderrData = '';
-        let processExited = false;
-        
-        claudeProcess.stdout.on('data', (data) => {
-          stdoutData += data.toString();
-          devLog('Received stdout chunk', { length: data.length });
-        });
-        
-        claudeProcess.stderr.on('data', (data) => {
-          stderrData += data.toString();
-          devLog('Received stderr chunk', { length: data.length });
-        });
-        
-        claudeProcess.on('error', (error) => {
-          devLog('Claude process error', { error: error.message });
-          reject(error);
-        });
-        
-        claudeProcess.on('close', (code) => {
-          processExited = true;
-          devLog('Claude process closed', { code, stdoutLength: stdoutData.length, stderrLength: stderrData.length });
-          
-          // Clean up temp file
-          try {
-            fs.unlinkSync(tmpFile);
-            devLog('Cleaned up temp file');
-          } catch (e) {
-            devLog('Failed to clean up temp file', { error: e.message });
-          }
-          
-          if (code === 0) {
-            resolve({ stdout: stdoutData, stderr: stderrData });
-          } else {
-            reject(new Error(`Claude process exited with code ${code}: ${stderrData || 'Unknown error'}`));
-          }
-        });
-        
-        // No need to write to stdin since we're using cat with a file
-        
-        // Timeout fallback
-        setTimeout(() => {
-          if (!processExited) {
-            devLog('Claude process timeout - killing process');
-            claudeProcess.kill();
-            reject(new Error('Claude CLI process timed out'));
-          }
-        }, 60000);
       });
       
-      stdout = output.stdout;
-      stderr = output.stderr;
-      devLog('Spawn completed successfully');
-    } catch (spawnError) {
-      devLog('Spawn failed', { 
-        error: spawnError.message,
-        stack: spawnError.stack
+      stdout = result.stdout;
+      stderr = result.stderr;
+      
+      // Clean up temp file
+      try {
+        fs.unlinkSync(tmpFile);
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+      
+      devLog('Command completed', { 
+        stdoutLength: stdout?.length || 0,
+        stderrLength: stderr?.length || 0
       });
-      throw spawnError;
+    } catch (execError) {
+      devLog('Command failed', { 
+        error: execError.message,
+        code: execError.code,
+        stdout: execError.stdout?.substring(0, 500),
+        stderr: execError.stderr?.substring(0, 500)
+      });
+      throw execError;
     }
     
     const executionTime = Date.now() - startTime;
