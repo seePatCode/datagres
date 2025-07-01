@@ -46,16 +46,18 @@ export function SettingsView() {
 
   // Check Claude CLI availability
   useEffect(() => {
-    window.electronAPI.executeShellCommand('which claude').then((result) => {
-      if (result.success && result.output) {
-        setClaudeStatus('installed')
-      } else {
+    if (aiSettings.provider === 'claude-code') {
+      window.electronAPI.executeShellCommand('which claude').then((result) => {
+        if (result.success && result.output) {
+          setClaudeStatus('installed')
+        } else {
+          setClaudeStatus('not-installed')
+        }
+      }).catch(() => {
         setClaudeStatus('not-installed')
-      }
-    }).catch(() => {
-      setClaudeStatus('not-installed')
-    })
-  }, [])
+      })
+    }
+  }, [aiSettings.provider])
 
   const handleProviderChange = (provider: AIProvider) => {
     dispatch(setAIProvider(provider))
@@ -216,10 +218,15 @@ export function SettingsView() {
                     <div className="space-y-2 text-sm text-muted-foreground">
                       <p>To use Claude Code CLI:</p>
                       <ol className="list-decimal list-inside space-y-1 ml-2">
-                        <li>Install Claude Code from <a href="https://claude.ai/code" className="text-primary underline" onClick={(e) => { e.preventDefault(); window.electronAPI.executeShellCommand('open https://claude.ai/code') }}>claude.ai/code</a></li>
-                        <li>Ensure the "claude" command is available in your PATH</li>
-                        <li>Run "claude login" in your terminal to authenticate</li>
+                        <li>Download and install Claude Code from <a href="https://claude.ai/code" className="text-primary underline" onClick={(e) => { e.preventDefault(); window.electronAPI.executeShellCommand('open https://claude.ai/code') }}>claude.ai/code</a></li>
+                        <li>Open the Claude Code app at least once</li>
+                        <li>The CLI should be automatically available at /usr/local/bin/claude</li>
+                        <li>If not found, check your PATH or restart your terminal</li>
                       </ol>
+                      <p className="text-xs mt-2 text-orange-600">
+                        Note: If you have a different "claude" command from npm, it may conflict. 
+                        The official Claude Code CLI is installed by the desktop app, not via npm.
+                      </p>
                     </div>
                   </div>
                 )}

@@ -476,27 +476,81 @@ ${prompt}
 async function tryClaudeCode(prompt, tableInfo) {
   devLog('Starting Claude Code CLI request');
   
+  let claudePath = '';
+  
   try {
     // First check if Claude CLI is available
     try {
-      const whichResult = await execAsync('which claude');
-      devLog('Claude CLI found at:', { path: whichResult.stdout.trim() });
+      // First check the standard Claude Code installation location
+      if (process.platform === 'darwin') {
+        try {
+          await execAsync('test -x /usr/local/bin/claude');
+          claudePath = '/usr/local/bin/claude';
+          devLog('Found Claude Code CLI at standard location:', { path: claudePath });
+        } catch (e) {
+          // Not at standard location, check PATH
+          const whichResult = await execAsync('which claude || command -v claude', {
+            shell: true
+          });
+          claudePath = whichResult.stdout.trim();
+          devLog('Found claude in PATH:', { path: claudePath });
+          
+          // Warn if it's the npm version
+          if (claudePath.includes('node_modules') || claudePath.includes('.nvm')) {
+            devLog('WARNING: Found npm/node version of claude, not the official Claude Code CLI');
+            throw new Error('Found npm claude package, not Claude Code CLI');
+          }
+        }
+      } else {
+        // Non-macOS, just check PATH
+        const whichResult = await execAsync('which claude || command -v claude || where claude', {
+          shell: true
+        });
+        claudePath = whichResult.stdout.trim();
+        devLog('Claude CLI found at:', { path: claudePath });
+      }
       
-      // Try a simple test command first
-      devLog('Testing Claude CLI with simple prompt...');
-      const testResult = await execAsync('claude -p "Say hello" --max-turns 1', {
-        timeout: 5000,
-        encoding: 'utf8'
-      });
-      devLog('Claude CLI test result', { 
-        stdout: testResult.stdout?.substring(0, 100),
-        stderr: testResult.stderr?.substring(0, 100)
-      });
+      // Verify it's executable and get version
+      try {
+        const versionResult = await execAsync(`"${claudePath}" --version`, {
+          timeout: 5000,
+          encoding: 'utf8'
+        });
+        devLog('Claude CLI version:', { 
+          version: versionResult.stdout.trim(),
+          stderr: versionResult.stderr
+        });
+      } catch (versionError) {
+        devLog('Claude CLI version check failed', {
+          error: versionError.message,
+          stdout: versionError.stdout,
+          stderr: versionError.stderr
+        });
+        // Continue anyway - some versions might not support --version
+      }
+      
     } catch (error) {
-      devLog('Claude CLI check failed', { error: error.message });
+      devLog('Claude CLI check failed', { 
+        error: error.message,
+        code: error.code,
+        stderr: error.stderr,
+        stdout: error.stdout
+      });
+      
+      // Try to provide more helpful error message
+      let errorMessage = 'Claude CLI not found. ';
+      if (process.platform === 'darwin') {
+        errorMessage += 'On macOS, after installing Claude Code, you may need to:\n';
+        errorMessage += '1. Open Claude Code app at least once\n';
+        errorMessage += '2. Add /usr/local/bin to your PATH\n';
+        errorMessage += '3. Restart your terminal or run: source ~/.zshrc';
+      } else {
+        errorMessage += 'Please install Claude Code from claude.ai/code and ensure the "claude" command is in your PATH.';
+      }
+      
       return {
         success: false,
-        error: 'Claude CLI not found. Please install Claude Code from claude.ai/code and ensure it\'s in your PATH.'
+        error: errorMessage
       };
     }
     
@@ -567,9 +621,17 @@ Request: ${prompt}`;
     
     try {
       const output = await new Promise((resolve, reject) => {
-        const claudeProcess = spawn('claude', ['-p', '--max-turns', '1'], {
+        // Try with just -p flag, as --max-turns might not be supported
+        const args = ['-p'];
+        
+        // Use the verified claude path
+        const claudeCommand = claudePath || 'claude';
+        devLog('Spawning claude process', { command: claudeCommand, args });
+        
+        const claudeProcess = spawn(claudeCommand, args, {
           encoding: 'utf8',
-          timeout: 60000
+          timeout: 60000,
+          env: { ...process.env, NO_COLOR: '1' } // Disable color output
         });
         
         let stdoutData = '';
