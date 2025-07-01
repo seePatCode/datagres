@@ -476,39 +476,21 @@ ${prompt}
 async function tryClaudeCode(prompt, tableInfo) {
   devLog('Starting Claude Code CLI request');
   
+  const fs = require('fs');
+  const os = require('os');
+  const path = require('path');
+  
   let claudePath = '';
   
   try {
     // First check if Claude CLI is available
     try {
-      // First check the standard Claude Code installation location
-      if (process.platform === 'darwin') {
-        try {
-          await execAsync('test -x /usr/local/bin/claude');
-          claudePath = '/usr/local/bin/claude';
-          devLog('Found Claude Code CLI at standard location:', { path: claudePath });
-        } catch (e) {
-          // Not at standard location, check PATH
-          const whichResult = await execAsync('which claude || command -v claude', {
-            shell: true
-          });
-          claudePath = whichResult.stdout.trim();
-          devLog('Found claude in PATH:', { path: claudePath });
-          
-          // Warn if it's the npm version
-          if (claudePath.includes('node_modules') || claudePath.includes('.nvm')) {
-            devLog('WARNING: Found npm/node version of claude, not the official Claude Code CLI');
-            throw new Error('Found npm claude package, not Claude Code CLI');
-          }
-        }
-      } else {
-        // Non-macOS, just check PATH
-        const whichResult = await execAsync('which claude || command -v claude || where claude', {
-          shell: true
-        });
-        claudePath = whichResult.stdout.trim();
-        devLog('Claude CLI found at:', { path: claudePath });
-      }
+      // Check if claude CLI is available in PATH
+      const whichResult = await execAsync('which claude || command -v claude || where claude', {
+        shell: true
+      });
+      claudePath = whichResult.stdout.trim();
+      devLog('Found claude CLI in PATH:', { path: claudePath });
       
       // Verify it's executable and get version
       try {
@@ -537,20 +519,9 @@ async function tryClaudeCode(prompt, tableInfo) {
         stdout: error.stdout
       });
       
-      // Try to provide more helpful error message
-      let errorMessage = 'Claude CLI not found. ';
-      if (process.platform === 'darwin') {
-        errorMessage += 'On macOS, after installing Claude Code, you may need to:\n';
-        errorMessage += '1. Open Claude Code app at least once\n';
-        errorMessage += '2. Add /usr/local/bin to your PATH\n';
-        errorMessage += '3. Restart your terminal or run: source ~/.zshrc';
-      } else {
-        errorMessage += 'Please install Claude Code from claude.ai/code and ensure the "claude" command is in your PATH.';
-      }
-      
       return {
         success: false,
-        error: errorMessage
+        error: 'Claude Code CLI not found. Please ensure you have Claude Code installed and the "claude" command is available in your PATH.'
       };
     }
     
@@ -621,17 +592,41 @@ Request: ${prompt}`;
     
     try {
       const output = await new Promise((resolve, reject) => {
-        // Try with just -p flag, as --max-turns might not be supported
-        const args = ['-p'];
+        // Use the user's default shell
+        let shellCommand;
+        let shellArgs;
         
-        // Use the verified claude path
-        const claudeCommand = claudePath || 'claude';
-        devLog('Spawning claude process', { command: claudeCommand, args });
+        if (process.platform === 'win32') {
+          shellCommand = 'cmd.exe';
+          shellArgs = ['/c'];
+        } else {
+          // Get user's default shell from environment or default to zsh on macOS, bash on Linux
+          shellCommand = process.env.SHELL || (process.platform === 'darwin' ? '/bin/zsh' : '/bin/bash');
+          shellArgs = ['-l', '-c']; // -l for login shell to load user's profile
+        }
         
-        const claudeProcess = spawn(claudeCommand, args, {
+        devLog('Using shell:', { shell: shellCommand });
+        
+        // Create a temporary file for the prompt to avoid escaping issues
+        const tmpFile = path.join(os.tmpdir(), `claude-prompt-${Date.now()}.txt`);
+        fs.writeFileSync(tmpFile, fullPrompt, 'utf8');
+        devLog('Created temp prompt file:', { tmpFile, length: fullPrompt.length });
+        
+        // Use cat to pipe the prompt to claude
+        const command = `cat "${tmpFile}" | claude -p`;
+        shellArgs.push(command);
+        
+        devLog('Running shell command', { shell: shellCommand, command });
+        
+        const claudeProcess = spawn(shellCommand, shellArgs, {
           encoding: 'utf8',
           timeout: 60000,
-          env: { ...process.env, NO_COLOR: '1' } // Disable color output
+          env: { 
+            ...process.env, 
+            NO_COLOR: '1',
+            CLAUDE_NO_INTERACTIVE: '1' // Try to force non-interactive mode
+          },
+          shell: true
         });
         
         let stdoutData = '';
@@ -656,6 +651,15 @@ Request: ${prompt}`;
         claudeProcess.on('close', (code) => {
           processExited = true;
           devLog('Claude process closed', { code, stdoutLength: stdoutData.length, stderrLength: stderrData.length });
+          
+          // Clean up temp file
+          try {
+            fs.unlinkSync(tmpFile);
+            devLog('Cleaned up temp file');
+          } catch (e) {
+            devLog('Failed to clean up temp file', { error: e.message });
+          }
+          
           if (code === 0) {
             resolve({ stdout: stdoutData, stderr: stderrData });
           } else {
@@ -663,10 +667,7 @@ Request: ${prompt}`;
           }
         });
         
-        // Write prompt to stdin
-        devLog('Writing prompt to stdin...');
-        claudeProcess.stdin.write(fullPrompt);
-        claudeProcess.stdin.end();
+        // No need to write to stdin since we're using cat with a file
         
         // Timeout fallback
         setTimeout(() => {
