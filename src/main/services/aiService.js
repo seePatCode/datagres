@@ -1,7 +1,7 @@
 // AI Service for natural language to SQL conversion using Ollama or Claude Code CLI
 
 const settingsStore = require('./settingsStore')
-const { exec } = require('child_process')
+const { exec, spawn } = require('child_process')
 const { promisify } = require('util')
 const execAsync = promisify(exec)
 
@@ -479,9 +479,21 @@ async function tryClaudeCode(prompt, tableInfo) {
   try {
     // First check if Claude CLI is available
     try {
-      await execAsync('which claude');
+      const whichResult = await execAsync('which claude');
+      devLog('Claude CLI found at:', { path: whichResult.stdout.trim() });
+      
+      // Try a simple test command first
+      devLog('Testing Claude CLI with simple prompt...');
+      const testResult = await execAsync('claude -p "Say hello" --max-turns 1', {
+        timeout: 5000,
+        encoding: 'utf8'
+      });
+      devLog('Claude CLI test result', { 
+        stdout: testResult.stdout?.substring(0, 100),
+        stderr: testResult.stderr?.substring(0, 100)
+      });
     } catch (error) {
-      devLog('Claude CLI not found in PATH');
+      devLog('Claude CLI check failed', { error: error.message });
       return {
         success: false,
         error: 'Claude CLI not found. Please install Claude Code from claude.ai/code and ensure it\'s in your PATH.'
@@ -546,39 +558,73 @@ Request: ${prompt}`;
     
     devLog('Executing Claude CLI command', { promptLength: fullPrompt.length });
     
-    // Execute claude CLI command with proper escaping
-    const escapedPrompt = fullPrompt.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`');
-    
-    // Try simpler command format first
-    const command = `claude -p "${escapedPrompt}"`;
-    
-    devLog('Full command to execute', { 
-      command: command.substring(0, 200) + '...', 
-      escapedPromptLength: escapedPrompt.length 
-    });
-    
     const startTime = Date.now();
-    devLog('Starting command execution...');
+    devLog('Starting command execution using stdin approach...');
     
-    let stdout, stderr;
+    // Use spawn with stdin to avoid command line length limits and escaping issues
+    let stdout = '';
+    let stderr = '';
+    
     try {
-      const result = await execAsync(command, {
-        maxBuffer: 1024 * 1024 * 10, // 10MB buffer for large responses
-        timeout: 60000, // 60 second timeout
-        encoding: 'utf8'
+      const output = await new Promise((resolve, reject) => {
+        const claudeProcess = spawn('claude', ['-p', '--max-turns', '1'], {
+          encoding: 'utf8',
+          timeout: 60000
+        });
+        
+        let stdoutData = '';
+        let stderrData = '';
+        let processExited = false;
+        
+        claudeProcess.stdout.on('data', (data) => {
+          stdoutData += data.toString();
+          devLog('Received stdout chunk', { length: data.length });
+        });
+        
+        claudeProcess.stderr.on('data', (data) => {
+          stderrData += data.toString();
+          devLog('Received stderr chunk', { length: data.length });
+        });
+        
+        claudeProcess.on('error', (error) => {
+          devLog('Claude process error', { error: error.message });
+          reject(error);
+        });
+        
+        claudeProcess.on('close', (code) => {
+          processExited = true;
+          devLog('Claude process closed', { code, stdoutLength: stdoutData.length, stderrLength: stderrData.length });
+          if (code === 0) {
+            resolve({ stdout: stdoutData, stderr: stderrData });
+          } else {
+            reject(new Error(`Claude process exited with code ${code}: ${stderrData || 'Unknown error'}`));
+          }
+        });
+        
+        // Write prompt to stdin
+        devLog('Writing prompt to stdin...');
+        claudeProcess.stdin.write(fullPrompt);
+        claudeProcess.stdin.end();
+        
+        // Timeout fallback
+        setTimeout(() => {
+          if (!processExited) {
+            devLog('Claude process timeout - killing process');
+            claudeProcess.kill();
+            reject(new Error('Claude CLI process timed out'));
+          }
+        }, 60000);
       });
-      stdout = result.stdout;
-      stderr = result.stderr;
-      devLog('execAsync completed successfully');
-    } catch (execError) {
-      devLog('execAsync failed', { 
-        error: execError.message,
-        code: execError.code,
-        stdout: execError.stdout,
-        stderr: execError.stderr
+      
+      stdout = output.stdout;
+      stderr = output.stderr;
+      devLog('Spawn completed successfully');
+    } catch (spawnError) {
+      devLog('Spawn failed', { 
+        error: spawnError.message,
+        stack: spawnError.stack
       });
-      // Re-throw with more context
-      throw execError;
+      throw spawnError;
     }
     
     const executionTime = Date.now() - startTime;
