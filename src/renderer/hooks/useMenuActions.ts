@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useDispatch } from 'react-redux'
 import { useTheme } from './useSettings'
-import { setCurrentView } from '@/store/slices/uiSlice'
+import { setCurrentView, pushNavigationEntry } from '@/store/slices/uiSlice'
 import type { MenuAction, AppView } from '@shared/types'
 import type { AppDispatch } from '@/store/store'
 
@@ -54,7 +54,12 @@ export function useMenuActions({
             onShowHelp?.()
             break
           case 'show-about':
+            dispatch(pushNavigationEntry({ type: 'view', viewName: 'about' }))
             dispatch(setCurrentView('about'))
+            break
+          case 'show-settings':
+            dispatch(pushNavigationEntry({ type: 'view', viewName: 'settings' }))
+            dispatch(setCurrentView('settings'))
             break
           case 'check-for-updates':
             if (window.electronAPI?.checkForUpdates) {

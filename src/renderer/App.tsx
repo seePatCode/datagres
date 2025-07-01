@@ -4,6 +4,7 @@ import type { ElectronAPI } from '@shared/types'
 import { ConnectionView } from '@/views/ConnectionView'
 import { ExplorerView } from '@/views/ExplorerView'
 import { AboutView } from '@/views/AboutView'
+import { SettingsView } from '@/views/SettingsView'
 import { HelpDialog } from '@/components/ui/help-dialog'
 import { UpdateNotification } from '@/components/ui/update-notification'
 import { Toaster } from '@/components/ui/toaster'
@@ -117,6 +118,8 @@ function App() {
         <ExplorerView onShowHelp={() => setShowHelp(true)} />
       ) : currentView === 'about' ? (
         <AboutView />
+      ) : currentView === 'settings' ? (
+        <SettingsView />
       ) : (
         <ConnectionView />
       )}

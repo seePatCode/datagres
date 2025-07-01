@@ -173,6 +173,10 @@ export interface ElectronAPI {
   generateSQL: (prompt: string, tableInfo: GenerateSQLRequest) => Promise<GenerateSQLResponse>
   executeShellCommand: (command: string) => Promise<{ success: boolean; output?: string; error?: string }>
   
+  // AI Settings
+  getAISettings: () => Promise<{ success: boolean; settings?: AISettings; error?: string }>
+  setAISettings: (settings: AISettings) => Promise<{ success: boolean; error?: string }>
+  
   // Theme updates
   updateTheme?: (theme: 'dark' | 'light' | 'system') => Promise<APIResponse>
   
@@ -224,10 +228,11 @@ export type MenuAction =
   | 'set-theme-system'
   | 'show-help'
   | 'show-about'
+  | 'show-settings'
   | 'check-for-updates'
 
 // View states
-export type AppView = 'connect' | 'explorer' | 'about'
+export type AppView = 'connect' | 'explorer' | 'about' | 'settings'
 
 // Tab state
 export interface TableTab {
@@ -249,3 +254,17 @@ export interface QueryTab {
 }
 
 export type Tab = TableTab | QueryTab
+
+// AI Provider Settings
+export type AIProvider = 'ollama' | 'claude-code'
+
+export interface AISettings {
+  provider: AIProvider
+  ollamaConfig?: {
+    model: string
+    url: string
+  }
+  claudeCodeConfig?: {
+    // Add any Claude Code specific config here in the future
+  }
+}

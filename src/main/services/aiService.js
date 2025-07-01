@@ -1,4 +1,9 @@
-// AI Service for natural language to SQL conversion using Ollama
+// AI Service for natural language to SQL conversion using Ollama or Claude Code CLI
+
+const settingsStore = require('./settingsStore')
+const { exec } = require('child_process')
+const { promisify } = require('util')
+const execAsync = promisify(exec)
 
 const isDev = process.env.NODE_ENV === 'development' || process.env.DEBUG_OLLAMA;
 const logLevel = process.env.OLLAMA_LOG_LEVEL || (isDev ? 'info' : 'error'); // 'debug', 'info', 'error'
@@ -468,35 +473,106 @@ ${prompt}
   }
 }
 
+async function tryClaudeCode(prompt, tableInfo) {
+  devLog('Starting Claude Code CLI request');
+  
+  try {
+    // Build schema context similar to Ollama
+    const schemaContext = tableInfo.allSchemas?.map(schema => {
+      const columnDetails = schema.columns.map(col => {
+        let colStr = `${col.name} ${col.dataType}`;
+        if (!col.nullable) colStr += ' NOT NULL';
+        if (col.isPrimaryKey) colStr += ' PRIMARY KEY';
+        if (col.defaultValue) colStr += ` DEFAULT ${col.defaultValue}`;
+        return colStr;
+      }).join(',\n  ');
+      
+      const tableName = schema.schemaName && schema.schemaName !== 'public' 
+        ? `${schema.schemaName}.${schema.tableName}` 
+        : schema.tableName;
+      
+      return `CREATE TABLE ${tableName} (\n  ${columnDetails}\n);`;
+    }).join('\n\n') || '';
+    
+    // Create a prompt for Claude Code CLI
+    const fullPrompt = `Generate a PostgreSQL query for the following request. Return ONLY the SQL query, no explanations.
+
+Database Schema:
+${schemaContext}
+
+Request: ${prompt}
+
+SQL Query:`;
+    
+    // Execute claude code CLI command
+    // Note: This is a placeholder - actual implementation would need proper CLI integration
+    devLog('Claude Code CLI integration not yet implemented');
+    
+    return {
+      success: false,
+      error: 'Claude Code CLI integration is coming soon. Please use Ollama for now.'
+    };
+    
+    // Future implementation would look like:
+    // const { stdout, stderr } = await execAsync(`claude-code --prompt "${fullPrompt.replace(/"/g, '\\"')}"`)
+    // return { success: true, sql: stdout.trim(), method: 'claude-code' }
+    
+  } catch (error) {
+    devLog('Claude Code CLI error', { error: error.message }, 'error');
+    return {
+      success: false,
+      error: `Claude Code CLI error: ${error.message}`
+    };
+  }
+}
+
 async function generateSQL(prompt, tableInfo) {
   devLog('=== Starting new SQL generation request ===');
   
+  // Get AI settings
+  const aiSettings = await settingsStore.getAISettings();
+  devLog('Using AI provider:', { provider: aiSettings.provider });
+  
   try {
-    // Try Ollama first time
-    const result = await tryOllama(prompt, tableInfo);
-    return result;
+    if (aiSettings.provider === 'claude-code') {
+      // Use Claude Code CLI
+      const result = await tryClaudeCode(prompt, tableInfo);
+      return result;
+    } else {
+      // Default to Ollama
+      // Try Ollama first time
+      const result = await tryOllama(prompt, tableInfo);
+      return result;
+    }
   } catch (error) {
-    console.log('First Ollama attempt failed, retrying once:', error.message);
+    console.log('First attempt failed, retrying once:', error.message);
     devLog('First attempt failed, will retry', { error: error.message }, 'info');
     
-    // Retry once as Ollama can have transient errors
-    try {
-      // Wait a brief moment before retry
-      devLog('Waiting 500ms before retry...');
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      devLog('Starting retry attempt');
-      const result = await tryOllama(prompt, tableInfo);
-      console.log('Retry successful');
-      devLog('Retry succeeded');
-      return result;
-    } catch (retryError) {
-      console.error('Retry also failed:', retryError.message);
-      devLog('Retry failed', { error: retryError.message }, 'error');
-      
+    // Only retry for Ollama
+    if (aiSettings.provider === 'ollama') {
+      try {
+        // Wait a brief moment before retry
+        devLog('Waiting 500ms before retry...');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        devLog('Starting retry attempt');
+        const result = await tryOllama(prompt, tableInfo);
+        console.log('Retry successful');
+        devLog('Retry succeeded');
+        return result;
+      } catch (retryError) {
+        console.error('Retry also failed:', retryError.message);
+        devLog('Retry failed', { error: retryError.message }, 'error');
+        
+        return {
+          success: false,
+          error: retryError.message
+        };
+      }
+    } else {
       return {
         success: false,
-        error: retryError.message
+        error: error.message
       };
     }
   } finally {

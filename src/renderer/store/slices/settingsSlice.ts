@@ -1,10 +1,12 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import type { RootState } from '../store'
+import type { AISettings, AIProvider } from '@shared/types'
 
 // This will replace ThemeProvider and SqlSettingsContext
 export interface SettingsState {
   theme: 'dark' | 'light' | 'system'
   sqlLivePreview: boolean
+  ai: AISettings
 }
 
 // Load initial state from localStorage to match current behavior
@@ -14,9 +16,28 @@ const loadInitialState = (): SettingsState => {
     const theme = (localStorage.getItem('datagres-ui-theme') as 'dark' | 'light' | 'system') || 'dark'
     const sqlLivePreview = localStorage.getItem('sql-live-preview') === 'true'
     
+    // Load AI settings
+    const savedAISettings = localStorage.getItem('datagres-ai-settings')
+    let ai: AISettings = {
+      provider: 'ollama',
+      ollamaConfig: {
+        model: 'qwen2.5-coder:latest',
+        url: 'http://localhost:11434'
+      }
+    }
+    
+    if (savedAISettings) {
+      try {
+        ai = JSON.parse(savedAISettings)
+      } catch (e) {
+        console.error('Failed to parse AI settings:', e)
+      }
+    }
+    
     return {
       theme,
       sqlLivePreview,
+      ai,
     }
   }
   
@@ -24,6 +45,13 @@ const loadInitialState = (): SettingsState => {
   return {
     theme: 'dark',
     sqlLivePreview: false,
+    ai: {
+      provider: 'ollama',
+      ollamaConfig: {
+        model: 'qwen2.5-coder:latest',
+        url: 'http://localhost:11434'
+      }
+    }
   }
 }
 
@@ -56,13 +84,25 @@ export const settingsSlice = createSlice({
       // Persist to localStorage to maintain compatibility
       localStorage.setItem('sql-live-preview', String(action.payload))
     },
+    setAIProvider: (state, action: PayloadAction<AIProvider>) => {
+      state.ai.provider = action.payload
+      // Persist to localStorage
+      localStorage.setItem('datagres-ai-settings', JSON.stringify(state.ai))
+    },
+    setAISettings: (state, action: PayloadAction<AISettings>) => {
+      state.ai = action.payload
+      // Persist to localStorage
+      localStorage.setItem('datagres-ai-settings', JSON.stringify(state.ai))
+    },
   },
 })
 
-export const { setTheme, setSqlLivePreview } = settingsSlice.actions
+export const { setTheme, setSqlLivePreview, setAIProvider, setAISettings } = settingsSlice.actions
 
 // Selectors
 export const selectTheme = (state: RootState) => state.settings.theme
 export const selectSqlLivePreview = (state: RootState) => state.settings.sqlLivePreview
+export const selectAISettings = (state: RootState) => state.settings.ai
+export const selectAIProvider = (state: RootState) => state.settings.ai.provider
 
 export default settingsSlice.reducer

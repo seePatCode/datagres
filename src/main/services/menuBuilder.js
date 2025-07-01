@@ -15,6 +15,14 @@ function createApplicationMenu(mainWindow, currentTheme = 'dark') {
       submenu: [
         { label: 'About Datagres', role: 'about' },
         { type: 'separator' },
+        { 
+          label: 'Preferences...', 
+          accelerator: 'Cmd+,',
+          click: () => {
+            mainWindow.webContents.send('menu-action', 'show-settings')
+          }
+        },
+        { type: 'separator' },
         { label: 'Hide Datagres', role: 'hide' },
         { label: 'Hide Others', role: 'hideothers' },
         { label: 'Show All', role: 'unhide' },
@@ -61,7 +69,13 @@ function createApplicationMenu(mainWindow, currentTheme = 'dark') {
         ] : [
           { label: 'Select All', role: 'selectall' },
           { type: 'separator' },
-          { label: 'Preferences', accelerator: 'CmdOrCtrl+,' }
+          { 
+            label: 'Preferences', 
+            accelerator: 'CmdOrCtrl+,',
+            click: () => {
+              mainWindow.webContents.send('menu-action', 'show-settings')
+            }
+          }
         ])
       ]
     },

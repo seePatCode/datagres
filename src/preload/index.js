@@ -18,6 +18,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   updateConnectionName: (connectionId, newName) => ipcRenderer.invoke('update-connection-name', connectionId, newName),
   // AI SQL generation
   generateSQL: (prompt, tableInfo) => ipcRenderer.invoke('generate-sql', prompt, tableInfo),
+  // AI Settings
+  getAISettings: () => ipcRenderer.invoke('get-ai-settings'),
+  setAISettings: (settings) => ipcRenderer.invoke('set-ai-settings', settings),
   // Execute shell command for setup
   executeShellCommand: (command) => ipcRenderer.invoke('execute-shell-command', command),
   // Theme updates

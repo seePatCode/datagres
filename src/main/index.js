@@ -13,6 +13,7 @@ const { createApplicationMenu, updateMenuTheme } = require('./services/menuBuild
 const { createMainWindow, setupWindowControlHandlers, getMainWindow } = require('./services/windowManager')
 const { testMocks, isTestMode } = require('./services/testMocks')
 const aiService = require('./services/aiService')
+const settingsStore = require('./services/settingsStore')
 const UpdateService = require('./services/updateService')
 
 // Initialize auto-updater
@@ -225,6 +226,25 @@ ipcMain.handle('generate-sql', async (_event, prompt, tableInfo) => {
       success: false,
       error: error.message
     }
+  }
+})
+
+// Settings handlers
+ipcMain.handle('get-ai-settings', async () => {
+  try {
+    const settings = await settingsStore.getAISettings()
+    return { success: true, settings }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+})
+
+ipcMain.handle('set-ai-settings', async (_event, settings) => {
+  try {
+    await settingsStore.setAISettings(settings)
+    return { success: true }
+  } catch (error) {
+    return { success: false, error: error.message }
   }
 })
 
