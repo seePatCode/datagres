@@ -10,6 +10,7 @@ interface UseMenuActionsOptions {
   activeTabId: string | null
   onNewConnection: () => void
   onShowConnections: () => void
+  onAwsSsmConnect?: () => void
   onCloseTab: (tabId: string) => void
   onShowHelp?: () => void
 }
@@ -19,6 +20,7 @@ export function useMenuActions({
   activeTabId,
   onNewConnection,
   onShowConnections,
+  onAwsSsmConnect,
   onCloseTab,
   onShowHelp
 }: UseMenuActionsOptions) {
@@ -34,6 +36,9 @@ export function useMenuActions({
             break
           case 'show-connections':
             onShowConnections()
+            break
+          case 'aws-ssm-connect':
+            onAwsSsmConnect?.()
             break
           case 'back-to-tables':
             // Close current tab
@@ -80,5 +85,5 @@ export function useMenuActions({
       // Return the cleanup function
       return cleanup
     }
-  }, [currentView, activeTabId, onNewConnection, onShowConnections, onCloseTab, setTheme, onShowHelp, dispatch])
+  }, [currentView, activeTabId, onNewConnection, onShowConnections, onAwsSsmConnect, onCloseTab, setTheme, onShowHelp, dispatch])
 }

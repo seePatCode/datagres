@@ -309,3 +309,72 @@ ipcMain.handle('execute-shell-command', async (_event, command) => {
     }
   }
 })
+
+// Handle AWS SSM tunnel setup
+ipcMain.handle('setup-aws-ssm-tunnel', async (_event, options) => {
+  const { exec } = require('child_process')
+  const { promisify } = require('util')
+  const execAsync = promisify(exec)
+  
+  try {
+    const { containerId, psqlCommand } = options
+    
+    // Parse psql command to extract connection details
+    const hostMatch = psqlCommand.match(/-h\s+([^\s]+)/)
+    const portMatch = psqlCommand.match(/-p\s+([^\s]+)/)
+    const userMatch = psqlCommand.match(/-U\s+([^\s]+)/)
+    const dbMatch = psqlCommand.match(/-d\s+([^\s]+)/)
+    
+    if (!hostMatch) {
+      throw new Error('Could not find database host in psql command. Make sure to include -h hostname')
+    }
+    
+    const dbHost = hostMatch[1]
+    const dbPort = portMatch ? portMatch[1] : '5432'
+    const dbUser = userMatch ? userMatch[1] : 'postgres'
+    const dbName = dbMatch ? dbMatch[1] : 'postgres'
+    
+    // Start SSM port forwarding session
+    const localPort = 15432 + Math.floor(Math.random() * 1000) // Random port between 15432-16432
+    
+    console.log(`Setting up SSM tunnel: ${containerId} -> ${dbHost}:${dbPort} (local port ${localPort})`)
+    
+    // Start the SSM session in the background
+    const ssmCommand = `aws ssm start-session --target ${containerId} --document-name AWS-StartPortForwardingSessionToRemoteHost --parameters '{"host":["${dbHost}"],"portNumber":["${dbPort}"],"localPortNumber":["${localPort}"]}'`
+    
+    // Execute in background and don't wait for it to complete
+    exec(ssmCommand, (error, stdout, stderr) => {
+      if (error) {
+        console.error('SSM session error:', error)
+      }
+      console.log('SSM session output:', stdout)
+      if (stderr) {
+        console.error('SSM session stderr:', stderr)
+      }
+    })
+    
+    // Wait a bit for the tunnel to establish
+    await new Promise(resolve => setTimeout(resolve, 3000))
+    
+    // Return connection string for localhost
+    const connectionString = `postgresql://${dbUser}@localhost:${localPort}/${dbName}`
+    
+    return {
+      success: true,
+      connectionString,
+      message: `SSM tunnel established. Connect to localhost:${localPort}`,
+      tunnelInfo: {
+        containerId,
+        remoteHost: dbHost,
+        remotePort: dbPort,
+        localPort
+      }
+    }
+  } catch (error) {
+    console.error('SSM tunnel setup error:', error)
+    return {
+      success: false,
+      error: error.message
+    }
+  }
+})

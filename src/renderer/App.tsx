@@ -8,6 +8,7 @@ import { SettingsView } from '@/views/SettingsView'
 import { HelpDialog } from '@/components/ui/help-dialog'
 import { UpdateNotification } from '@/components/ui/update-notification'
 import { Toaster } from '@/components/ui/toaster'
+import { AwsSsmWizard } from '@/components/ui/aws-ssm-wizard'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useMenuActions } from '@/hooks/useMenuActions'
 import { useTabManagement } from '@/hooks/useTabManagement'
@@ -16,6 +17,7 @@ import {
   loadSavedConnections,
   selectActiveConnection,
   resetConnection,
+  setConnectionString,
 } from '@/store/slices/connectionSlice'
 import {
   selectTabs,
@@ -97,8 +99,20 @@ function App() {
     dispatch(pushNavigationEntry({ type: 'view', viewName: 'connect' }))
   }
   
+  const handleAwsSsmConnect = () => {
+    setShowAwsSsmWizard(true)
+  }
+  
+  const handleAwsSsmConnection = (connectionString: string) => {
+    // Treat it like a regular connection once the tunnel is established
+    dispatch(setConnectionString(connectionString))
+    dispatch(pushNavigationEntry({ type: 'view', viewName: 'explorer' }))
+    dispatch(setCurrentView('explorer'))
+  }
+  
   const { closeTab: handleCloseTab } = useTabManagement(connectionString || '')
   const [showHelp, setShowHelp] = useState(false)
+  const [showAwsSsmWizard, setShowAwsSsmWizard] = useState(false)
   
   // Use menu actions hook
   useMenuActions({
@@ -106,6 +120,7 @@ function App() {
     activeTabId,
     onNewConnection: handleNewConnection,
     onShowConnections: handleShowConnections,
+    onAwsSsmConnect: handleAwsSsmConnect,
     onCloseTab: handleCloseTab,
     onShowHelp: () => setShowHelp(true)
   })
@@ -146,6 +161,11 @@ function App() {
         <ConnectionView />
       )}
       <HelpDialog open={showHelp} onOpenChange={setShowHelp} />
+      <AwsSsmWizard 
+        isOpen={showAwsSsmWizard} 
+        onClose={() => setShowAwsSsmWizard(false)}
+        onConnect={handleAwsSsmConnection}
+      />
       <UpdateNotification />
       <Toaster />
     </>

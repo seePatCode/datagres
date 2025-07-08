@@ -50,6 +50,13 @@ function createApplicationMenu(mainWindow, currentTheme = 'dark') {
           }
         },
         { type: 'separator' },
+        {
+          label: 'Connect via AWS SSM',
+          click: () => {
+            mainWindow.webContents.send('menu-action', 'aws-ssm-connect')
+          }
+        },
+        { type: 'separator' },
         ...(isMac ? [] : [{ label: 'Exit', role: 'quit' }])
       ]
     },

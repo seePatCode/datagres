@@ -26,6 +26,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setSetting: (key, value) => ipcRenderer.invoke('set-setting', key, value),
   // Execute shell command for setup
   executeShellCommand: (command) => ipcRenderer.invoke('execute-shell-command', command),
+  // AWS SSM tunnel setup
+  setupAwsSsmTunnel: (options) => ipcRenderer.invoke('setup-aws-ssm-tunnel', options),
   // Theme updates
   updateTheme: (theme) => ipcRenderer.invoke('update-theme', theme),
   // Window controls

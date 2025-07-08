@@ -180,6 +180,18 @@ export interface ElectronAPI {
   // AI SQL generation
   generateSQL: (prompt: string, tableInfo: GenerateSQLRequest) => Promise<GenerateSQLResponse>
   executeShellCommand: (command: string) => Promise<{ success: boolean; output?: string; error?: string }>
+  setupAwsSsmTunnel: (options: { containerId: string; psqlCommand: string }) => Promise<{ 
+    success: boolean; 
+    connectionString?: string; 
+    message?: string; 
+    tunnelInfo?: { 
+      containerId: string; 
+      remoteHost: string; 
+      remotePort: string; 
+      localPort: number; 
+    }; 
+    error?: string 
+  }>
   
   // AI Settings
   getAISettings: () => Promise<{ success: boolean; settings?: AISettings; error?: string }>
@@ -234,6 +246,7 @@ export interface ElectronAPI {
 export type MenuAction = 
   | 'new-connection'
   | 'show-connections'
+  | 'aws-ssm-connect'
   | 'back-to-tables'
   | 'set-theme-dark'
   | 'set-theme-light'
