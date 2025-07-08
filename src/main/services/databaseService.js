@@ -330,7 +330,7 @@ async function fetchTableData(connectionString, tableName, searchOptions = {}) {
     let orderByClause = ''
     if (searchOptions.orderBy && searchOptions.orderBy.length > 0) {
       const orderParts = searchOptions.orderBy.map(order => 
-        `${order.column} ${order.direction.toUpperCase()}`
+        `"${order.column}" ${order.direction.toUpperCase()}`
       )
       orderByClause = `ORDER BY ${orderParts.join(', ')}`
     } else {
@@ -582,13 +582,13 @@ async function updateTableData(connectionString, request) {
 
 
 /**
- * Execute arbitrary SQL query
+ * Execute arbitrary SQL query with optional pagination
  * @param {string} connectionString 
- * @param {{query: string}} request 
- * @returns {Promise<{success: boolean, data?: {columns: string[], rows: any[][], rowCount: number}, queryTime?: number, error?: string}>}
+ * @param {{query: string, skipAutoLimit?: boolean, page?: number, pageSize?: number}} request 
+ * @returns {Promise<{success: boolean, data?: {columns: string[], rows: any[][], rowCount: number}, queryTime?: number, autoLimitApplied?: boolean, limitValue?: number, totalRows?: number, page?: number, pageSize?: number, error?: string}>}
  */
 async function executeSQL(connectionString, request) {
-  const { query } = request
+  const { query, skipAutoLimit = false, page = 1, pageSize = 100 } = request
   
   // In test mode, return mock results
   if (process.env.NODE_ENV === 'test') {
@@ -608,9 +608,57 @@ async function executeSQL(connectionString, request) {
   try {
     await client.connect()
     
-    const startTime = Date.now()
-    const result = await client.query(query)
-    const queryTime = Date.now() - startTime
+    const queryUpper = query.trim().toUpperCase()
+    const isSelectQuery = queryUpper.startsWith('SELECT')
+    const hasExistingLimit = queryUpper.includes('LIMIT')
+    const hasAggregation = /COUNT\s*\(|SUM\s*\(|AVG\s*\(|MIN\s*\(|MAX\s*\(/i.test(query)
+    
+    // For SELECT queries without LIMIT and without aggregation, we'll paginate
+    const shouldPaginate = isSelectQuery && !hasExistingLimit && !hasAggregation && !skipAutoLimit
+    
+    let totalRows = 0
+    let result
+    let queryTime = 0
+    
+    if (shouldPaginate) {
+      // First, get the total count by wrapping the query
+      const countQuery = `SELECT COUNT(*) as count FROM (${query}) as subquery`
+      const startCountTime = Date.now()
+      
+      try {
+        const countResult = await client.query(countQuery)
+        totalRows = parseInt(countResult.rows[0].count, 10)
+        queryTime += Date.now() - startCountTime
+      } catch (countError) {
+        // If count query fails (e.g., due to ORDER BY in subquery), fall back to regular execution
+        console.warn('Count query failed, falling back to non-paginated query:', countError.message)
+        const startTime = Date.now()
+        result = await client.query(query)
+        queryTime = Date.now() - startTime
+        totalRows = result.rowCount || 0
+      }
+      
+      // Only apply pagination if we successfully got the count
+      if (totalRows > 0 && !result) {
+        // Now get the paginated data
+        const offset = (page - 1) * pageSize
+        const paginatedQuery = `${query} LIMIT ${pageSize} OFFSET ${offset}`
+        const startDataTime = Date.now()
+        result = await client.query(paginatedQuery)
+        queryTime += Date.now() - startDataTime
+      } else if (!result) {
+        // If totalRows is 0, we still need to execute the query to get column info
+        const startTime = Date.now()
+        result = await client.query(`${query} LIMIT 0`)
+        queryTime += Date.now() - startTime
+      }
+    } else {
+      // Non-paginated query (has LIMIT, has aggregation, or not SELECT)
+      const startTime = Date.now()
+      result = await client.query(query)
+      queryTime = Date.now() - startTime
+      totalRows = result.rowCount || 0
+    }
     
     // Handle different types of queries
     if (result.command === 'SELECT' || result.rows) {
@@ -627,7 +675,12 @@ async function executeSQL(connectionString, request) {
           rows,
           rowCount: result.rowCount || rows.length
         },
-        queryTime
+        queryTime,
+        totalRows: shouldPaginate ? totalRows : undefined,
+        page: shouldPaginate ? page : undefined,
+        pageSize: shouldPaginate ? pageSize : undefined,
+        autoLimitApplied: shouldPaginate && totalRows > pageSize,
+        limitValue: shouldPaginate ? pageSize : null
       }
     } else {
       // Non-SELECT query (INSERT, UPDATE, DELETE, etc.)
@@ -640,7 +693,8 @@ async function executeSQL(connectionString, request) {
           rows: [[`Query OK, ${result.rowCount || 0} rows affected`]],
           rowCount: 1
         },
-        queryTime
+        queryTime,
+        autoLimitApplied: false
       }
     }
   } catch (error) {

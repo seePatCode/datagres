@@ -116,6 +116,9 @@ export interface UpdateTableDataResponse extends APIResponse {
 
 export interface ExecuteSQLRequest {
   query: string
+  skipAutoLimit?: boolean
+  page?: number
+  pageSize?: number
 }
 
 export interface ExecuteSQLResponse extends APIResponse {
@@ -125,6 +128,11 @@ export interface ExecuteSQLResponse extends APIResponse {
     rowCount: number
   }
   queryTime?: number
+  autoLimitApplied?: boolean
+  limitValue?: number
+  totalRows?: number
+  page?: number
+  pageSize?: number
 }
 
 export interface GenerateSQLRequest {

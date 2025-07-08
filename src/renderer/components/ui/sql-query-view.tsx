@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { DataTable } from '@/components/ui/data-table'
@@ -10,7 +10,9 @@ import { SQLEditor, SQLEditorHandle } from '@/components/ui/sql-editor'
 import { SqlAiPrompt } from '@/components/ui/sql-ai-prompt'
 import { useSqlSettings } from '@/hooks/useSettings'
 import { useDebounce } from '@/hooks/useDebounce'
-import { Play, Loader2, AlertCircle, Clock, Eye, Sparkles, Check } from 'lucide-react'
+import { useInfiniteQueryExecution } from '@/hooks/useInfiniteQueryExecution'
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
+import { Play, Loader2, AlertCircle, Clock, Eye, Sparkles, Check, RefreshCw } from 'lucide-react'
 import { ColumnDef } from '@tanstack/react-table'
 import type { TableSchema, TableInfo } from '@shared/types'
 import { formatCellValue, formatCellTooltip, isJsonValue } from '@/lib/formatters'
@@ -58,13 +60,18 @@ const createColumns = (columnNames: string[]): ColumnDef<any>[] => {
 export function SQLQueryView({ connectionString, initialQuery = '', onQueryChange, tables = [] }: SQLQueryViewProps) {
   const [query, setQuery] = useState(typeof initialQuery === 'string' ? initialQuery : '')
   const editorRef = useRef<SQLEditorHandle>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const queryClient = useQueryClient()
   const { livePreview, setLivePreview } = useSqlSettings()
   const [schemas, setSchemas] = useState<TableSchema[]>([])
   const [showAiPrompt, setShowAiPrompt] = useState(false)
   const [aiPromptPosition, setAiPromptPosition] = useState<{ top: number; left: number } | undefined>()
   const [isFixingError, setIsFixingError] = useState(false)
   const [lastExecutedQuery, setLastExecutedQuery] = useState<string>('')
+  const [executedQuery, setExecutedQuery] = useState<string>('')
+  const [queryEnabled, setQueryEnabled] = useState(false)
   const [fixSuccessMessage, setFixSuccessMessage] = useState<{ before: string; after: string } | null>(null)
+  const [executionError, setExecutionError] = useState<Error | null>(null)
   
   // Only debounce when live preview is on
   const debouncedQuery = useDebounce(query, livePreview ? 500 : 0)
@@ -99,18 +106,39 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
     fetchSchemas()
   }, [tables, connectionString])
 
-  const executeMutation = useMutation({
-    mutationFn: async (sqlQuery: string) => {
-      const result = await window.electronAPI.executeSQL(connectionString, {
-        query: sqlQuery
-      })
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Query execution failed')
-      }
-      
-      return result
+  // Use infinite query for paginated results
+  const {
+    data: queryData,
+    totalRows,
+    autoLimitApplied,
+    queryTime,
+    fetchNextPage,
+    hasNextPage,
+    isLoading,
+    isLoadingMore,
+    error: queryError,
+    isError
+  } = useInfiniteQueryExecution({
+    connectionString,
+    query: executedQuery,
+    enabled: queryEnabled && !!executedQuery,
+    pageSize: 100
+  })
+  
+  // Update execution error when query fails
+  useEffect(() => {
+    if (queryError && queryEnabled) {
+      setExecutionError(queryError)
+      setQueryEnabled(false)
     }
+  }, [queryError, queryEnabled])
+  
+  // Set up infinite scroll
+  const { sentinelRef } = useInfiniteScroll({
+    onLoadMore: fetchNextPage,
+    hasMore: !!hasNextPage,
+    isLoading: isLoadingMore,
+    rootRef: scrollContainerRef as React.RefObject<HTMLElement>
   })
 
   const handleQueryChange = useCallback((newQuery: string) => {
@@ -125,10 +153,14 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
     
     if (queryToExecute.trim()) {
       setLastExecutedQuery(queryToExecute)
+      setExecutedQuery(queryToExecute)
       setFixSuccessMessage(null) // Clear any success message
-      executeMutation.mutate(queryToExecute)
+      setExecutionError(null)
+      // Invalidate any existing query data
+      queryClient.invalidateQueries({ queryKey: ['executeSQL', connectionString, queryToExecute] })
+      setQueryEnabled(true)
     }
-  }, [query, executeMutation])
+  }, [query, connectionString, queryClient])
 
   const handleInsertSql = useCallback((sql: string, replaceSelection: boolean = false) => {
     if (editorRef.current) {
@@ -179,8 +211,8 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
     // Skip if query is empty
     if (!debouncedQuery.trim()) return
     
-    // Skip if already executing
-    if (executeMutation.isPending) return
+    // Skip if already loading
+    if (isLoading) return
     
     // Only execute safe queries
     const trimmedQuery = debouncedQuery.trim().toLowerCase()
@@ -191,10 +223,13 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
     
     if (isSafeQuery) {
       setLastExecutedQuery(debouncedQuery)
+      setExecutedQuery(debouncedQuery)
       setFixSuccessMessage(null) // Clear any success message
-      executeMutation.mutate(debouncedQuery)
+      setExecutionError(null)
+      queryClient.invalidateQueries({ queryKey: ['executeSQL', connectionString, debouncedQuery] })
+      setQueryEnabled(true)
     }
-  }, [debouncedQuery, livePreview])
+  }, [debouncedQuery, livePreview, isLoading, connectionString, queryClient])
 
   // Format execution time
   const formatTime = (ms: number) => {
@@ -241,10 +276,10 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
               variant="primary"
               size="sm"
               onClick={handleExecute}
-              disabled={executeMutation.isPending || !query.trim()}
+              disabled={isLoading || !query.trim()}
               className="gap-2"
             >
-              {executeMutation.isPending ? (
+              {isLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Executing...
@@ -280,13 +315,13 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
       </div>
 
       {/* Results */}
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-        {executeMutation.error && (
+      <div ref={scrollContainerRef} className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        {(queryError || executionError) && (
           <div className="flex justify-center p-2">
             <Alert variant="destructive" className="w-auto max-w-2xl" data-testid="sql-error">
               <div className="flex items-start gap-3">
                 <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                <AlertDescription className="text-sm">{executeMutation.error.message}</AlertDescription>
+                <AlertDescription className="text-sm">{(queryError || executionError)?.message}</AlertDescription>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -298,7 +333,7 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
                         try {
                           // Get the query that failed (use the last executed query)
                           const failedQuery = lastExecutedQuery || query.trim();
-                          const errorMessage = executeMutation.error.message;
+                          const errorMessage = (queryError || executionError)?.message || 'Unknown error';
                           
                           // Generate a prompt for fixing the SQL
                           const fixPrompt = `Fix this SQL error by finding the correct column name.
@@ -358,8 +393,8 @@ Return ONLY the corrected SQL query.`;
                               }, 50);
                             }
                             
-                            // Clear the error by resetting the mutation
-                            executeMutation.reset();
+                            // Clear the error
+                            setExecutionError(null);
                             // Show success message with before/after
                             setFixSuccessMessage({
                               before: failedQuery,
@@ -405,7 +440,7 @@ Return ONLY the corrected SQL query.`;
         )}
 
         {/* Success message after fixing */}
-        {fixSuccessMessage && !executeMutation.error && (
+        {fixSuccessMessage && !queryError && !executionError && (
           <div className="flex justify-center p-2">
             <Alert className="w-auto max-w-4xl border-green-500/50 bg-green-50/10" data-testid="sql-fix-success">
               <div className="flex items-start gap-3">
@@ -434,32 +469,43 @@ Return ONLY the corrected SQL query.`;
           </div>
         )}
 
-        {executeMutation.data && (
+        {queryData && (
           <div className="flex flex-col h-full">
             {/* Query stats */}
             <div className="flex items-center gap-4 px-3 py-2 border-b bg-muted/20 text-sm flex-shrink-0">
               <span className="flex items-center gap-1 text-muted-foreground">
                 <Clock className="h-3 w-3" />
-                {formatTime(executeMutation.data.queryTime || 0)}
+                {formatTime(queryTime || 0)}
               </span>
               <span className="text-muted-foreground">
-                {executeMutation.data.data?.rowCount || 0} rows
+                {queryData.rows.length} {totalRows && totalRows > queryData.rows.length ? `of ${totalRows}` : ''} rows
               </span>
             </div>
 
             {/* Results table with its own scroll container */}
-            <div className="flex-1 min-h-0" data-testid="query-results">
-              {executeMutation.data.data && executeMutation.data.data.columns.length > 0 && (
+            <div className="flex-1 min-h-0 overflow-auto" data-testid="query-results">
+              {queryData.columns.length > 0 && (
                 <DataTable
-                  columns={createColumns(executeMutation.data.data.columns)}
-                  data={executeMutation.data.data.rows}
+                  columns={createColumns(queryData.columns)}
+                  data={queryData.rows}
+                  infiniteScrollContent={
+                    hasNextPage && queryData.rows.length > 0 ? (
+                      <div ref={sentinelRef} className="h-20 flex items-center justify-center">
+                        {isLoadingMore ? (
+                          <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+                        ) : (
+                          <div className="text-sm text-muted-foreground">Scroll for more...</div>
+                        )}
+                      </div>
+                    ) : null
+                  }
                 />
               )}
             </div>
           </div>
         )}
 
-        {!executeMutation.data && !executeMutation.error && (
+        {!queryData && !queryError && !executionError && (
           <div className="flex items-center justify-center h-full text-muted-foreground">
             Execute a query to see results
           </div>
