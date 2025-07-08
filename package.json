@@ -2,7 +2,7 @@
   "name": "datagres",
   "productName": "Datagres",
   "description": "Database Explorer",
-  "version": "0.4.8",
+  "version": "0.4.9",
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",
