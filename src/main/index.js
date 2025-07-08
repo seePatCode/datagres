@@ -288,7 +288,15 @@ ipcMain.handle('execute-shell-command', async (_event, command) => {
     }
     
     console.log(`Executing command: ${command}`)
-    const { stdout, stderr } = await execAsync(command)
+    
+    // For 'which claude', use login shell to get full PATH
+    let actualCommand = command
+    if (command === 'which claude') {
+      const userShell = process.env.SHELL || '/bin/bash'
+      actualCommand = `${userShell} -l -c "${command}"`
+    }
+    
+    const { stdout, stderr } = await execAsync(actualCommand)
     
     return {
       success: true,

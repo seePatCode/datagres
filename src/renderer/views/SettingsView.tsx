@@ -213,14 +213,13 @@ export function SettingsView() {
                     <div className="space-y-2 text-sm text-muted-foreground">
                       <p>To use Claude Code CLI:</p>
                       <ol className="list-decimal list-inside space-y-1 ml-2">
-                        <li>Download and install Claude Code from <a href="https://claude.ai/code" className="text-primary underline" onClick={(e) => { e.preventDefault(); window.electronAPI.executeShellCommand('open https://claude.ai/code') }}>claude.ai/code</a></li>
-                        <li>Open the Claude Code app at least once</li>
-                        <li>The CLI should be automatically available at /usr/local/bin/claude</li>
-                        <li>If not found, check your PATH or restart your terminal</li>
+                        <li>Install via npm: <code className="text-xs bg-muted px-1 py-0.5 rounded">npm install -g @anthropic-ai/claude-code</code></li>
+                        <li>Or download from <a href="https://claude.ai/code" className="text-primary underline" onClick={(e) => { e.preventDefault(); window.electronAPI.executeShellCommand('open https://claude.ai/code') }}>claude.ai/code</a></li>
+                        <li>Run <code className="text-xs bg-muted px-1 py-0.5 rounded">claude login</code> in your terminal to authenticate</li>
+                        <li>Restart Datagres after installation</li>
                       </ol>
-                      <p className="text-xs mt-2 text-orange-600">
-                        Note: If you have a different "claude" command from npm, it may conflict. 
-                        The official Claude Code CLI is installed by the desktop app, not via npm.
+                      <p className="text-xs mt-2 text-muted-foreground">
+                        Note: The Claude CLI will be found automatically from your PATH, including npm global installations.
                       </p>
                     </div>
                   </div>
