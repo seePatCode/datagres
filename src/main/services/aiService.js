@@ -483,44 +483,19 @@ async function tryClaudeCode(prompt, tableInfo) {
   let claudePath = '';
   
   try {
-    // First check if Claude CLI is available
+    // Get the user's default shell
+    const userShell = process.env.SHELL || '/bin/bash';
+    devLog('User shell detected:', { shell: userShell });
+    
+    // Use the user's login shell to find claude with their full PATH
+    // The -l flag loads the full login environment (including .zshrc, .bash_profile, etc.)
     try {
-      // In packaged apps, PATH might not include user directories
-      // Check common installation locations first
-      const commonPaths = [
-        '/usr/local/bin/claude',
-        '/opt/homebrew/bin/claude',
-        path.join(os.homedir(), '.local', 'bin', 'claude'),
-        path.join(os.homedir(), 'bin', 'claude'),
-        '/usr/bin/claude'
-      ];
-      
-      // Check common paths first
-      for (const checkPath of commonPaths) {
-        if (fs.existsSync(checkPath)) {
-          try {
-            fs.accessSync(checkPath, fs.constants.X_OK);
-            claudePath = checkPath;
-            devLog('Found claude CLI at common location:', { path: claudePath });
-            break;
-          } catch (e) {
-            // Not executable, continue
-          }
-        }
-      }
-      
-      // If not found in common paths, check PATH
-      if (!claudePath) {
-        const whichResult = await execAsync('which claude || command -v claude || where claude', {
-          shell: true,
-          env: {
-            ...process.env,
-            PATH: process.env.PATH + ':/usr/local/bin:/opt/homebrew/bin:' + path.join(os.homedir(), '.local/bin') + ':' + path.join(os.homedir(), 'bin')
-          }
-        });
-        claudePath = whichResult.stdout.trim();
-        devLog('Found claude CLI in PATH:', { path: claudePath });
-      }
+      const whichResult = await execAsync(`${userShell} -l -c "which claude || command -v claude"`, {
+        timeout: 5000,
+        encoding: 'utf8'
+      });
+      claudePath = whichResult.stdout.trim();
+      devLog('Found claude CLI using login shell:', { path: claudePath, shell: userShell });
       
       // Verify it's executable and get version
       try {
@@ -551,7 +526,7 @@ async function tryClaudeCode(prompt, tableInfo) {
       
       return {
         success: false,
-        error: 'Claude Code CLI not found. Please ensure you have Claude Code installed. On macOS, try: brew install claude or download from https://claude.ai/download. The claude command should be installed in /usr/local/bin/ or /opt/homebrew/bin/'
+        error: 'Claude Code CLI not found. Please install it via npm: npm install -g @anthropic-ai/claude-code, or download from https://claude.ai/code'
       };
     }
     
@@ -642,15 +617,15 @@ Request: ${prompt}`;
       
       devLog('Running command:', { command: command.substring(0, 200) + '...' });
       
-      const result = await execAsync(command, {
+      // Use login shell to ensure full environment is loaded
+      const userShell = process.env.SHELL || '/bin/bash';
+      const loginShellCommand = `${userShell} -l -c '${command}'`;
+      
+      const result = await execAsync(loginShellCommand, {
         maxBuffer: 1024 * 1024 * 10, // 10MB
         timeout: 60000, // 1 minute
         encoding: 'utf8',
-        shell: true,
-        env: {
-          ...process.env,
-          SHELL: process.env.SHELL || '/bin/zsh'
-        }
+        shell: false // We're already using a shell in the command
       });
       
       stdout = result.stdout;
