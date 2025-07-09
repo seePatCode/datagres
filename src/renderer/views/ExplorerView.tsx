@@ -38,11 +38,14 @@ import {
   selectTabs,
   selectActiveTabId,
   selectRecentTables,
+  selectStarredTables,
   selectOrAddTableTab,
   setActiveTab,
   closeAllTabs,
   closeOtherTabs,
   addQueryTab,
+  toggleTableStar,
+  isTableStarred,
 } from '@/store/slices/tabsSlice'
 import {
   selectCanGoBack,
@@ -72,6 +75,7 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
   const tabs = useSelector(selectTabs(connectionString))
   const activeTabId = useSelector(selectActiveTabId(connectionString))
   const recentTables = useSelector(selectRecentTables(connectionString))
+  const starredTables = useSelector(selectStarredTables(connectionString))
   // Removed showSaveDialog and pendingConnectionString - connections are now auto-saved
   const canGoBack = useSelector(selectCanGoBack)
   const canGoForward = useSelector(selectCanGoForward)
@@ -159,6 +163,17 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
     }
   }
   
+  const handleToggleTableStar = (tableName: string) => {
+    if (connectionString) {
+      dispatch(toggleTableStar({ connectionString, tableName }))
+    }
+  }
+  
+  const checkIsTableStarred = (tableName: string) => {
+    const state = { tabs: { starredTables: { [connectionString]: starredTables } } }
+    return starredTables.some(t => t.name === tableName)
+  }
+  
   // getDefaultConnectionName removed - connections are now auto-saved
 
   return (
@@ -191,8 +206,11 @@ export function ExplorerView({ onShowHelp }: ExplorerViewProps = {}) {
                 tables={tables}
                 schemas={schemas}
                 recentTables={recentTables}
+                starredTables={starredTables}
                 onConnectionChange={handleConnectionChange}
                 onTableSelect={handleTableSelect}
+                onToggleTableStar={handleToggleTableStar}
+                isTableStarred={checkIsTableStarred}
                 selectedTable={(() => {
                   const activeTab = tabs.find(t => t.id === activeTabId)
                   return activeTab && activeTab.type === 'table' ? activeTab.tableName : ''

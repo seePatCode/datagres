@@ -21,6 +21,8 @@ export interface TabsState {
   activeTabId: Record<string, string | null>
   // Recent tables per connection
   recentTables: Record<string, TableInfo[]>
+  // Starred tables per connection
+  starredTables: Record<string, TableInfo[]>
   // Track last save time for cleanup
   lastSaved: Record<string, number>
 }
@@ -29,6 +31,7 @@ const initialState: TabsState = {
   tabs: {},
   activeTabId: {},
   recentTables: {},
+  starredTables: {},
   lastSaved: {},
 }
 
@@ -48,6 +51,7 @@ export const tabsSlice = createSlice({
         state.tabs[connectionString] = []
         state.activeTabId[connectionString] = null
         state.recentTables[connectionString] = []
+        state.starredTables[connectionString] = []
       }
       
       // Add pagination defaults for table tabs
@@ -126,6 +130,7 @@ export const tabsSlice = createSlice({
         state.tabs[connectionString] = []
         state.activeTabId[connectionString] = null
         state.recentTables[connectionString] = []
+        state.starredTables[connectionString] = []
       }
       
       // Check if table tab already exists
@@ -173,6 +178,7 @@ export const tabsSlice = createSlice({
         state.tabs[connectionString] = []
         state.activeTabId[connectionString] = null
         state.recentTables[connectionString] = []
+        state.starredTables[connectionString] = []
       }
       
       const newTab: QueryTabInternal = {
@@ -219,7 +225,34 @@ export const tabsSlice = createSlice({
       delete state.tabs[connectionString]
       delete state.activeTabId[connectionString]
       delete state.recentTables[connectionString]
+      delete state.starredTables[connectionString]
       delete state.lastSaved[connectionString]
+    },
+    
+    // Toggle star status for a table
+    toggleTableStar: (state, action: PayloadAction<{
+      connectionString: string
+      tableName: string
+    }>) => {
+      const { connectionString, tableName } = action.payload
+      
+      // Initialize if needed
+      if (!state.starredTables[connectionString]) {
+        state.starredTables[connectionString] = []
+      }
+      
+      const starred = state.starredTables[connectionString]
+      const index = starred.findIndex(t => t.name === tableName)
+      
+      if (index === -1) {
+        // Add to starred
+        state.starredTables[connectionString].push({ name: tableName })
+      } else {
+        // Remove from starred
+        state.starredTables[connectionString].splice(index, 1)
+      }
+      
+      state.lastSaved[connectionString] = Date.now()
     },
     
     // Hydrate state from persistence
@@ -242,6 +275,9 @@ export const tabsSlice = createSlice({
           if (newState.recentTables?.[connectionString]) {
             state.recentTables[connectionString] = newState.recentTables[connectionString]
           }
+          if (newState.starredTables?.[connectionString]) {
+            state.starredTables[connectionString] = newState.starredTables[connectionString]
+          }
           state.lastSaved[connectionString] = lastSaved
         }
       })
@@ -256,6 +292,7 @@ export const tabsSlice = createSlice({
           delete state.tabs[connectionString]
           delete state.activeTabId[connectionString]
           delete state.recentTables[connectionString]
+          delete state.starredTables[connectionString]
           delete state.lastSaved[connectionString]
         }
       })
@@ -273,6 +310,7 @@ export const {
   closeAllTabs,
   closeOtherTabs,
   clearConnectionTabs,
+  toggleTableStar,
   hydrateTabsState,
   cleanupOldTabStates,
 } = tabsSlice.actions
@@ -292,5 +330,13 @@ export const selectActiveTab = (connectionString: string) => (state: RootState) 
 
 export const selectRecentTables = (connectionString: string) => (state: RootState) =>
   state.tabs.recentTables[connectionString] || []
+
+export const selectStarredTables = (connectionString: string) => (state: RootState) =>
+  state.tabs.starredTables?.[connectionString] || []
+
+export const isTableStarred = (connectionString: string, tableName: string) => (state: RootState) => {
+  const starred = state.tabs.starredTables?.[connectionString] || []
+  return starred.some(t => t.name === tableName)
+}
 
 export default tabsSlice.reducer

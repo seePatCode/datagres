@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Database, Search, Table, Clock, ChevronDown, ChevronRight, FileCode2, ChevronsUpDown, Edit2, Trash2, Copy, Info } from 'lucide-react'
+import { Database, Search, Table, Clock, ChevronDown, ChevronRight, FileCode2, ChevronsUpDown, Edit2, Trash2, Copy, Info, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/hooks/use-toast'
 import { TableInfoDialog } from '@/components/ui/table-info-dialog'
@@ -27,8 +27,11 @@ interface DatabaseSidebarProps {
   tables: TableInfo[]  // Still support flat table list for backward compatibility
   schemas?: SchemaInfo[]  // New: schemas with their tables
   recentTables: TableInfo[]
+  starredTables: TableInfo[]
   onConnectionChange: (connectionId: string) => void
   onTableSelect: (tableName: string, schemaName?: string) => void
+  onToggleTableStar: (tableName: string) => void
+  isTableStarred: (tableName: string) => boolean
   selectedTable?: string
   className?: string
   onNewQuery?: () => void
@@ -43,8 +46,11 @@ export function DatabaseSidebar({
   tables,
   schemas,
   recentTables,
+  starredTables,
   onConnectionChange,
   onTableSelect,
+  onToggleTableStar,
+  isTableStarred,
   selectedTable,
   className,
   onNewQuery,
@@ -53,6 +59,7 @@ export function DatabaseSidebar({
   connectionString,
 }: DatabaseSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('')
+  const [starredExpanded, setStarredExpanded] = useState(true)
   const [recentExpanded, setRecentExpanded] = useState(true)
   const [allTablesExpanded, setAllTablesExpanded] = useState(true)
   const [schemaExpanded, setSchemaExpanded] = useState<Record<string, boolean>>({})
@@ -244,6 +251,74 @@ export function DatabaseSidebar({
 
         <div className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
           <div className="p-2 space-y-1 min-w-0">
+            {/* Starred Tables */}
+            {starredTables.length > 0 && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setStarredExpanded(!starredExpanded)}
+                  className="w-full justify-start gap-1 h-7 px-2 text-muted-foreground hover:text-foreground"
+                >
+                  {starredExpanded ? (
+                    <ChevronDown className="h-3 w-3" />
+                  ) : (
+                    <ChevronRight className="h-3 w-3" />
+                  )}
+                  <Star className="h-3 w-3 fill-current" />
+                  <span className="text-xs font-medium">Starred</span>
+                </Button>
+                
+                {starredExpanded && (
+                  <div className="ml-4 space-y-0.5 overflow-hidden min-w-0 pr-2" style={{ width: 'calc(100% - 1rem)' }}>
+                    {starredTables.map((table) => (
+                      <ContextMenu key={`starred-${table.name}`}>
+                        <ContextMenuTrigger>
+                          <button
+                            onClick={() => onTableSelect(table.name, table.schema)}
+                            className={cn(
+                              "w-full h-7 text-xs px-2 rounded-md transition-all",
+                              "flex items-center gap-2 min-w-0 overflow-hidden",
+                              "active:scale-[0.98]",
+                              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                              selectedTable === table.name
+                                ? "bg-muted text-muted-foreground shadow-sm hover:bg-muted/80 hover:text-foreground"
+                                : "hover:bg-accent hover:text-accent-foreground"
+                            )}
+                          >
+                            <Table className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate flex-1 text-left">{table.name}</span>
+                            <Star 
+                              className="h-3 w-3 flex-shrink-0 fill-current text-yellow-500 hover:text-yellow-600" 
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onToggleTableStar(table.name)
+                              }}
+                            />
+                          </button>
+                        </ContextMenuTrigger>
+                        <ContextMenuContent>
+                          <ContextMenuItem onClick={() => handleViewTableInfo(table.name, table.schema)}>
+                            <Info className="mr-2 h-4 w-4" />
+                            View Info
+                          </ContextMenuItem>
+                          <ContextMenuItem onClick={() => handleCopyTableName(table.name)}>
+                            <Copy className="mr-2 h-4 w-4" />
+                            Copy Table Name
+                          </ContextMenuItem>
+                          <ContextMenuItem onClick={() => onToggleTableStar(table.name)}>
+                            <Star className="mr-2 h-4 w-4" />
+                            Unstar Table
+                          </ContextMenuItem>
+                        </ContextMenuContent>
+                      </ContextMenu>
+                    ))}
+                  </div>
+                )}
+                <Separator className="my-2" />
+              </>
+            )}
+
             {/* Recent Tables */}
             {recentTables.length > 0 && (
               <>
@@ -286,6 +361,16 @@ export function DatabaseSidebar({
                                 {formatRowCount(table.rowCount)}
                               </span>
                             )}
+                            <Star 
+                              className={cn(
+                                "h-3 w-3 flex-shrink-0 ml-1",
+                                isTableStarred(table.name) ? "fill-current text-yellow-500" : "text-muted-foreground"
+                              )}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onToggleTableStar(table.name)
+                              }}
+                            />
                           </button>
                         </ContextMenuTrigger>
                         <ContextMenuContent>
@@ -296,6 +381,10 @@ export function DatabaseSidebar({
                           <ContextMenuItem onClick={() => handleCopyTableName(table.name)}>
                             <Copy className="mr-2 h-4 w-4" />
                             Copy Table Name
+                          </ContextMenuItem>
+                          <ContextMenuItem onClick={() => onToggleTableStar(table.name)}>
+                            <Star className="mr-2 h-4 w-4" />
+                            {isTableStarred(table.name) ? 'Unstar' : 'Star'} Table
                           </ContextMenuItem>
                         </ContextMenuContent>
                       </ContextMenu>
@@ -384,6 +473,16 @@ export function DatabaseSidebar({
                                     {formatRowCount(table.rowCount)}
                                   </span>
                                 )}
+                                <Star 
+                                  className={cn(
+                                    "h-3 w-3 flex-shrink-0 ml-1",
+                                    isTableStarred(table.name) ? "fill-current text-yellow-500" : "text-muted-foreground"
+                                  )}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    onToggleTableStar(table.name)
+                                  }}
+                                />
                               </button>
                             </ContextMenuTrigger>
                             <ContextMenuContent>
@@ -394,6 +493,10 @@ export function DatabaseSidebar({
                               <ContextMenuItem onClick={() => handleCopyTableName(table.name)}>
                                 <Copy className="mr-2 h-4 w-4" />
                                 Copy Table Name
+                              </ContextMenuItem>
+                              <ContextMenuItem onClick={() => onToggleTableStar(table.name)}>
+                                <Star className="mr-2 h-4 w-4" />
+                                {isTableStarred(table.name) ? 'Unstar' : 'Star'} Table
                               </ContextMenuItem>
                             </ContextMenuContent>
                           </ContextMenu>
@@ -445,6 +548,16 @@ export function DatabaseSidebar({
                                 {formatRowCount(table.rowCount)}
                               </span>
                             )}
+                            <Star 
+                              className={cn(
+                                "h-3 w-3 flex-shrink-0 ml-1",
+                                isTableStarred(table.name) ? "fill-current text-yellow-500" : "text-muted-foreground"
+                              )}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onToggleTableStar(table.name)
+                              }}
+                            />
                           </button>
                         </ContextMenuTrigger>
                         <ContextMenuContent>
@@ -455,6 +568,10 @@ export function DatabaseSidebar({
                           <ContextMenuItem onClick={() => handleCopyTableName(table.name)}>
                             <Copy className="mr-2 h-4 w-4" />
                             Copy Table Name
+                          </ContextMenuItem>
+                          <ContextMenuItem onClick={() => onToggleTableStar(table.name)}>
+                            <Star className="mr-2 h-4 w-4" />
+                            {isTableStarred(table.name) ? 'Unstar' : 'Star'} Table
                           </ContextMenuItem>
                         </ContextMenuContent>
                       </ContextMenu>

@@ -163,7 +163,7 @@ export function ConnectionView() {
                   value={connectionString}
                   onChange={(e) => setConnectionString(e.target.value)}
                   disabled={isConnecting}
-                  className="font-mono"
+                  className="font-mono bg-white dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 shadow-inner hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 placeholder:text-gray-500 dark:placeholder:text-gray-400 h-12 text-sm"
                   data-testid="connection-string-input"
                 />
                 <p className="text-xs text-muted-foreground">

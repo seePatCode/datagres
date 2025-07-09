@@ -2,7 +2,7 @@ import { Middleware, AnyAction, isAction } from '@reduxjs/toolkit'
 import type { StoreState } from '../types'
 
 // Keys to persist
-const PERSISTED_KEYS = ['settings', 'tabs'] as const
+const PERSISTED_KEYS = ['settings', 'tabs', 'connection'] as const
 
 // Middleware to persist state changes
 export const persistenceMiddleware: Middleware<{}, StoreState> = (store) => (next) => (action) => {
