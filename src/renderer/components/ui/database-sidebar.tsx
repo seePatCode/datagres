@@ -463,6 +463,8 @@ export function DatabaseSidebar({
                             <ContextMenuTrigger>
                               <button
                                 onClick={() => onTableSelect(table.name, schema.name)}
+                                onMouseEnter={() => setHoveredTable(`${schema.name}.${table.name}`)}
+                                onMouseLeave={() => setHoveredTable(null)}
                                 className={cn(
                                   "w-full h-7 text-xs px-2 rounded-md transition-all",
                                   "flex items-center gap-2 min-w-0 overflow-hidden",
@@ -480,16 +482,18 @@ export function DatabaseSidebar({
                                     {formatRowCount(table.rowCount)}
                                   </span>
                                 )}
-                                <Star 
-                                  className={cn(
-                                    "h-3 w-3 flex-shrink-0 ml-1",
-                                    isTableStarred(table.name) ? "fill-current text-yellow-500" : "text-muted-foreground"
-                                  )}
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    onToggleTableStar(table.name)
-                                  }}
-                                />
+                                {(hoveredTable === `${schema.name}.${table.name}` || isTableStarred(table.name)) && (
+                                  <Star 
+                                    className={cn(
+                                      "h-3 w-3 flex-shrink-0 ml-1",
+                                      isTableStarred(table.name) ? "fill-current text-yellow-500" : "text-muted-foreground"
+                                    )}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      onToggleTableStar(table.name)
+                                    }}
+                                  />
+                                )}
                               </button>
                             </ContextMenuTrigger>
                             <ContextMenuContent>
@@ -538,6 +542,8 @@ export function DatabaseSidebar({
                         <ContextMenuTrigger>
                           <button
                             onClick={() => onTableSelect(table.name, table.schema)}
+                            onMouseEnter={() => setHoveredTable(table.name)}
+                            onMouseLeave={() => setHoveredTable(null)}
                             className={cn(
                               "w-full h-7 text-xs px-2 rounded-md transition-all",
                               "flex items-center gap-2 min-w-0 overflow-hidden",
@@ -555,16 +561,18 @@ export function DatabaseSidebar({
                                 {formatRowCount(table.rowCount)}
                               </span>
                             )}
-                            <Star 
-                              className={cn(
-                                "h-3 w-3 flex-shrink-0 ml-1",
-                                isTableStarred(table.name) ? "fill-current text-yellow-500" : "text-muted-foreground"
-                              )}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                onToggleTableStar(table.name)
-                              }}
-                            />
+                            {(hoveredTable === table.name || isTableStarred(table.name)) && (
+                              <Star 
+                                className={cn(
+                                  "h-3 w-3 flex-shrink-0 ml-1",
+                                  isTableStarred(table.name) ? "fill-current text-yellow-500" : "text-muted-foreground"
+                                )}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onToggleTableStar(table.name)
+                                }}
+                              />
+                            )}
                           </button>
                         </ContextMenuTrigger>
                         <ContextMenuContent>
