@@ -18,6 +18,8 @@ import {
   selectActiveConnection,
   resetConnection,
   setConnectionString,
+  loadAndConnectToSavedConnection,
+  connectToDatabase,
 } from '@/store/slices/connectionSlice'
 import {
   selectTabs,
@@ -82,6 +84,36 @@ function App() {
   const connectionString = activeConnection?.connectionString || ''
   const tabs = useSelector(selectTabs(connectionString))
   const activeTabId = useSelector(selectActiveTabId(connectionString))
+  
+  // Auto-reconnect to last database on startup
+  const [hasAttemptedReconnect, setHasAttemptedReconnect] = useState(false)
+  
+  useEffect(() => {
+    // Only attempt once and only on the connect view
+    if (!hasAttemptedReconnect && currentView === 'connect' && activeConnection) {
+      // We have a persisted connection
+      setHasAttemptedReconnect(true)
+      
+      // Try to reconnect using the saved connection ID or connection string
+      if (activeConnection.savedConnectionId) {
+        dispatch(loadAndConnectToSavedConnection(activeConnection.savedConnectionId)).then((result) => {
+          if (result.meta.requestStatus === 'fulfilled') {
+            dispatch(setCurrentView('explorer'))
+            dispatch(pushNavigationEntry({ type: 'view', viewName: 'explorer' }))
+          }
+        })
+      } else if (activeConnection.connectionString) {
+        dispatch(connectToDatabase({ 
+          connectionString: activeConnection.connectionString 
+        })).then((result) => {
+          if (result.meta.requestStatus === 'fulfilled') {
+            dispatch(setCurrentView('explorer'))
+            dispatch(pushNavigationEntry({ type: 'view', viewName: 'explorer' }))
+          }
+        })
+      }
+    }
+  }, [activeConnection, currentView, hasAttemptedReconnect, dispatch])
   
   // Navigation handlers
   const handleGoBack = () => dispatch(navigateBack())

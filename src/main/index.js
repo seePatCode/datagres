@@ -239,6 +239,25 @@ ipcMain.handle('get-ai-settings', async () => {
   }
 })
 
+// Tabs state persistence handlers
+ipcMain.handle('get-tabs-state', async () => {
+  try {
+    const tabsState = await settingsStore.getSetting('tabsState')
+    return { success: true, state: tabsState || null }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+})
+
+ipcMain.handle('set-tabs-state', async (_event, state) => {
+  try {
+    await settingsStore.setSetting('tabsState', state)
+    return { success: true }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+})
+
 ipcMain.handle('set-ai-settings', async (_event, settings) => {
   try {
     await settingsStore.setAISettings(settings)

@@ -201,6 +201,10 @@ export interface ElectronAPI {
   getSetting: (key: string) => Promise<any>
   setSetting: (key: string, value: any) => Promise<{ success: boolean; error?: string }>
   
+  // Tabs state persistence
+  getTabsState: () => Promise<{ success: boolean; state?: any; error?: string }>
+  setTabsState: (state: any) => Promise<{ success: boolean; error?: string }>
+  
   // Theme updates
   updateTheme?: (theme: 'dark' | 'light' | 'system') => Promise<APIResponse>
   

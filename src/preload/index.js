@@ -24,6 +24,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // General settings
   getSetting: (key) => ipcRenderer.invoke('get-setting', key),
   setSetting: (key, value) => ipcRenderer.invoke('set-setting', key, value),
+  // Tabs state persistence
+  getTabsState: () => ipcRenderer.invoke('get-tabs-state'),
+  setTabsState: (state) => ipcRenderer.invoke('set-tabs-state', state),
   // Execute shell command for setup
   executeShellCommand: (command) => ipcRenderer.invoke('execute-shell-command', command),
   // AWS SSM tunnel setup

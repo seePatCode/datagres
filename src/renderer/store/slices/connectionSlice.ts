@@ -177,6 +177,11 @@ export const connectionSlice = createSlice({
         state.activeConnection.error = undefined
       }
     },
+    
+    hydrateConnectionState: (state, action: PayloadAction<ConnectionState>) => {
+      // Hydrate the entire connection state from persisted storage
+      return action.payload
+    },
   },
   extraReducers: (builder) => {
     // Fetch saved connections
@@ -285,6 +290,7 @@ export const {
   setConnectionString,
   resetConnection,
   clearConnectionError,
+  hydrateConnectionState,
 } = connectionSlice.actions
 
 // Selectors

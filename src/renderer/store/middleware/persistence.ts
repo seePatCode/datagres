@@ -15,11 +15,18 @@ export const persistenceMiddleware: Middleware<{}, StoreState> = (store) => (nex
     if (PERSISTED_KEYS.includes(actionPrefix as any)) {
       const state = store.getState() as StoreState
       
-      // Save to localStorage for now (will move to electron-store later)
-      try {
-        localStorage.setItem(`redux-${actionPrefix}`, JSON.stringify(state[actionPrefix as keyof StoreState]))
-      } catch (error) {
-        // Silently fail - persistence is not critical
+      // Special handling for tabs state - use electron-store
+      if (actionPrefix === 'tabs' && window.electronAPI?.setTabsState) {
+        window.electronAPI.setTabsState(state.tabs).catch((error: any) => {
+          console.error('Failed to persist tabs state:', error)
+        })
+      } else {
+        // Save other state to localStorage
+        try {
+          localStorage.setItem(`redux-${actionPrefix}`, JSON.stringify(state[actionPrefix as keyof StoreState]))
+        } catch (error) {
+          // Silently fail - persistence is not critical
+        }
       }
     }
     
@@ -33,17 +40,32 @@ export const persistenceMiddleware: Middleware<{}, StoreState> = (store) => (nex
 }
 
 // Helper to load persisted state
-export const loadPersistedState = (): Partial<StoreState> => {
+export const loadPersistedState = async (): Promise<Partial<StoreState>> => {
   const persistedState: Partial<StoreState> = {}
   
-  PERSISTED_KEYS.forEach(key => {
+  // Load tabs state from electron-store
+  if (window.electronAPI?.getTabsState) {
     try {
-      const item = localStorage.getItem(`redux-${key}`)
-      if (item) {
-        persistedState[key as keyof StoreState] = JSON.parse(item)
+      const result = await window.electronAPI.getTabsState()
+      if (result.success && result.state) {
+        persistedState.tabs = result.state
       }
     } catch (error) {
-      // Silently fail - will use default state
+      console.error('Failed to load tabs state:', error)
+    }
+  }
+  
+  // Load other state from localStorage
+  PERSISTED_KEYS.forEach(key => {
+    if (key !== 'tabs') {  // Skip tabs as we loaded it from electron-store
+      try {
+        const item = localStorage.getItem(`redux-${key}`)
+        if (item) {
+          persistedState[key as keyof StoreState] = JSON.parse(item)
+        }
+      } catch (error) {
+        // Silently fail - will use default state
+      }
     }
   })
   

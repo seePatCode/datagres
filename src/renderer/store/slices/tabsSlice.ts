@@ -237,6 +237,9 @@ export const tabsSlice = createSlice({
       const { connectionString, tableName } = action.payload
       
       // Initialize if needed
+      if (!state.starredTables) {
+        state.starredTables = {}
+      }
       if (!state.starredTables[connectionString]) {
         state.starredTables[connectionString] = []
       }
@@ -276,6 +279,9 @@ export const tabsSlice = createSlice({
             state.recentTables[connectionString] = newState.recentTables[connectionString]
           }
           if (newState.starredTables?.[connectionString]) {
+            if (!state.starredTables) {
+              state.starredTables = {}
+            }
             state.starredTables[connectionString] = newState.starredTables[connectionString]
           }
           state.lastSaved[connectionString] = lastSaved
