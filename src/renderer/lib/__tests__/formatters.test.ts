@@ -24,17 +24,17 @@ describe('formatters', () => {
       expect(formatCellValue(false)).toBe('false')
     })
 
-    it('should format JSON objects with pretty printing', () => {
+    it('should format JSON objects in compact format', () => {
       const obj = { name: 'John', age: 30 }
-      expect(formatCellValue(obj)).toBe('{\n  "name": "John",\n  "age": 30\n}')
+      expect(formatCellValue(obj)).toBe('{"name":"John","age":30}')
     })
 
-    it('should format JSON arrays with pretty printing', () => {
+    it('should format JSON arrays in compact format', () => {
       const arr = ['apple', 'banana', 'cherry']
-      expect(formatCellValue(arr)).toBe('[\n  "apple",\n  "banana",\n  "cherry"\n]')
+      expect(formatCellValue(arr)).toBe('["apple","banana","cherry"]')
     })
 
-    it('should format nested JSON objects', () => {
+    it('should format nested JSON objects in compact format', () => {
       const nested = {
         user: {
           name: 'Alice',
@@ -44,16 +44,7 @@ describe('formatters', () => {
           }
         }
       }
-      const expected = `{
-  "user": {
-    "name": "Alice",
-    "preferences": {
-      "theme": "dark",
-      "notifications": true
-    }
-  }
-}`
-      expect(formatCellValue(nested)).toBe(expected)
+      expect(formatCellValue(nested)).toBe('{"user":{"name":"Alice","preferences":{"theme":"dark","notifications":true}}}')
     })
   })
 

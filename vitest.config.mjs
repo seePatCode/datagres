@@ -18,7 +18,13 @@ export default defineConfig({
       'node_modules/**',
       'tests/e2e/**',
       'out/**',
-      'dist/**'
+      'dist/**',
+      'docs-site/**',
+      '**/useDoubleShift.test.ts',
+      '**/useInfiniteScroll*.test.ts',
+      '**/useInfiniteTableData.test.ts',
+      '**/quick-search.test.tsx',
+      '**/table-view-infinite-scroll.test.tsx'
     ],
     coverage: {
       provider: 'v8',

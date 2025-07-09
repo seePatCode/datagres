@@ -44,7 +44,7 @@ function createMainWindow() {
     ...(process.platform === 'darwin' 
       ? { titleBarStyle: 'hidden' } // macOS: Hide title but keep traffic lights
       : { frame: false }), // Windows/Linux: Completely frameless
-    show: process.env.NODE_ENV !== 'test', // Don't show during tests
+    show: false, // Will show after loading completes
     focusable: process.env.NODE_ENV !== 'test', // Don't steal focus during tests
     webPreferences: {
       nodeIntegration: false,

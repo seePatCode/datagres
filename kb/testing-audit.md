@@ -8,7 +8,10 @@ The current testing infrastructure shows **significant gaps in code coverage** w
 - **Unit Test Coverage: ~20-30%** (estimated based on test failures and limited test files)
 - **E2E Test Coverage: ~40%** (basic user flows only)
 - **Critical Features Without Tests: 80%+**
-- **Test Execution: Failing** (11 of 103 tests failing)
+- **Test Execution Status:**
+  - Unit Tests: **11 of 103 tests failing** (89% pass rate)
+  - E2E Tests: **40 of 42 tests failing** (5% pass rate)
+  - Primary issue: Tests expect auto-connection behavior that isn't working
 
 ## Testing Infrastructure Overview
 
@@ -143,10 +146,10 @@ The current testing infrastructure shows **significant gaps in code coverage** w
 
 ## Test Failure Analysis
 
-### Unit Test Failures (11 failures)
+### Unit Test Failures (11 of 103 failing - 89% pass rate)
 1. **AI Service Tests** (5 failures)
    - Missing Ollama mock implementation
-   - Settings store initialization errors
+   - Settings store initialization errors: "Please specify the `projectName` option"
    - Network request mocking issues
 
 2. **Database Service Tests** (1 failure)
@@ -156,10 +159,27 @@ The current testing infrastructure shows **significant gaps in code coverage** w
    - JSON pretty-printing expectations
    - Date formatting issues
 
+### E2E Test Failures (40 of 42 failing - 5% pass rate)
+1. **Window Title Test**
+   - Expected: "Datagres - Database Explorer"
+   - Received: "" (empty title)
+
+2. **Auto-Connection Tests** (majority of failures)
+   - Tests expect "Connected to testdb" text
+   - Auto-connection feature appears broken
+   - Connection UI elements not found
+   - Tables view never appears
+
+3. **Test Infrastructure Issues**
+   - Tests timeout after 5 seconds waiting for elements
+   - Mock test mode may not be properly initialized
+
 ### Root Causes
 - **Missing Test Environment Setup**: ElectronStore requires projectName
 - **Inadequate Mocking**: External dependencies not properly mocked
-- **Outdated Test Expectations**: Tests not updated with code changes
+- **Broken Auto-Connection**: E2E tests expect auto-connection that isn't working
+- **Window Title Issue**: App window has no title set
+- **Test Mode Detection**: NODE_ENV=test may not be properly detected
 
 ## Recommendations
 

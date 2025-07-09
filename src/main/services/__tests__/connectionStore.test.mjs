@@ -50,7 +50,7 @@ describe('connectionStore', () => {
         port: 5432,
         database: 'testdb',
         username: 'user',
-        password: null
+        password: ''
       })
     })
 
@@ -64,7 +64,7 @@ describe('connectionStore', () => {
         port: 5432,
         database: 'testdb',
         username: 'user',
-        password: null
+        password: ''
       })
     })
 

@@ -28,7 +28,18 @@ describe('databaseService', () => {
         expect(result).toEqual({
           success: true,
           database: 'testdb',
-          tables: ['users', 'products', 'orders', 'categories']
+          tables: ['users', 'products', 'orders', 'categories'],
+          schemas: [
+            {
+              name: 'public',
+              tables: [
+                { name: 'users', schema: 'public' },
+                { name: 'products', schema: 'public' },
+                { name: 'orders', schema: 'public' },
+                { name: 'categories', schema: 'public' }
+              ]
+            }
+          ]
         })
       })
 
