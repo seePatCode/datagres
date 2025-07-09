@@ -35,24 +35,8 @@ export function SettingsView() {
       setOllamaUrl(aiSettings.ollamaConfig.url || 'http://localhost:11434')
     }
   }, [aiSettings.ollamaConfig])
-  const [claudeStatus, setClaudeStatus] = useState<'checking' | 'installed' | 'not-installed'>('checking')
 
   // No need to sync here - it's now handled in the Redux slice
-
-  // Check Claude CLI availability
-  useEffect(() => {
-    if (aiSettings.provider === 'claude-code') {
-      window.electronAPI.executeShellCommand('which claude').then((result) => {
-        if (result.success && result.output) {
-          setClaudeStatus('installed')
-        } else {
-          setClaudeStatus('not-installed')
-        }
-      }).catch(() => {
-        setClaudeStatus('not-installed')
-      })
-    }
-  }, [aiSettings.provider])
 
   const handleProviderChange = (provider: AIProvider) => {
     dispatch(setAIProvider(provider))
@@ -187,45 +171,6 @@ export function SettingsView() {
               </div>
             )}
 
-            {/* Claude Code Configuration */}
-            {aiSettings.provider === 'claude-code' && (
-              <div className="space-y-4 pt-4 border-t">
-                <h4 className="text-sm font-medium">Claude Code Configuration</h4>
-                
-                {claudeStatus === 'checking' ? (
-                  <p className="text-sm text-muted-foreground">Checking Claude CLI installation...</p>
-                ) : claudeStatus === 'installed' ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 bg-green-500 rounded-full" />
-                      <p className="text-sm text-green-600">Claude CLI is installed and ready to use</p>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Claude will use your existing authentication. If not authenticated, run "claude login" in your terminal.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 bg-orange-500 rounded-full" />
-                      <p className="text-sm text-orange-600">Claude CLI not found</p>
-                    </div>
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      <p>To use Claude Code CLI:</p>
-                      <ol className="list-decimal list-inside space-y-1 ml-2">
-                        <li>Install via npm: <code className="text-xs bg-muted px-1 py-0.5 rounded">npm install -g @anthropic-ai/claude-code</code></li>
-                        <li>Or download from <a href="https://claude.ai/code" className="text-primary underline" onClick={(e) => { e.preventDefault(); window.electronAPI.executeShellCommand('open https://claude.ai/code') }}>claude.ai/code</a></li>
-                        <li>Run <code className="text-xs bg-muted px-1 py-0.5 rounded">claude login</code> in your terminal to authenticate</li>
-                        <li>Restart Datagres after installation</li>
-                      </ol>
-                      <p className="text-xs mt-2 text-muted-foreground">
-                        Note: The Claude CLI will be found automatically from your PATH, including npm global installations.
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
           </CardContent>
         </Card>
 
