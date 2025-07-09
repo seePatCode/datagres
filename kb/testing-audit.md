@@ -74,7 +74,6 @@ The current testing infrastructure shows **significant gaps in code coverage** w
    - Connection string validation
    - SSL/TLS configuration
    - Cloud provider detection (AWS, Heroku, Azure)
-   - Keytar integration for secure password storage
 
 2. **Data Editing**
    - Cell editing (`editable-data-table.tsx`)

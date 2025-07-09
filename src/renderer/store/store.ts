@@ -2,7 +2,7 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { setupListeners } from '@reduxjs/toolkit/query'
 import settingsReducer from './slices/settingsSlice'
-import uiReducer from './slices/uiSlice'
+import uiReducer, { setHydrated } from './slices/uiSlice'
 import connectionReducer, { hydrateConnectionState } from './slices/connectionSlice'
 import tabsReducer, { hydrateTabsState } from './slices/tabsSlice'
 import { persistenceMiddleware, loadPersistedState } from './middleware/persistence'
@@ -26,15 +26,23 @@ export const store = configureStore({
 
 // Load persisted state asynchronously and hydrate the store
 loadPersistedState().then(persistedState => {
+  console.log('[Store] Hydrating store with persisted state')
+  
   // Hydrate tabs state if available
   if (persistedState.tabs) {
+    console.log('[Store] Hydrating tabs state')
     store.dispatch(hydrateTabsState(persistedState.tabs))
   }
+  
   // Hydrate connection state if available
   if (persistedState.connection) {
+    console.log('[Store] Hydrating connection state:', persistedState.connection)
     store.dispatch(hydrateConnectionState(persistedState.connection))
   }
-  // Other slices can be hydrated here if needed
+  
+  // Mark store as hydrated
+  console.log('[Store] Marking store as hydrated')
+  store.dispatch(setHydrated())
 })
 
 // Infer the `RootState` and `AppDispatch` types from the store itself

@@ -180,7 +180,16 @@ export const connectionSlice = createSlice({
     
     hydrateConnectionState: (state, action: PayloadAction<ConnectionState>) => {
       // Hydrate the entire connection state from persisted storage
-      return action.payload
+      console.log('[ConnectionSlice] Hydrating with:', action.payload)
+      // Reset the status to idle since we're not actually connected yet
+      const hydratedState = {
+        ...action.payload,
+        activeConnection: action.payload.activeConnection ? {
+          ...action.payload.activeConnection,
+          status: 'idle' as const
+        } : null
+      }
+      return hydratedState
     },
   },
   extraReducers: (builder) => {
@@ -215,6 +224,7 @@ export const connectionSlice = createSlice({
         }
       })
       .addCase(connectToDatabase.fulfilled, (state, action) => {
+        console.log('[ConnectionSlice] Connection successful:', action.payload)
         state.activeConnection = {
           connectionString: action.payload.connectionString,
           originalConnectionString: action.payload.originalConnectionString,

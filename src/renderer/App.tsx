@@ -36,6 +36,7 @@ import {
   selectCurrentView,
   selectCanGoBack,
   selectCanGoForward,
+  selectIsHydrated,
 } from '@/store/slices/uiSlice'
 import { loadSettings } from '@/store/slices/settingsSlice'
 
@@ -78,6 +79,7 @@ function App() {
   const currentView = useSelector(selectCurrentView)
   const canGoBack = useSelector(selectCanGoBack)
   const canGoForward = useSelector(selectCanGoForward)
+  const isHydrated = useSelector(selectIsHydrated)
   
   // Connection state (for keyboard shortcuts)
   const activeConnection = useSelector(selectActiveConnection)
@@ -89,31 +91,51 @@ function App() {
   const [hasAttemptedReconnect, setHasAttemptedReconnect] = useState(false)
   
   useEffect(() => {
+    console.log('[App] Auto-reconnect check:', {
+      isHydrated,
+      hasAttemptedReconnect,
+      currentView,
+      activeConnection,
+    })
+    
+    // Wait for store to be hydrated before attempting reconnect
+    if (!isHydrated) {
+      console.log('[App] Waiting for store to hydrate...')
+      return
+    }
+    
     // Only attempt once and only on the connect view
-    if (!hasAttemptedReconnect && currentView === 'connect' && activeConnection) {
+    if (!hasAttemptedReconnect && currentView === 'connect' && activeConnection && activeConnection.connectionString) {
       // We have a persisted connection
+      console.log('[App] Attempting auto-reconnect with:', activeConnection)
       setHasAttemptedReconnect(true)
       
       // Try to reconnect using the saved connection ID or connection string
       if (activeConnection.savedConnectionId) {
+        console.log('[App] Reconnecting using saved connection ID:', activeConnection.savedConnectionId)
         dispatch(loadAndConnectToSavedConnection(activeConnection.savedConnectionId)).then((result) => {
+          console.log('[App] Saved connection reconnect result:', result)
           if (result.meta.requestStatus === 'fulfilled') {
+            console.log('[App] Reconnect successful, switching to explorer view')
             dispatch(setCurrentView('explorer'))
             dispatch(pushNavigationEntry({ type: 'view', viewName: 'explorer' }))
           }
         })
       } else if (activeConnection.connectionString) {
+        console.log('[App] Reconnecting using connection string:', activeConnection.connectionString)
         dispatch(connectToDatabase({ 
           connectionString: activeConnection.connectionString 
         })).then((result) => {
+          console.log('[App] Connection string reconnect result:', result)
           if (result.meta.requestStatus === 'fulfilled') {
+            console.log('[App] Reconnect successful, switching to explorer view')
             dispatch(setCurrentView('explorer'))
             dispatch(pushNavigationEntry({ type: 'view', viewName: 'explorer' }))
           }
         })
       }
     }
-  }, [activeConnection, currentView, hasAttemptedReconnect, dispatch])
+  }, [isHydrated, activeConnection, currentView, hasAttemptedReconnect, dispatch])
   
   // Navigation handlers
   const handleGoBack = () => dispatch(navigateBack())

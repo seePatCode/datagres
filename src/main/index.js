@@ -258,6 +258,25 @@ ipcMain.handle('set-tabs-state', async (_event, state) => {
   }
 })
 
+// Connection state persistence handlers
+ipcMain.handle('get-connection-state', async () => {
+  try {
+    const connectionState = await settingsStore.getSetting('connectionState')
+    return { success: true, state: connectionState || null }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+})
+
+ipcMain.handle('set-connection-state', async (_event, state) => {
+  try {
+    await settingsStore.setSetting('connectionState', state)
+    return { success: true }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+})
+
 ipcMain.handle('set-ai-settings', async (_event, settings) => {
   try {
     await settingsStore.setAISettings(settings)

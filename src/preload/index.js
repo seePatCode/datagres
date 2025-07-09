@@ -27,6 +27,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Tabs state persistence
   getTabsState: () => ipcRenderer.invoke('get-tabs-state'),
   setTabsState: (state) => ipcRenderer.invoke('set-tabs-state', state),
+  // Connection state persistence
+  getConnectionState: () => ipcRenderer.invoke('get-connection-state'),
+  setConnectionState: (state) => ipcRenderer.invoke('set-connection-state', state),
   // Execute shell command for setup
   executeShellCommand: (command) => ipcRenderer.invoke('execute-shell-command', command),
   // AWS SSM tunnel setup

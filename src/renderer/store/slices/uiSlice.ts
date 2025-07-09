@@ -13,6 +13,9 @@ export interface UIState {
   // Navigation state
   navigationHistory: NavigationEntry[]
   navigationIndex: number
+  
+  // Persistence state
+  isHydrated: boolean
 }
 
 export interface NavigationEntry {
@@ -28,6 +31,7 @@ const initialState: UIState = {
   pendingConnectionString: '',
   navigationHistory: [{ type: 'view', viewName: 'connect', timestamp: Date.now() }],
   navigationIndex: 0,
+  isHydrated: false,
 }
 
 export const uiSlice = createSlice({
@@ -46,6 +50,10 @@ export const uiSlice = createSlice({
     hideSaveConnectionDialog: (state) => {
       state.showSaveDialog = false
       state.pendingConnectionString = ''
+    },
+    
+    setHydrated: (state) => {
+      state.isHydrated = true
     },
     
     // Navigation actions
@@ -92,6 +100,7 @@ export const {
   setCurrentView,
   showSaveConnectionDialog,
   hideSaveConnectionDialog,
+  setHydrated,
   pushNavigationEntry,
   navigateBack,
   navigateForward,
@@ -106,5 +115,6 @@ export const selectCanGoBack = (state: RootState) => state.ui.navigationIndex > 
 export const selectCanGoForward = (state: RootState) => state.ui.navigationIndex < state.ui.navigationHistory.length - 1
 export const selectCurrentNavigationEntry = (state: RootState) => 
   state.ui.navigationHistory[state.ui.navigationIndex]
+export const selectIsHydrated = (state: RootState) => state.ui.isHydrated
 
 export default uiSlice.reducer
