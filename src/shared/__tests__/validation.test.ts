@@ -8,7 +8,7 @@ import {
 describe('Connection String Validation', () => {
   describe('validateConnectionString', () => {
     it('should accept connection strings without port', () => {
-      const connStr = 'postgres://default:Q4xeSq6hPYWJ@ep-falling-star-a4016m1k-pooler.us-east-1.aws.neon.tech/verceldb'
+      const connStr = 'postgres://testuser:testpass@example-host.us-east-1.aws.neon.tech/testdb'
       expect(validateConnectionString(connStr)).toBe(true)
     })
 
@@ -103,8 +103,8 @@ describe('Connection String Validation', () => {
     })
 
     it('should handle Neon connection strings', () => {
-      const input = 'postgres://default:Q4xeSq6hPYWJ@ep-falling-star-a4016m1k-pooler.us-east-1.aws.neon.tech/verceldb'
-      const expected = 'postgres://default:Q4xeSq6hPYWJ@ep-falling-star-a4016m1k-pooler.us-east-1.aws.neon.tech:5432/verceldb'
+      const input = 'postgres://testuser:testpass@example-host.us-east-1.aws.neon.tech/testdb'
+      const expected = 'postgres://testuser:testpass@example-host.us-east-1.aws.neon.tech:5432/testdb'
       expect(normalizeConnectionString(input)).toBe(expected)
     })
 
