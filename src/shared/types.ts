@@ -298,6 +298,6 @@ export interface AISettings {
     url: string
   }
   claudeCodeConfig?: {
-    // Add any Claude Code specific config here in the future
+    cliPath?: string  // Path to Claude CLI executable
   }
 }

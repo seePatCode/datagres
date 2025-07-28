@@ -20,7 +20,9 @@ const getDefaultState = (): SettingsState => {
         model: 'qwen2.5-coder:latest',
         url: 'http://localhost:11434'
       },
-      claudeCodeConfig: {}
+      claudeCodeConfig: {
+        cliPath: ''
+      }
     }
   }
 }

@@ -27,6 +27,7 @@ export function SettingsView() {
   
   const [ollamaModel, setOllamaModel] = useState(aiSettings.ollamaConfig?.model || 'qwen2.5-coder:latest')
   const [ollamaUrl, setOllamaUrl] = useState(aiSettings.ollamaConfig?.url || 'http://localhost:11434')
+  const [claudeCliPath, setClaudeCliPath] = useState(aiSettings.claudeCodeConfig?.cliPath || '')
   
   // Update local state when aiSettings change (e.g., from localStorage)
   useEffect(() => {
@@ -34,7 +35,10 @@ export function SettingsView() {
       setOllamaModel(aiSettings.ollamaConfig.model || 'qwen2.5-coder:latest')
       setOllamaUrl(aiSettings.ollamaConfig.url || 'http://localhost:11434')
     }
-  }, [aiSettings.ollamaConfig])
+    if (aiSettings.claudeCodeConfig) {
+      setClaudeCliPath(aiSettings.claudeCodeConfig.cliPath || '')
+    }
+  }, [aiSettings.ollamaConfig, aiSettings.claudeCodeConfig])
 
   // No need to sync here - it's now handled in the Redux slice
 
@@ -48,6 +52,16 @@ export function SettingsView() {
       ollamaConfig: {
         model: ollamaModel,
         url: ollamaUrl
+      }
+    }
+    dispatch(setAISettings(newSettings))
+  }
+
+  const handleSaveClaudeSettings = () => {
+    const newSettings: AISettings = {
+      ...aiSettings,
+      claudeCodeConfig: {
+        cliPath: claudeCliPath
       }
     }
     dispatch(setAISettings(newSettings))
@@ -167,6 +181,42 @@ export function SettingsView() {
                   className="mt-2"
                 >
                   Save Ollama Settings
+                </Button>
+              </div>
+            )}
+
+            {/* Claude Code Configuration */}
+            {aiSettings.provider === 'claude-code' && (
+              <div className="space-y-4 pt-4 border-t">
+                <h4 className="text-sm font-medium">Claude Code Configuration</h4>
+                <div className="space-y-2">
+                  <Label htmlFor="claude-cli-path">Claude CLI Path</Label>
+                  <Input
+                    id="claude-cli-path"
+                    value={claudeCliPath}
+                    onChange={(e) => setClaudeCliPath(e.target.value)}
+                    placeholder="/usr/local/bin/claude or ~/.claude/local/claude"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    The full path to your Claude CLI executable. Common locations:
+                  </p>
+                  <ul className="text-xs text-muted-foreground ml-4 list-disc">
+                    <li>~/.claude/local/claude (Official installation)</li>
+                    <li>/usr/local/bin/claude (npm global install)</li>
+                    <li>~/.nvm/versions/node/*/bin/claude (NVM install)</li>
+                  </ul>
+                  <div className="mt-2 p-2 bg-muted rounded-md">
+                    <p className="text-xs">
+                      <strong>Tip:</strong> To find your Claude CLI path, run <code className="px-1 py-0.5 bg-background rounded">which claude</code> in your terminal.
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  onClick={handleSaveClaudeSettings}
+                  size="sm"
+                  className="mt-2"
+                >
+                  Save Claude Settings
                 </Button>
               </div>
             )}

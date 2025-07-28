@@ -30,7 +30,9 @@ async function initializeStore() {
               model: 'qwen2.5-coder:latest',
               url: 'http://localhost:11434'
             },
-            claudeCodeConfig: {}
+            claudeCodeConfig: {
+              cliPath: '' // User will set this via settings
+            }
           }
         }
       })
