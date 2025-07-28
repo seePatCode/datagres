@@ -481,11 +481,56 @@ async function tryClaudeCode(prompt, tableInfo) {
   const path = require('path');
   
   let claudePath = '';
+  let npmPrefix = ''; // Declare npmPrefix at the top level
   
   try {
     // Get the user's default shell
     const userShell = process.env.SHELL || '/bin/bash';
-    devLog('User shell detected:', { shell: userShell });
+    const currentPath = process.env.PATH || 'PATH not available';
+    
+    devLog('Environment info:', { 
+      shell: userShell,
+      currentPath: currentPath.split(':').join('\n  '),
+      platform: process.platform,
+      isPackaged: process.mas || process.windowsStore || !process.defaultApp
+    });
+    
+    // First, let's log what PATH the shell sees
+    try {
+      const pathResult = await execAsync(`${userShell} -l -c "echo $PATH"`, {
+        timeout: 5000,
+        encoding: 'utf8'
+      });
+      const shellPath = pathResult.stdout.trim();
+      
+      // Always log PATH info for Claude CLI debugging
+      console.log('[Claude CLI PATH Discovery]', {
+        currentProcessPATH: process.env.PATH?.split(':').length + ' directories',
+        shellLoginPATH: shellPath.split(':').length + ' directories',
+        shell: userShell
+      });
+      
+      devLog('Shell login PATH:', { 
+        shell: userShell,
+        paths: shellPath.split(':').join('\n  ')
+      });
+      
+      // Also check common npm global locations
+      const npmGlobalResult = await execAsync(`${userShell} -l -c "npm config get prefix 2>/dev/null || echo 'npm not found'"`, {
+        timeout: 5000,
+        encoding: 'utf8'
+      });
+      npmPrefix = npmGlobalResult.stdout.trim();
+      devLog('npm global prefix:', { prefix: npmPrefix });
+      
+      // Always log npm prefix for debugging
+      if (npmPrefix && npmPrefix !== 'npm not found') {
+        console.log('[Claude CLI npm prefix]', npmPrefix);
+      }
+    } catch (pathError) {
+      console.error('[Claude CLI PATH Discovery Error]', pathError.message);
+      devLog('Failed to get shell PATH', { error: pathError.message });
+    }
     
     // Use the user's login shell to find claude with their full PATH
     // The -l flag loads the full login environment (including .zshrc, .bash_profile, etc.)
@@ -495,28 +540,99 @@ async function tryClaudeCode(prompt, tableInfo) {
         encoding: 'utf8'
       });
       claudePath = whichResult.stdout.trim();
+      
+      // If "claude not found" in output, clear claudePath
+      if (claudePath.includes('not found')) {
+        claudePath = '';
+      }
+      
       devLog('Found claude CLI using login shell:', { path: claudePath, shell: userShell });
       
-      // Verify it's executable and get version
-      try {
-        const versionResult = await execAsync(`"${claudePath}" --version`, {
-          timeout: 5000,
-          encoding: 'utf8'
-        });
-        devLog('Claude CLI version:', { 
-          version: versionResult.stdout.trim(),
-          stderr: versionResult.stderr
-        });
-      } catch (versionError) {
-        devLog('Claude CLI version check failed', {
-          error: versionError.message,
-          stdout: versionError.stdout,
-          stderr: versionError.stderr
-        });
-        // Continue anyway - some versions might not support --version
+      // If not found via shell, try common locations directly
+      if (!claudePath) {
+        console.log('[Claude CLI] Shell lookup failed, checking common paths...');
+        
+        const commonPaths = [
+          '/usr/local/bin/claude',
+          '/opt/homebrew/bin/claude',
+          `${os.homedir()}/.npm/bin/claude`,
+          `${os.homedir()}/.npm-global/bin/claude`,
+          `${os.homedir()}/node_modules/.bin/claude`,
+          `${os.homedir()}/.nvm/versions/node/*/bin/claude`, // NVM paths
+          '/usr/bin/claude',
+          // Add npm prefix path if we found it
+          ...(npmPrefix && npmPrefix !== 'npm not found' ? [`${npmPrefix}/bin/claude`] : [])
+        ];
+        
+        // Expand glob patterns
+        const expandedPaths = [];
+        for (const checkPath of commonPaths) {
+          if (checkPath.includes('*')) {
+            // Handle NVM-style paths
+            try {
+              const baseDir = path.dirname(checkPath.split('*')[0]);
+              if (fs.existsSync(baseDir)) {
+                const dirs = fs.readdirSync(baseDir);
+                for (const dir of dirs) {
+                  expandedPaths.push(checkPath.replace('*', dir));
+                }
+              }
+            } catch (e) {
+              // Ignore glob expansion errors
+            }
+          } else {
+            expandedPaths.push(checkPath);
+          }
+        }
+        
+        for (const checkPath of expandedPaths) {
+          try {
+            const stats = fs.statSync(checkPath);
+            if (stats.isFile() && (stats.mode & fs.constants.X_OK)) {
+              console.log(`[Claude CLI] Found at: ${checkPath}`);
+              claudePath = checkPath;
+              break;
+            }
+          } catch (e) {
+            // Path doesn't exist or not accessible
+          }
+        }
+      }
+      
+      if (claudePath) {
+        // Verify it's executable and get version
+        try {
+          const versionResult = await execAsync(`"${claudePath}" --version`, {
+            timeout: 5000,
+            encoding: 'utf8'
+          });
+          devLog('Claude CLI version:', { 
+            version: versionResult.stdout.trim(),
+            stderr: versionResult.stderr
+          });
+        } catch (versionError) {
+          devLog('Claude CLI version check failed', {
+            error: versionError.message,
+            stdout: versionError.stdout,
+            stderr: versionError.stderr
+          });
+          // Continue anyway - some versions might not support --version
+        }
+      } else {
+        throw new Error('Claude CLI not found in any common locations');
       }
       
     } catch (error) {
+      // Always log Claude CLI errors, even in production, for debugging
+      console.error('[Claude CLI Check Failed]', { 
+        error: error.message,
+        code: error.code,
+        stderr: error.stderr,
+        stdout: error.stdout,
+        currentPath: process.env.PATH,
+        isPackaged: process.mas || process.windowsStore || !process.defaultApp
+      });
+      
       devLog('Claude CLI check failed', { 
         error: error.message,
         code: error.code,
@@ -524,9 +640,39 @@ async function tryClaudeCode(prompt, tableInfo) {
         stdout: error.stdout
       });
       
+      // Get diagnostic information for the error message
+      const currentPath = process.env.PATH || 'not available';
+      const pathDirs = currentPath.split(':').filter(p => p.includes('npm') || p.includes('node') || p.includes('local'));
+      
+      let diagnosticInfo = `\n\nDiagnostic info:\n`;
+      diagnosticInfo += `- Current shell: ${userShell}\n`;
+      diagnosticInfo += `- Current PATH includes: ${pathDirs.length > 0 ? pathDirs.join(', ') : 'no npm/node paths found'}\n`;
+      diagnosticInfo += `- Platform: ${process.platform}\n`;
+      diagnosticInfo += `- Running from: ${process.mas || process.windowsStore || !process.defaultApp ? 'packaged app' : 'development'}\n`;
+      
+      // Try to check common locations manually
+      const commonPaths = [
+        '/usr/local/bin/claude',
+        '/opt/homebrew/bin/claude',
+        `${os.homedir()}/.npm-global/bin/claude`,
+        `${os.homedir()}/node_modules/.bin/claude`,
+        '/usr/bin/claude'
+      ];
+      
+      for (const checkPath of commonPaths) {
+        try {
+          if (fs.existsSync(checkPath)) {
+            diagnosticInfo += `\nFound claude at ${checkPath} but couldn't access it via shell`;
+            break;
+          }
+        } catch (e) {
+          // Ignore
+        }
+      }
+      
       return {
         success: false,
-        error: 'Claude Code CLI not found. Please install it via npm: npm install -g @anthropic-ai/claude-code, or download from https://claude.ai/code'
+        error: `Claude Code CLI not found. Please install it via npm: npm install -g @anthropic-ai/claude-code, or download from https://claude.ai/code${diagnosticInfo}`
       };
     }
     
