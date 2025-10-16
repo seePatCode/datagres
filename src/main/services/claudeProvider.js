@@ -360,31 +360,21 @@ Request: ${prompt}`;
   let stderr = '';
   
   try {
-    // Write prompt to a file and pass the filename to claude
+    // Write prompt to a file and use cat to pipe it to claude
+    // This avoids command line length limits for large schemas
     const tmpFile = path.join(os.tmpdir(), `claude-prompt-${Date.now()}.txt`);
     fs.writeFileSync(tmpFile, fullPrompt, 'utf8');
     devLog('Created temp prompt file:', { tmpFile, length: fullPrompt.length });
-    
-    // Try different approaches based on what works
-    let command;
-    
-    // Use printf to properly handle newlines and pass to claude
-    // The -p flag might be for "prompt" mode
-    const escapedPrompt = fullPrompt
-      .replace(/\\/g, '\\\\')
-      .replace(/"/g, '\\"')
-      .replace(/\$/g, '\\$')
-      .replace(/`/g, '\\`')
-      .replace(/%/g, '%%'); // Escape % for printf
-    
-    command = `printf "${escapedPrompt}" | "${claudePath}" -p`;
-    
-    devLog('Running command:', { command: command.substring(0, 200) + '...' });
-    
+
+    // Use cat to read the file and pipe to claude to avoid command line length limits
+    const command = `cat "${tmpFile}" | "${claudePath}" -p`;
+
+    devLog('Running command:', { command });
+
     // Use login shell to ensure full environment is loaded
     const userShell = process.env.SHELL || '/bin/bash';
     const loginShellCommand = `${userShell} -l -c '${command}'`;
-    
+
     const result = await execAsync(loginShellCommand, {
       maxBuffer: 1024 * 1024 * 10, // 10MB
       timeout: 60000, // 1 minute
