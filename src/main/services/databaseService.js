@@ -655,7 +655,15 @@ async function executeSQL(connectionString, request) {
     } else {
       // Non-paginated query (has LIMIT, has aggregation, or not SELECT)
       const startTime = Date.now()
-      result = await client.query(query)
+
+      // Safety: Add LIMIT 1000 to SELECT queries without LIMIT (except aggregation queries)
+      // to prevent accidental full table scans
+      let queryToExecute = query
+      if (isSelectQuery && !hasExistingLimit && !hasAggregation) {
+        queryToExecute = `${query} LIMIT 1000`
+      }
+
+      result = await client.query(queryToExecute)
       queryTime = Date.now() - startTime
       totalRows = result.rowCount || 0
     }
