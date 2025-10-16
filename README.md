@@ -76,8 +76,8 @@ Alternatively, build from source:
 git clone https://github.com/seepatcode/datagres.git
 cd datagres
 
-# Install dependencies
-npm install
+# Install dependencies (use --legacy-peer-deps due to React 19)
+npm install --legacy-peer-deps
 
 # Run in development mode
 npm run dev
@@ -86,7 +86,7 @@ npm run dev
 npm run make
 npm run dist
 
-# Adding shadcn/ui components (use npx with --legacy-peer-deps due to React 19)
+# Adding shadcn/ui components
 npx --legacy-peer-deps shadcn@latest add [component-name]
 ```
 
