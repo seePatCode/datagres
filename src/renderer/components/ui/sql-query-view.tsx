@@ -12,7 +12,7 @@ import { useSqlSettings } from '@/hooks/useSettings'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useInfiniteQueryExecution } from '@/hooks/useInfiniteQueryExecution'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
-import { Play, Loader2, AlertCircle, Clock, Eye, Sparkles, Check, RefreshCw } from 'lucide-react'
+import { Play, Loader2, AlertCircle, Clock, Eye, Sparkles, Check, RefreshCw, Download } from 'lucide-react'
 import { ColumnDef } from '@tanstack/react-table'
 import type { TableSchema, TableInfo } from '@shared/types'
 import { formatCellValue, formatCellTooltip, isJsonValue } from '@/lib/formatters'
@@ -236,6 +236,41 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
     if (ms < 1000) return `${ms}ms`
     return `${(ms / 1000).toFixed(2)}s`
   }
+
+  // Export results to CSV
+  const exportToCSV = useCallback(() => {
+    if (!queryData || !queryData.columns || !queryData.rows) return
+
+    // Create CSV content
+    const headers = queryData.columns.join(',')
+    const rows = queryData.rows.map(row =>
+      row.map(cell => {
+        // Handle null values
+        if (cell === null) return ''
+        // Escape quotes and wrap in quotes if contains comma, newline, or quote
+        const cellStr = String(cell)
+        if (cellStr.includes(',') || cellStr.includes('\n') || cellStr.includes('"')) {
+          return `"${cellStr.replace(/"/g, '""')}"`
+        }
+        return cellStr
+      }).join(',')
+    ).join('\n')
+
+    const csv = `${headers}\n${rows}`
+
+    // Create blob and download
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+
+    link.setAttribute('href', url)
+    link.setAttribute('download', `query-results-${Date.now()}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }, [queryData])
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -472,14 +507,25 @@ Return ONLY the corrected SQL query.`;
         {queryData && (
           <div className="flex flex-col h-full">
             {/* Query stats */}
-            <div className="flex items-center gap-4 px-3 py-2 border-b bg-muted/20 text-sm flex-shrink-0">
-              <span className="flex items-center gap-1 text-muted-foreground">
-                <Clock className="h-3 w-3" />
-                {formatTime(queryTime || 0)}
-              </span>
-              <span className="text-muted-foreground">
-                {queryData.rows.length} {totalRows && totalRows > queryData.rows.length ? `of ${totalRows}` : ''} rows
-              </span>
+            <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/20 text-sm flex-shrink-0">
+              <div className="flex items-center gap-4">
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Clock className="h-3 w-3" />
+                  {formatTime(queryTime || 0)}
+                </span>
+                <span className="text-muted-foreground">
+                  {queryData.rows.length} {totalRows && totalRows > queryData.rows.length ? `of ${totalRows}` : ''} rows
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={exportToCSV}
+                className="gap-1 h-7 text-xs"
+              >
+                <Download className="h-3 w-3" />
+                Export CSV
+              </Button>
             </div>
 
             {/* Results table with its own scroll container */}
