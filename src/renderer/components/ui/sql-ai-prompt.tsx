@@ -330,7 +330,9 @@ export function SqlAiPrompt({
               </div>
             </div>
           ) : (
-            <p className="text-xs text-destructive">{generateMutation.error.message}</p>
+            <div className="max-h-32 overflow-y-auto">
+              <p className="text-xs text-destructive">{generateMutation.error.message}</p>
+            </div>
           )}
         </div>
       )}

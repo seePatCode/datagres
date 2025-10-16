@@ -321,7 +321,7 @@ export function SQLQueryView({ connectionString, initialQuery = '', onQueryChang
             <Alert variant="destructive" className="w-auto max-w-2xl" data-testid="sql-error">
               <div className="flex items-start gap-3">
                 <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                <AlertDescription className="text-sm">{(queryError || executionError)?.message}</AlertDescription>
+                <AlertDescription className="text-sm max-h-32 overflow-y-auto">{(queryError || executionError)?.message}</AlertDescription>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
